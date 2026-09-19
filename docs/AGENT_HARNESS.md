@@ -1,5 +1,7 @@
 # Offline agent harness
 
+Interface note: the version 8 simplified frontend removes the sample launcher, scenario controls, and agent trace dashboard described in the original UI walkthrough below. The mock backend and its tests remain unchanged. Use [DEMO.md](DEMO.md) for the current human guarding demonstration.
+
 Safety Guard develops its agent workflow with a deterministic mock provider. It does not call an OpenAI model, spend API credits, or demonstrate language-model reasoning. The purpose of this phase is to exercise the application's context, tool permissions, persistence, and failure handling before a live provider is introduced.
 
 The mock provider selects from explicit rules and fixed messages. Its outputs and the product's agent trace must identify this mode. A successful mock workflow is evidence about application orchestration, not evidence of real-world safety, language comprehension, or qualification for an LLM-based award.

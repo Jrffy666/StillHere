@@ -6,7 +6,6 @@ import {
   Clock3,
   Copy,
   HeartHandshake,
-  ShieldCheck,
   Users,
   X,
 } from 'lucide-react';
@@ -255,7 +254,7 @@ export function HumanGuarding({
               </Button>
             )}
           </div>
-          <div className="guardian-applications" aria-live="polite">
+          {(trip.status === 'open' || relay || candidates.length > 0) && <div className="guardian-applications" aria-live="polite">
             <h4>
               {candidates.length
                 ? `${candidates.length} waiting application${candidates.length === 1 ? '' : 's'}`
@@ -299,7 +298,7 @@ export function HumanGuarding({
                 )}
               </div>
             ))}
-          </div>
+          </div>}
           {rider && (
             <p className="small-note">
               Guest names are not verified. Check who is applying before
@@ -309,17 +308,8 @@ export function HumanGuarding({
         </article>
       )}
       {contributions.length > 0 && (
-        <article className="human-relay-card">
-          <div className="card-header">
-            <h3>
-              <ShieldCheck size={17} /> Participation on this journey
-            </h3>
-          </div>
-          <p>
-            These are the observed check-ins and assignments in this journey.
-            Confirmed community contributions and appreciation appear in the
-            public guarding history and each member’s profile.
-          </p>
+        <details className="simple-details">
+          <summary>Participation on this journey</summary>
           {contributions.map((item) => (
             <div className="contribution-row" key={item.guardian.id}>
               <div>
@@ -344,18 +334,13 @@ export function HumanGuarding({
                       : item.rewardStatus === 'ineligible'
                         ? 'No completion credit'
                         : item.checkIns > 0
-                          ? 'Contribution recorded'
+                          ? 'Checked in'
                           : 'Check-in needed'}
               </small>
             </div>
           ))}
-          <p className="small-note">
-            A completed community journey shares one 25-point and 10-reputation
-            pool equally among eligible guardians. Repeated assignments cannot
-            earn an extra share. Optional wallet-signed V2 commitments have their
-            own settlement receipts and are not added to community totals.
-          </p>
-        </article>
+          <p className="small-note">Confirmed contributions appear in the chain receipts and each guardian’s profile.</p>
+        </details>
       )}
       <Dialog
         open={Boolean(approval)}
@@ -378,7 +363,7 @@ export function HumanGuarding({
                 : ''}
             </DialogDescription>
           </DialogHeader>
-          {approval && <MemberProfileCard key={approval.candidate.id} memberId={approval.candidate.id} token={token} viewerId={user.id} />}
+          {approval && <><MemberProfileCard key={approval.candidate.id} memberId={approval.candidate.id} token={token} viewerId={user.id} compact /><MemberProfileButton memberId={approval.candidate.id} name={approval.candidate.name} token={token} viewerId={user.id} /></>}
           {!approvalValid && (
             <p role="alert">
               This application is no longer available. Close this window and

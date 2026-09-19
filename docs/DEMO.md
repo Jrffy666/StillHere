@@ -6,7 +6,7 @@ Updated September 20, 2026. This walkthrough exercises ordinary human journeys a
 
 Contribution points, completion records, free appreciation categories, public member profiles, an appreciation wall, an honor cabinet, and chain receipt links are implemented. Points are non-transferable recognition, not cash or a tradable token. Appreciation has no purchase price and adds no points. Cabinet milestones are visual summaries of confirmed records, not separately minted awards. There is no collectible NFT or global leaderboard.
 
-The built-in **Explore a demo journey** path is simulated and does not award official contributions. To demonstrate the recognition mechanism, use ordinary **New journey** creation with separate rider and guardian accounts. A controlled demonstration can use fictional participants and routes while creating actual Devnet records. Identify those participants as demonstration accounts; do not present their activity as real passenger trips.
+The simplified interface has three destinations: **My journeys**, **Guard network**, and **My profile**. It no longer exposes the one-person simulated journey launcher. Existing simulated journeys remain labeled and do not award official contributions. To demonstrate the recognition mechanism, use ordinary **New journey** creation with separate rider and guardian accounts. A controlled demonstration can use fictional participants and routes while creating actual Devnet records. Identify those participants as demonstration accounts; do not present their activity as real passenger trips.
 
 ## Prepare access and accounts
 
@@ -18,14 +18,14 @@ Automated verification removed its synthetic accounts. It did not leave a popula
 
 ## Minimal two-account contribution and banner walkthrough
 
-1. In the guardian session, open **My community profile** and show the initial counters. A fresh account should have zero confirmed points, contributions, and banners.
-2. In the rider session, choose **New journey**, enter fictional route details, accept the public-record notice using **Continue with public records**, and choose **Create guarded journey**. For this walkthrough, leave the optional wallet-signed commitment unchecked. Community publication still applies automatically. A 300-second guardian check-in interval gives more time for narration.
+1. In the guardian session, open **My profile** and show the initial counters. A fresh account should have zero confirmed points, contributions, and banners.
+2. In the rider session, choose **New journey**, enter fictional route details, accept the public-record notice using **Continue with public records**, and choose **Create guarded journey**. Keep **More options** closed for the ordinary walletless flow, or open it to select a 300-second check-in interval for narration. Leave the optional wallet-signed commitment unchecked. Community publication still applies automatically.
 3. Use **Copy guardian invite** and open it in the separate guardian context. Review the rider profile, accept the public-record notice and the check-in commitment, then choose **Apply to guard**.
 4. As the rider, review the candidate's profile and choose **Approve guardian**. As the guardian, select **I am here · Check in** at least once; **Resume & check in** is the equivalent control when marked unavailable. Approval alone does not qualify for a completion allocation.
-5. As the rider, choose **I've arrived**. The journey closes and its eligible contribution is queued for publication. Show **Public guarding history** and the distinction between pending, submitted, and **Chain confirmed** records. Publication is asynchronous; do not promise a fixed confirmation time.
-6. Once the contribution is confirmed and the profile refreshes, open the guardian's **My community profile**. For a fresh account with exactly this one eligible journey, expect **Confirmed points: 25**, **Confirmed contributions: 1**, and **Confirmed banners: 0**. The contribution record itself also shows **+10 reputation**. Creating a journey as the rider does not award the rider these guardian points.
-7. In the rider's closed journey, find **A little thank-you, freely given.** Choose a category and select **Send free banner**. Options are **Thank you for being there**, **Thank you for listening**, and **Thank you for taking over**. Sending is optional.
-8. After the gratitude record is chain confirmed, the guardian's **Confirmed banners** becomes **1**, while confirmed points remain **25**. Open **My community profile**: **First watch** and **A grateful connection** are now recognized in the **Honor cabinet**. **A steady presence** remains at **1 / 5 contributions**. The received pennant appears on the **Appreciation wall**, with its category, date, sender's public community reference, and **View receipt** link. Use that link to open its Devnet account evidence. Profile data refreshes periodically; saved gratitude and finalized on-chain gratitude are separate states.
+5. As the rider, choose **I've arrived**. The journey closes and its eligible contribution is queued for publication. Open **Contribution & chain receipts** to show **Public guarding history** and the distinction between pending, submitted, and **Chain confirmed** records. Publication is asynchronous; do not promise a fixed confirmation time.
+6. Once the contribution is confirmed and the profile refreshes, open the guardian's **My profile**. For a fresh account with exactly this one eligible journey, expect **Confirmed points: 25**, **Confirmed contributions: 1**, and **Confirmed banners: 0**. Expand **Contribution history & receipts**; the contribution record itself also shows **+10 reputation**. Creating a journey as the rider does not award the rider these guardian points.
+7. In the rider's closed journey, find **Say thank you** Choose a category and select **Send free banner**. Options are **Thank you for being there**, **Thank you for listening**, and **Thank you for taking over**. Sending is optional.
+8. After the gratitude record is chain confirmed, the guardian's **Confirmed banners** becomes **1**, while confirmed points remain **25**. Open **My profile**: **First watch** and **A grateful connection** are now recognized in the **Honor cabinet**. **A steady presence** remains at **1 / 5 contributions**. The received pennant appears on the **Appreciation wall**, with its category, date, sender's public community reference, and **View receipt** link. Use that link to open its Devnet account evidence. Profile data refreshes periodically; saved gratitude and finalized on-chain gratitude are separate states.
 
 Use the wall's category buttons to filter received banners. **Load earlier records** loads another page of public history; older banners can be beyond the first page. Cabinet progress and the confirmed-banner total cover the whole account, whereas the displayed card count covers loaded matching banners. Open **Dedication details** to show the public sender, recipient, and journey references. A rider's sent banners remain in history but do not appear as received honors on the rider's wall.
 
@@ -49,7 +49,7 @@ The guest sessions demonstrate role authorization, not verified real-world ident
 
 **Request a relay.** Select **Request a human relay** from the rider or A, then **Copy relay invite**. The request has a ten-minute window; A stays assigned until a replacement is approved. Open the relay invitation as B, acknowledge the role, and choose **Apply to take over**. B still sees a redacted request.
 
-**Complete the handoff.** Approve B as the rider, then record B's check-in. Refresh A's earlier trip view or attempt an action: A no longer has permission to receive private trip updates or act as the guardian. A's public participation evidence remains accessible in **My community profile**; this journey's completion contribution is allocated after arrival. Show the handoff in the activity history.
+**Complete the handoff.** Approve B as the rider, then record B's check-in. Refresh A's earlier trip view or attempt an action: A no longer has permission to receive private trip updates or act as the guardian. A's public participation evidence remains accessible in **My profile**; this journey's completion contribution is allocated after arrival. Show the handoff in the activity history.
 
 **Arrive and share the contribution.** The rider confirms arrival. Two distinct eligible guardians share one community pool of 25 points and 10 reputation. The guardian whose public community reference sorts first receives 13 points; the other receives 12. Both receive 5 reputation. No additional pool is created by the relay, and another arrival request cannot settle again. Wait for chain confirmation before presenting the allocations as confirmed. The rider may send one free banner to each eligible guardian, including A after handoff; each banner adds no points.
 
@@ -82,7 +82,7 @@ Revocation cannot erase route details or messages that A already saw. Demonstrat
 
 ## Sample journey versus the human workflow
 
-The single-person sample journey with simulated guardian Alex is useful for trying map events and reminders. Demo events stay labeled, demo alerts do not contact real recipients, and demo completion awards no real points.
+The old single-person sample journey with simulated guardian Alex remains supported by the backend, but its launcher and scenario controls are no longer part of the simplified interface. Existing sample journeys stay labeled; demo completion awards no real points. Use ordinary two-account journeys for the current demonstration.
 
 Use separate actual guest sessions for approval, relay, privacy, and shared-reward evidence. A simulated handoff is not evidence of two independent participants.
 
@@ -108,3 +108,9 @@ The retained V2 wallet-signed commitment is an additional flow with separate rec
 
 See [COMMUNITY_LEDGER.md](COMMUNITY_LEDGER.md) for current community rules and [SPONSORS.md](SPONSORS.md) for award research. AI/provider demonstrations are deferred from this walkthrough.
 
+
+## Simplified completion feedback
+
+The assigned guardian now sees **I am here ? Check in** in the main journey card, with a first-check-in prompt and countdown. Rider status check-ins do not count as guardian participation. If no guardian has checked in, the rider sees that arriving will earn no contribution points; arrival remains available. An arrived journey with no recorded guardian participation explicitly explains that no contribution was earned. A confirmed arrival receipt alone is not a contribution receipt.
+
+The route/map, activity, participation details, and privacy controls are expandable. Chat, guardian applications, relay actions, arrival, and help stay directly accessible. In **My profile**, contribution totals, the honor cabinet, and appreciation wall remain visible; raw records and profile editing are expandable.

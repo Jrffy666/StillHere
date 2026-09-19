@@ -1,13 +1,13 @@
 {
-  "recordedAt": "2026-09-19T20:44:04.390Z",
+  "recordedAt": "2026-09-19T21:18:47.648Z",
   "frontend": {
     "url": "https://safety-guard-htn2026.klavander56.chatgpt.site",
     "projectId": "appgprj_6aaeb438ee7c81918e772f03d67510af",
-    "versionId": "appgprj_6aaeb438ee7c81918e772f03d67510af~appgver_6246483f74448191aa70cbd4cdc165dd",
-    "versionNumber": 7,
-    "deploymentId": "appgdep_6aaef3b8de208191b58fd6ee4d7e3612",
+    "versionId": "appgprj_6aaeb438ee7c81918e772f03d67510af~appgver_950b3c3b41208191a9e4e494d880a0b9",
+    "versionNumber": 8,
+    "deploymentId": "appgdep_6aaefb742898819192c0c7ff1a14670e",
     "status": "succeeded",
-    "sourceCommit": "ce55c4220daf93ecc0ccf53b75cddbfcb2d8959c",
+    "sourceCommit": "ab4c43005cb193f33518702c831428123e0f9235",
     "environmentRevision": 2,
     "access": "owner and one explicitly authorized external demo viewer"
   },
@@ -145,6 +145,18 @@
       "workerChanged": false,
       "liveModel": false,
       "evidence": "community.honors.validation.json"
+    },
+    "simplifiedFrontend": {
+      "journeyProgressTestsPassed": 7,
+      "honorProjectionTestsPassed": 14,
+      "proxyTestsPassed": 8,
+      "typecheck": true,
+      "lint": true,
+      "productionBuild": true,
+      "publishedChecksPassed": 27,
+      "browserVisualQa": false,
+      "browserInteractiveAcceptance": false,
+      "evidence": "frontend.core.validation.json"
     }
   },
   "remaining": "Manual browser and wallet-extension acceptance; Devnet sponsorship/abuse operations before any wider community launch. Site access is limited to the owner and one explicitly authorized demo viewer.",

@@ -7,7 +7,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { api, errorMessage } from '@/lib/api';
 import type { GratitudeKind, MemberProfile } from '@/lib/types';
 import { MemberCommunityLedger, useCommunityRecords } from '@/components/community-records';
-import { CommunityNotice } from '@/components/community-notice';
 import { CommunityHonors } from '@/components/community-honors';
 
 export const GRATITUDE_LABELS: Record<GratitudeKind, string> = {
@@ -52,11 +51,16 @@ export function MemberProfileCard({ memberId, token, viewerId, editable = false,
             <div><dt>Confirmed contributions</dt><dd>{confirmed?.contributions ?? '—'}</dd></div>
             <div><dt>Confirmed banners</dt><dd>{confirmed?.banners ?? '—'}</dd></div>
           </dl>
+          {!compact && <p className="simple-note">These points recognize participation. Each confirmed contribution has a receipt below.</p>}
+          {!compact && records.isError && !records.data && <div className="profile-feedback" role="alert"><p>Contribution records could not load.</p><Button variant="outline" onClick={() => void records.refetch()}>Retry contributions</Button></div>}
           {!compact && <CommunityHonors query={records} ownProfile={member.id === viewerId} />}
-          <MemberCommunityLedger query={records} compact={compact} />
+          {compact ? <MemberCommunityLedger query={records} compact /> : <details className="simple-details">
+            <summary>Contribution history & receipts</summary>
+            <MemberCommunityLedger query={records} />
+          </details>}
           {!compact && (
             <>
-              {editable && member.id === viewerId && <><CommunityNotice token={token} /><ProfileEditor key={member.id} member={member} token={token} /></>}
+              {editable && member.id === viewerId && <details className="simple-details"><summary>Edit introduction</summary><ProfileEditor key={member.id} member={member} token={token} /></details>}
             </>
           )}
         </>

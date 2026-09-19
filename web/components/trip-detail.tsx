@@ -1,74 +1,31 @@
 'use client';
 import { useEffect, useRef, useState, type SyntheticEvent } from 'react';
-import {
-  ShieldCheck,
-  ArrowRight,
-  Check,
-  HeartHandshake,
-  Sparkles,
-  Send,
-  MapPin,
-  Clock3,
-  AlertCircle,
-  Volume2,
-  LocateFixed,
-  CheckCheck,
-  Link as LinkIcon,
-  ExternalLink,
-  Moon,
-  Route,
-  WifiOff,
-  BellOff,
-  Leaf,
-} from 'lucide-react';
+import { ArrowRight, Check, HeartHandshake, Send, LocateFixed, ExternalLink, AlertCircle, Clock3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { JourneyMap } from '@/components/journey-map';
 import { HumanGuarding } from '@/components/human-guarding';
-import { AgentActivity } from '@/components/agent-activity';
 import { JourneyPrivacy } from '@/components/journey-privacy';
 import { JourneyGratitudeCard } from '@/components/journey-gratitude';
 import { MemberProfileButton } from '@/components/member-profile';
 import { JourneyCommunityRecords } from '@/components/community-records';
-import { errorMessage, timeLabel, responseError } from '@/lib/api';
+import { errorMessage, timeLabel } from '@/lib/api';
+import { journeyProgress } from '@/lib/journey-progress';
 import type { Trip, User } from '@/lib/types';
 
-export type ActionBody = {
-  action: string;
-  requestId?: string;
-  text?: string;
-  lat?: number;
-  lng?: number;
-  scenario?: string;
-};
-export function TripDetail({
-  trip,
-  user,
-  token,
-  busy,
-  act,
-  onProof,
-  voiceConfigured,
-}: {
-  trip: Trip;
-  user: User;
-  token: string;
-  busy: boolean;
-  act: (body: ActionBody) => Promise<void>;
-  onProof: () => void;
-  voiceConfigured: boolean;
+export type ActionBody = { action: string; requestId?: string; text?: string; lat?: number; lng?: number; scenario?: string };
+export function TripDetail({ trip, user, token, busy, act, onProfile }: {
+  trip: Trip; user: User; token: string; busy: boolean;
+  act: (body: ActionBody) => Promise<void>; onProfile: () => void;
 }) {
   const [text, setText] = useState(''),
     [now, setNow] = useState(() => Date.now()),
     [info, setInfo] = useState('');
-  const [locationBusy, setLocationBusy] = useState(false),
-    [voiceBusy, setVoiceBusy] = useState(false);
+  const [locationBusy, setLocationBusy] = useState(false);
   const [sharing, setSharing] = useState(false);
   const watching = useRef<number | null>(null),
-    lastLocation = useRef(0),
-    audio = useRef<HTMLAudioElement | null>(null),
-    audioUrl = useRef<string | null>(null);
-  const messagesEnd = useRef<HTMLDivElement>(null);
+    lastLocation = useRef(0);
+  const messageViewport = useRef<HTMLDivElement>(null);
   const closed = trip.status === 'arrived' || trip.status === 'cancelled';
   const rider = user.id === trip.rider.id;
   const seconds = trip.nextCheckInAt
@@ -79,17 +36,13 @@ export function TripDetail({
     return () => clearInterval(timer);
   }, []);
   useEffect(() => {
-    messagesEnd.current?.scrollIntoView({
-      behavior: 'instant',
-      block: 'nearest',
-    });
+    const viewport = messageViewport.current;
+    if (viewport) viewport.scrollTop = viewport.scrollHeight;
   }, [trip.messages.length]);
   useEffect(
     () => () => {
       if (watching.current !== null)
         navigator.geolocation.clearWatch(watching.current);
-      audio.current?.pause();
-      if (audioUrl.current) URL.revokeObjectURL(audioUrl.current);
     },
     [],
   );
@@ -159,507 +112,89 @@ export function TripDetail({
       { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 },
     );
   }
-  async function speak() {
-    setVoiceBusy(true);
-    setInfo('');
-    try {
-      const response = await fetch(`/api/trips/${trip.id}/voice`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
-        signal: AbortSignal.timeout(20000),
-      });
-      if (!response.ok) {
-        const body = await response.json();
-        throw new Error(responseError(body, 'Voice is unavailable.'));
-      }
-      audio.current?.pause();
-      if (audioUrl.current) URL.revokeObjectURL(audioUrl.current);
-      audioUrl.current = URL.createObjectURL(await response.blob());
-      audio.current = new Audio(audioUrl.current);
-      await audio.current.play();
-    } catch (e) {
-      setInfo(errorMessage(e));
-    } finally {
-      setVoiceBusy(false);
-    }
-  }
-  return (
-    <>
-      {trip.demo && (
-        <div className="demo-banner">
-          <span>
-            <Sparkles size={15} />
-            <strong>Demo journey</strong> Simulated guardian and location. No
-            external alerts or real rewards.
-          </span>
-          <span>Try a scenario below</span>
-        </div>
-      )}
-      {closed && rider && !trip.demo && <JourneyGratitudeCard trip={trip} token={token} viewerId={user.id} />}
-      <div className="journey-toolbar">
-        <div>
-          <ShieldCheck size={19} />
-          <span>
-            {trip.status === 'arrived'
-              ? 'Glad you made it.'
-              : trip.status === 'cancelled'
-                ? 'This journey has ended.'
-                : 'Stay connected, on your terms.'}
-            <small>
-              {trip.status === 'arrived'
-                ? trip.reward.status === 'demo'
-                  ? 'Demo complete. No real points were issued.'
-                  : trip.reward.status === 'credited'
-                    ? 'Guardian contribution recorded in the app.'
-                    : trip.reward.status === 'pending'
-                      ? 'Guardian contribution credit is pending.'
-                      : 'No guardian contribution credited.'
-                : 'Your precise location is never written to the blockchain.'}
-            </small>
-          </span>
-        </div>
-        <div className="toolbar-actions">
-          {trip.shareUrl && (
-            <a
-              className="text-action"
-              href={trip.shareUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              referrerPolicy="no-referrer"
-            >
-              <LinkIcon size={14} />
-              Uber link
-              <ExternalLink size={11} />
-            </a>
-          )}
-          {!trip.chainEnabled && (
-            <Button variant="outline" onClick={onProof}>
-              <Leaf size={15} />
-              View contribution
-            </Button>
-          )}
-          {!closed && rider && (
-            <>
-              <Button
-                variant="outline"
-                disabled={busy || trip.status !== 'active'}
-                onClick={() => void act({ action: 'check-in' }).catch(() => {})}
-              >
-                <Check size={15} /> I am okay
-              </Button>
-              <Button
-                variant="outline"
-                disabled={locationBusy || trip.demo || busy}
-                onClick={toggleLocation}
-              >
-                <LocateFixed size={15} />
-                {sharing ? 'Pause location' : 'Share location'}
-              </Button>
-              <Button
-                variant="destructive"
-                disabled={busy}
-                onClick={() =>
-                  void act({
-                    action: 'help',
-                    text: 'I need help. Please alert my trusted contact.',
-                  }).catch(() => {})
-                }
-              >
-                <AlertCircle size={15} />I need help
-              </Button>
-              <Button
-                disabled={busy || trip.status !== 'active'}
-                onClick={() => void act({ action: 'arrive' }).catch(() => {})}
-              >
-                <CheckCheck size={16} />
-                I’ve arrived
-              </Button>
-            </>
-          )}
-        </div>
+  const progress = journeyProgress(trip);
+  const assignedGuardian = !rider && trip.guardian?.id === user.id;
+  const [mapOpen, setMapOpen] = useState(false);
+  return <>
+    {trip.demo && <p className="simple-notice">Sample journey · Simulated participation earns no community contribution.</p>}
+    <section className="simple-journey" aria-label="Current journey">
+      <div className="simple-journey-heading">
+        <div><span className="simple-label">{closed ? 'Journey ended' : rider ? 'You are the rider' : 'You are the guardian'}</span>
+          <h2>{trip.origin.label}<ArrowRight size={17} />{trip.destination.label}</h2></div>
+        <span className={'status-pill ' + (!closed && trip.risk === 'urgent' ? 'urgent' : '')}>
+          {trip.status === 'arrived' ? 'Arrived' : trip.status === 'cancelled' ? 'Cancelled' : trip.status === 'open' ? 'Waiting for a guardian' : trip.risk === 'urgent' ? 'Help requested' : 'In progress'}
+        </span>
       </div>
-      <div className="journey-grid">
-        <section className="journey-main">
-          <article className="journey-card">
-            <div className="card-header">
-              <div>
-                <span className="overline">
-                  {closed ? 'JOURNEY HISTORY' : 'YOUR CURRENT JOURNEY'}
-                </span>
-                <h2>
-                  {trip.origin.label} <ArrowRight size={17} />{' '}
-                  {trip.destination.label}
-                </h2>
-              </div>
-              <span
-                className={`status-pill ${trip.risk === 'urgent' && !closed ? 'urgent' : ''}`}
-              >
-                {trip.status === 'arrived'
-                  ? 'Arrived'
-                  : trip.status === 'cancelled'
-                    ? 'Cancelled'
-                    : trip.status === 'open'
-                      ? 'Awaiting a guardian'
-                      : trip.risk === 'urgent'
-                        ? 'Help requested'
-                        : 'In progress'}
-              </span>
-            </div>
-            <JourneyMap trip={trip} />
-            <div className="route-summary">
-              <div>
-                <MapPin size={17} />
-                <span>
-                  SHARED LOCATION
-                  <strong>
-                    {trip.demo
-                      ? 'Demo coordinates'
-                      : `${trip.location.lat.toFixed(4)}, ${trip.location.lng.toFixed(4)}`}
-                  </strong>
-                </span>
-              </div>
-              <div>
-                <Clock3 size={17} />
-                <span>
-                  LAST UPDATE
-                  <strong>
-                    {Math.max(
-                      0,
-                      Math.floor((now - trip.location.updatedAt) / 1000),
-                    )}
-                    s ago
-                  </strong>
-                </span>
-              </div>
-              <div>
-                <LockIcon />
-                <span>
-                  VISIBILITY<strong>Journey participants</strong>
-                </span>
-              </div>
-            </div>
-          </article>
-          {trip.demo && !closed && (
-            <div className="scenario-bar">
-              <span>TRY A HANDOFF</span>
-              {[
-                {
-                  name: 'Guardian offline',
-                  value: 'guardian-offline',
-                  icon: Moon,
-                },
-                { name: 'Route change', value: 'route-deviation', icon: Route },
-                {
-                  name: 'Stale location',
-                  value: 'stale-location',
-                  icon: WifiOff,
-                },
-                {
-                  name: 'Alert fails',
-                  value: 'notification-failure',
-                  icon: BellOff,
-                },
-              ].map((s) => (
-                <Button
-                  key={s.value}
-                  variant="outline"
-                  disabled={busy}
-                  onClick={() =>
-                    void act({ action: 'simulate', scenario: s.value }).catch(
-                      () => {},
-                    )
-                  }
-                >
-                  <s.icon size={14} />
-                  {s.name}
-                </Button>
-              ))}
-            </div>
-          )}
-          <AgentActivity trip={trip} />
-          <article className="activity-card">
-            <div className="card-header">
-              <h3>Journey activity</h3>
-              <span className="quiet-label">EVERY HANDOFF, ACCOUNTED FOR</span>
-            </div>
-            <div className="activity-list">
-              {[...trip.events]
-                .reverse()
-                .slice(0, 9)
-                .map((event, i) => (
-                  <div className="activity-item" key={event.id}>
-                    <span className={`event-dot ${i === 0 ? 'latest' : ''}`} />
-                    <div>
-                      <strong>{event.title}</strong>
-                      <p>{event.detail}</p>
-                    </div>
-                    <time>{timeLabel(event.at)}</time>
-                  </div>
-                ))}
-            </div>
-          </article>
-        </section>
-        <aside className="journey-side">
-          <article className="guardian-card">
-            <div className="card-header">
-              <h3>Your circle of care</h3>
-              <HeartHandshake size={18} />
-            </div>
-            <div className="guardian-person">
-              <div className="avatar guardian-avatar">
-                {trip.guardian?.name.slice(0, 1) || '?'}
-              </div>
-              <div>
-                <strong>
-                  {trip.guardian?.name || 'Waiting for a guardian'}
-                </strong>
-                <span>
-                  {trip.guardian?.simulated
-                    ? 'Simulated community guardian'
-                    : trip.guardian
-                      ? 'Community guardian'
-                      : 'Share your invite to get connected'}
-                </span>
-                {trip.guardian && !trip.guardian.simulated && <MemberProfileButton memberId={trip.guardian.id} name={trip.guardian.name} token={token} viewerId={user.id} />}
-              </div>
-              <span
-                className={`presence ${!closed && trip.guardMode === 'human' && seconds !== null && seconds > 0 ? 'on' : ''}`}
-              />
-            </div>
-            {!rider && <div className="circle-rider"><span>Accompanying {trip.rider.name}</span><MemberProfileButton memberId={trip.rider.id} name={trip.rider.name} token={token} viewerId={user.id} /></div>}
-            <div
-              className={`companion-row ${trip.guardMode === 'ai' ? 'engaged' : ''}`}
-            >
-              <span className="companion-icon">
-                <Sparkles size={18} />
-              </span>
-              <div>
-                <strong>Guard companion</strong>
-                <span>
-                  {closed
-                    ? 'Journey closed'
-                    : trip.guardMode === 'ai'
-                      ? 'Scheduled reminders continue'
-                      : 'Check-in reminders ready'}
-                </span>
-              </div>
-              <span className="mini-tag">
-                {trip.agent?.provider === 'mock' ? 'MOCK' : 'RULES'}
-              </span>
-            </div>
-            {!closed && (
-              <div className="checkin-panel">
-                <div>
-                  <span>
-                    {trip.guardMode === 'human'
-                      ? seconds === 0
-                        ? 'Guardian check-in overdue'
-                        : 'Next guardian check-in'
-                      : trip.guardMode === 'waiting'
-                        ? 'Waiting for rider approval'
-                        : 'No human has confirmed coverage'}
-                  </span>
-                  <strong>
-                    {seconds !== null
-                      ? `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`
-                      : trip.guardMode === 'ai'
-                        ? 'Reminders'
-                        : '—'}
-                  </strong>
-                </div>
-                <div className="countdown-track">
-                  <span
-                    style={{
-                      width: `${seconds === null ? 100 : Math.min(100, (seconds / trip.checkInIntervalSeconds) * 100)}%`,
-                    }}
-                  />
-                </div>
-                <p>
-                  {trip.guardMode === 'human'
-                    ? 'A missed check-in opens a human relay request. Check-ins confirm availability, not safety.'
-                    : 'Scheduled checks continue. A human guardian must be approved to join.'}
-                </p>
-                {trip.guardian && (
-                  <p>
-                    {trip.lastGuardianCheckInAt
-                      ? `Last guardian check-in: ${timeLabel(trip.lastGuardianCheckInAt)}.`
-                      : 'Waiting for the guardian’s first check-in.'}
-                  </p>
-                )}
-              </div>
-            )}
-            {!closed && (
-              <div className="guardian-actions">
-                {!rider && trip.guardian?.id === user.id && (
-                  <Button
-                    disabled={busy}
-                    onClick={() =>
-                      void act({
-                        action: trip.guardMode === 'ai' ? 'resume' : 'check-in',
-                      }).catch(() => {})
-                    }
-                  >
-                    <Check size={16} />
-                    {trip.guardMode === 'ai'
-                      ? 'Resume & check in'
-                      : 'I am here · Check in'}
-                  </Button>
-                )}
-                {trip.status === 'active' &&
-                  trip.guardMode === 'human' &&
-                  !rider && (
-                    <Button
-                      variant="outline"
-                      disabled={busy}
-                      onClick={() =>
-                        void act({ action: 'takeover' }).catch(() => {})
-                      }
-                    >
-                      <Moon size={15} />
-                      I am unavailable
-                    </Button>
-                  )}
-              </div>
-            )}
-          </article>
-          <HumanGuarding
-            trip={trip}
-            user={user}
-            token={token}
-            now={now}
-            busy={busy}
-            act={act}
-            share={share}
-          />
-          <article className="chat-card">
-            <div className="card-header">
-              <h3>
-                <Sparkles size={15} /> Journey conversation
-              </h3>
-              {voiceConfigured && (
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  aria-label="Read latest companion message aloud"
-                  disabled={voiceBusy}
-                  onClick={() => void speak()}
-                >
-                  <Volume2 size={15} />
-                </Button>
-              )}
-            </div>
-            <div
-              className="messages"
-              aria-live="polite"
-              aria-relevant="additions"
-            >
-              {trip.messages.length === 0 ? (
-                <div className="chat-empty">
-                  <HeartHandshake size={25} />
-                  <p>Your check-ins and conversation will appear here.</p>
-                </div>
-              ) : (
-                trip.messages.slice(-35).map((message) => (
-                  <div
-                    className={`message ${message.senderId === user.id ? 'mine' : ''} ${message.role === 'agent' ? 'agent-message' : ''}`}
-                    key={message.id}
-                  >
-                    <div>
-                      <strong>
-                        {message.senderId === user.id
-                          ? 'You'
-                          : message.senderName}
-                      </strong>
-                      <time>{timeLabel(message.at)}</time>
-                    </div>
-                    <p>{message.text}</p>
-                  </div>
-                ))
-              )}
-              <div ref={messagesEnd} />
-            </div>
-            {!closed && (
-              <form
-                className="message-form"
-                onSubmit={(event) => void send(event).catch(() => {})}
-              >
-                <Input
-                  aria-label="Message your circle"
-                  placeholder="A quick check-in…"
-                  maxLength={1500}
-                  value={text}
-                  onChange={(e) => setText(e.target.value)}
-                />
-                <Button
-                  size="icon"
-                  type="submit"
-                  aria-label="Send message"
-                  disabled={busy || !text.trim()}
-                >
-                  <Send size={16} />
-                </Button>
-              </form>
-            )}
-          </article>
-          {trip.notifications.length > 0 && (
-            <article className="notification-card">
-              <h3>Contact alerts</h3>
-              {trip.notifications.slice(-3).map((n) => (
-                <div
-                  className={`notification-item ${n.status === 'failed' ? 'failed' : ''}`}
-                  key={n.id}
-                >
-                  <div>
-                    <strong>
-                      {n.status === 'simulated'
-                        ? 'Demo alert'
-                        : n.status === 'sent'
-                          ? 'Provider accepted'
-                          : n.status === 'failed'
-                            ? 'Not delivered'
-                            : n.status === 'acknowledged'
-                              ? 'Acknowledged'
-                              : 'Pending'}
-                    </strong>
-                    <time>{timeLabel(n.at)}</time>
-                  </div>
-                  <p>{n.detail}</p>
-                </div>
-              ))}
-            </article>
-          )}
-        </aside>
+      <div className="simple-people">
+        <div><strong>{rider ? trip.guardian?.name || 'No guardian yet' : trip.rider.name}</strong>
+          <span>{rider ? 'Guardian' : 'Rider'}</span></div>
+        {rider && trip.guardian && !trip.guardian.simulated && <MemberProfileButton memberId={trip.guardian.id} name={trip.guardian.name} token={token} viewerId={user.id} />}
+        {!rider && <MemberProfileButton memberId={trip.rider.id} name={trip.rider.name} token={token} viewerId={user.id} />}
       </div>
-      {info && (
-        <output className="notice">
-          {info}
-          <button onClick={() => setInfo('')} aria-label="Dismiss notification">
-            ×
-          </button>
-        </output>
-      )}
-      {!closed && rider && (
-        <div className="cancel-row">
-          <button
-            disabled={busy}
-            onClick={() => {
-              if (
-                window.confirm(
-                  'End this journey? Check-ins and companion monitoring will stop.',
-                )
-              )
-                void act({ action: 'cancel' }).catch(() => {});
-            }}
-          >
-            Cancel journey
-          </button>
+      {!closed && trip.guardian && <div className={'simple-checkin ' + (progress.firstCheckInNeeded ? 'first-checkin' : '')}>
+        <div><strong>{progress.firstCheckInNeeded ? assignedGuardian ? 'Start with your first check-in' : 'Waiting for the guardian’s first check-in' : trip.guardMode !== 'human' ? 'A human check-in is needed' : seconds === 0 ? 'Guardian check-in overdue' : 'Next guardian check-in'}
+          </strong><p>{progress.firstCheckInNeeded ? 'A guardian must check in before arrival to earn a contribution.' : trip.lastGuardianCheckInAt ? 'Last check-in: ' + timeLabel(trip.lastGuardianCheckInAt) + '. Check-ins confirm availability.' : 'No human has confirmed availability yet.'}</p>
+          {seconds !== null && <span className="simple-timer"><Clock3 size={15} />{Math.floor(seconds / 60)}:{String(seconds % 60).padStart(2, '0')}</span>}</div>
+        {assignedGuardian ? <Button disabled={busy} onClick={() => void act({ action: trip.guardMode === 'ai' ? 'resume' : 'check-in' }).catch(() => {})}>
+          <Check size={17} />{trip.guardMode === 'ai' ? 'Resume & check in' : 'I am here · Check in'}
+        </Button> : null}
+      </div>}
+      {!closed && rider && <>
+        <div className="simple-primary-actions">
+          <Button disabled={busy} onClick={() => void act({ action: 'arrive' }).catch(() => {})}><Check size={16} />I’ve arrived</Button>
+          <Button variant="outline" disabled={busy || trip.status !== 'active'} onClick={() => void act({ action: 'check-in' }).catch(() => {})}>I am okay</Button>
+          <Button variant="destructive" disabled={busy} onClick={() => void act({ action: 'help', text: 'I need help. Please check my journey.' }).catch(() => {})}><AlertCircle size={16} />I need help</Button>
         </div>
-      )}
-      {!trip.demo && <JourneyCommunityRecords tripId={trip.id} token={token} viewerId={user.id} />}
-      <JourneyPrivacy trip={trip} user={user} token={token} />
-    </>
-  );
-}
-function LockIcon() {
-  return <ShieldCheck size={17} />;
+        {progress.checkedGuardians === 0 && !trip.demo && <p className="simple-note">No guardian has checked in. Arriving now will close the journey without contribution points.</p>}
+        {trip.risk === 'urgent' && <p className="simple-notice">Help is requested in this app. This does not call emergency services.</p>}
+      </>}
+      {!closed && assignedGuardian && trip.guardMode === 'human' && <Button variant="ghost" disabled={busy} onClick={() => void act({ action: 'takeover' }).catch(() => {})}>I am unavailable — request cover</Button>}
+      {closed && <div className="simple-completion">
+        <strong>{progress.noContributionAtArrival ? 'No contribution earned on this journey' : trip.status === 'cancelled' ? 'Journey cancelled' : 'You have arrived'}</strong>
+        <p>{trip.demo ? 'This sample creates no official community contribution.' : progress.noContributionAtArrival ? 'No guardian check-in was recorded before arrival. Arrival is on chain, but it does not award contribution points.' : trip.status === 'cancelled' ? 'Cancelled journeys award no completion points. You can still thank a guardian who checked in.' : 'Check the contribution receipts below for publication status. Your profile counts only confirmed records.'}</p>
+        {!trip.demo && <Button variant="outline" onClick={onProfile}>View my contributions</Button>}
+      </div>}
+    </section>
+    {info && <output className="notice">{info}<button onClick={() => setInfo('')} aria-label="Dismiss notification">×</button></output>}
+    {!closed && <HumanGuarding trip={trip} user={user} token={token} now={now} busy={busy} act={act} share={share} />}
+    {closed && rider && !trip.demo && <JourneyGratitudeCard trip={trip} token={token} viewerId={user.id} />}
+    <div className="simple-journey-content">
+      <article className="chat-card">
+        <div className="card-header"><h3><HeartHandshake size={17} />Conversation</h3></div>
+        <div ref={messageViewport} className="messages" aria-live="polite" aria-relevant="additions">
+          {trip.messages.length === 0 ? <p className="simple-note">Say hello to your travel companion.</p> : trip.messages.slice(-35).map(message => <div key={message.id} className={'message ' + (message.senderId === user.id ? 'mine' : '') + (message.role === 'agent' ? ' agent-message' : '')}>
+            <div><strong>{message.senderId === user.id ? 'You' : message.role === 'agent' ? 'Automated reminder' : message.senderName}</strong><time>{timeLabel(message.at)}</time></div><p>{message.text}</p>
+          </div>)}
+        </div>
+        {!closed && <form className="message-form" onSubmit={event => void send(event).catch(() => {})}>
+          <Input aria-label="Message your companion" placeholder="Write a message…" maxLength={1500} value={text} onChange={event => setText(event.target.value)} />
+          <Button size="icon" type="submit" aria-label="Send message" disabled={busy || !text.trim()}><Send size={16} /></Button>
+        </form>}
+      </article>
+      <section className="simple-journey-details" aria-label="Journey details">
+        <details className="simple-details" onToggle={event => setMapOpen(event.currentTarget.open)}>
+          <summary>Route & shared location</summary>
+          {mapOpen && <JourneyMap trip={trip} />}
+          <p className="simple-note">Last update {timeLabel(trip.location.updatedAt)} · Visible to journey participants.</p>
+          {rider && !closed && <Button variant="outline" disabled={locationBusy || trip.demo || busy} onClick={toggleLocation}><LocateFixed size={15} />{sharing ? 'Pause location' : 'Share location'}</Button>}
+          {trip.shareUrl && <a className="text-action" href={trip.shareUrl} target="_blank" rel="noopener noreferrer" referrerPolicy="no-referrer">Open Uber link<ExternalLink size={13} /></a>}
+        </details>
+        <details className="simple-details">
+          <summary>Journey activity</summary>
+          <div className="activity-list">{[...trip.events].reverse().map(event => <div className="activity-item" key={event.id}><div><strong>{event.title}</strong><p>{event.detail}</p></div><time>{timeLabel(event.at)}</time></div>)}</div>
+        </details>
+        {trip.notifications.length > 0 && <details className="simple-details"><summary>Contact alert status</summary>
+          {trip.notifications.slice(-3).map(notification => <div className="notification-item" key={notification.id}><strong>{notification.status === 'simulated' ? 'Simulated' : notification.status === 'sent' ? 'Provider accepted' : notification.status === 'failed' ? 'Not delivered' : notification.status === 'acknowledged' ? 'Acknowledged' : 'Pending'}</strong><p>{notification.detail}</p></div>)}
+        </details>}
+        <JourneyPrivacy trip={trip} user={user} token={token} />
+      </section>
+    </div>
+    {!trip.demo && <details className="simple-details" open={closed}>
+      <summary>Contribution & chain receipts</summary>
+      <JourneyCommunityRecords tripId={trip.id} token={token} viewerId={user.id} />
+    </details>}
+    {!closed && rider && <div className="cancel-row"><button disabled={busy} onClick={() => {
+      if (window.confirm('Cancel this journey and stop check-ins?')) void act({ action: 'cancel' }).catch(() => {});
+    }}>Cancel journey</button></div>}
+  </>;
 }

@@ -1,0 +1,132 @@
+/* The core journey interface. Existing tokens and dialog primitives stay shared. */
+.simple-app { min-height: 100dvh; background: var(--background); }
+.simple-header { display: flex; gap: 24px; align-items: center; justify-content: space-between; padding: 18px max(24px, calc((100vw - 1080px) / 2)); border-bottom: 1px solid var(--border); background: var(--background); }
+.simple-brand { display: inline-flex; align-items: center; gap: 7px; font-size: 20px; font-weight: 600; letter-spacing: -.7px; white-space: nowrap; }
+.simple-brand svg { color: var(--primary); }
+.simple-brand span { color: var(--muted-foreground); font-weight: 400; margin-left: -7px; }
+.simple-nav, .simple-account { display: flex; align-items: center; gap: 5px; }
+.simple-nav button { min-height: 40px; padding: 8px 12px; font-size: 12px; color: var(--muted-foreground); }
+.simple-nav button[aria-current='page'] { color: var(--primary); background: #b6f5690d; }
+.simple-account button { font-size: 12px; min-height: 38px; }
+.simple-main { max-width: 1080px; padding: 32px 24px 20px; margin: 0 auto; outline: none; }
+.simple-heading { display: flex; justify-content: space-between; align-items: center; gap: 18px; margin-bottom: 26px; }
+.simple-heading h1 { font-size: 27px; font-weight: 550; letter-spacing: -.8px; }
+.simple-heading p { color: var(--muted-foreground); margin-top: 7px; font-size: 12px; line-height: 1.6; }
+.simple-main button[data-slot='button'] { min-height: 38px; }
+.simple-main .primary-action { justify-content: center !important; gap: 14px; }
+.simple-welcome { max-width: 430px; margin: 50px auto 80px; padding: 30px; border: 1px solid var(--border); border-radius: 14px; background: var(--card); }
+.simple-welcome > svg { color: var(--accent); margin-bottom: 24px; }
+.simple-welcome h1 { font-size: 36px; letter-spacing: -1.2px; }
+.simple-welcome > p { margin-top: 14px; line-height: 1.8; color: var(--muted-foreground); }
+.simple-note { color: var(--muted-foreground); font-size: 11px; line-height: 1.8; margin-top: 12px; }
+.simple-footer { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; padding-top: 24px; margin-top: 30px; border-top: 1px solid var(--border); color: var(--muted-foreground); font-size: 10px; line-height: 1.7; }
+.simple-empty { text-align: center; padding: 55px 20px; border: 1px dashed var(--border); border-radius: 12px; display: grid; justify-items: center; }
+.simple-empty > svg { color: var(--accent); margin-bottom: 18px; }
+.simple-empty h2 { font-size: 24px; font-weight: 500; letter-spacing: -.6px; }
+.simple-empty p { color: var(--muted-foreground); line-height: 1.8; margin: 12px 0 20px; max-width: 420px; }
+.simple-empty > div { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+.simple-request-list { display: grid; gap: 12px; }
+.simple-request { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 22px; border: 1px solid var(--border); border-radius: 10px; background: var(--card); }
+.simple-request h2 { font-size: 19px; font-weight: 500; margin: 7px 0; overflow-wrap: anywhere; }
+.simple-request p { color: var(--muted-foreground); font-size: 12px; }
+.simple-label { color: var(--accent); font-size: 10px; letter-spacing: .6px; }
+.simple-trip-picker { display: flex; gap: 12px; align-items: center; margin-bottom: 18px; }
+.simple-trip-picker > label { color: var(--muted-foreground); font-size: 12px; }
+.simple-trip-picker [data-slot='native-select-wrapper'] { flex: 1; max-width: 520px; min-width: 0; }
+.simple-trip-picker select { height: 38px; }
+.simple-journey { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin-bottom: 18px; }
+.simple-journey-heading { display: flex; align-items: start; justify-content: space-between; gap: 15px; }
+.simple-journey-heading h2 { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; font-size: 21px; font-weight: 500; line-height: 1.5; letter-spacing: -.5px; margin-top: 7px; overflow-wrap: anywhere; }
+.simple-journey-heading h2 svg { flex-shrink: 0; color: var(--muted-foreground); }
+.simple-people { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-top: 23px; }
+.simple-people > div { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.simple-people strong { font-size: 14px; font-weight: 500; overflow-wrap: anywhere; }
+.simple-people span { color: var(--muted-foreground); font-size: 11px; }
+.simple-checkin { display: flex; gap: 20px; justify-content: space-between; align-items: center; padding: 17px; margin: 18px 0 10px; border-radius: 8px; background: var(--secondary); border: 1px solid var(--border); }
+.simple-checkin.first-checkin { border-color: #b6f56950; background: #b6f56908; }
+.simple-checkin strong { font-weight: 500; font-size: 14px; }
+.simple-checkin p { font-size: 11px; line-height: 1.8; color: var(--muted-foreground); margin-top: 7px; }
+.simple-timer { display: inline-flex; align-items: center; gap: 7px; color: var(--accent); font-family: var(--font-geist-mono), monospace; font-size: 12px; margin-top: 9px; }
+.simple-primary-actions { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 20px; }
+.simple-completion { border-top: 1px solid var(--border); padding-top: 20px; margin-top: 20px; }
+.simple-completion > strong { font-size: 16px; font-weight: 500; }
+.simple-completion p { font-size: 12px; line-height: 1.8; color: var(--muted-foreground); margin: 9px 0 16px; max-width: 680px; }
+.simple-notice { display: block; padding: 12px 15px; border: 1px solid var(--honor-border); color: var(--accent); border-radius: 8px; font-size: 12px; line-height: 1.8; margin-bottom: 14px; }
+.simple-journey-content { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); align-items: start; gap: 20px; margin: 20px 0; }
+.simple-journey-details { min-width: 0; }
+.simple-details { min-width: 0; border: 1px solid var(--border); border-radius: 9px; background: var(--card); margin: 12px 0; padding: 0 17px; }
+.simple-details > summary { cursor: pointer; padding: 16px 0; font-size: 12px; font-weight: 500; line-height: 1.5; }
+.simple-details[open] { padding-bottom: 17px; }
+.simple-details > summary:focus-visible { outline: 2px solid var(--primary); outline-offset: 4px; }
+.simple-details > summary > span { color: var(--muted-foreground); font-size: 10px; font-weight: 400; margin-left: 8px; }
+.simple-details .community-ledger { margin-top: 0; border-top: 0; padding-top: 5px; }
+.simple-details .journey-community { margin: 0; padding: 0; border: 0; background: transparent; }
+.simple-details .text-action { display: inline-flex; margin-top: 15px; gap: 7px; }
+.simple-details .activity-list { max-height: 320px; overflow-y: auto; }
+.simple-details .activity-item { grid-template-columns: minmax(0, 1fr) auto; padding: 12px 0; }
+.simple-main .chat-card { min-width: 0; padding: 20px; margin: 0; border-radius: 10px; }
+.simple-main .chat-card .card-header { padding: 0 0 15px; }
+.simple-main .chat-card .messages { min-height: 130px; max-height: 300px; height: auto; padding: 10px 0; }
+.simple-main .message-form { margin: 8px 0 0; padding: 13px 0 0; }
+.simple-main .human-relay-card { padding: 20px; border-radius: 10px; margin: 14px 0; }
+.simple-main .human-relay-card p { font-size: 12px; }
+.simple-main .human-relay-card .small-note { font-size: 10px; }
+.simple-main .guardian-applications h4 { font-size: 12px; margin-bottom: 10px; }
+.simple-main .journey-privacy { margin: 12px 0; }
+.simple-main .gratitude-card { padding: 22px; margin: 18px 0; }
+.simple-main .gratitude-card > p { font-size: 12px; line-height: 1.8; }
+.simple-main .member-profile { padding: 24px; }
+.simple-main .member-visibility { margin-bottom: 17px; font-size: 10px; }
+.simple-main .member-stats { margin-bottom: 10px; }
+.simple-main .community-showcase { margin-top: 24px; }
+.simple-main .honor-cabinet { padding: 20px; background: var(--honor-surface); }
+.simple-main .collection-kicker { display: none; }
+.simple-main .collection-heading h4 { font-size: 24px; }
+.simple-main .collection-heading { margin-bottom: 16px; }
+.simple-main .collection-heading p { font-size: 11px; margin-top: 7px; }
+.simple-main .honor-tile { padding: 15px; }
+.simple-main .honor-symbol { width: 24px; height: 24px; margin: 15px 0 10px; }
+.simple-main .honor-tile h5 { font-size: 14px; }
+.simple-main .honor-progress-label { margin-top: 15px; }
+.simple-main .banner-wall { margin-top: 24px; padding-top: 22px; }
+.simple-main .gratitude-art { max-width: 260px; }
+.simple-main .banner-wall-grid { gap: 14px; }
+.simple-main .banner-wall-empty { padding: 28px 18px; }
+.simple-main .profile-editor { border: 0; margin-top: 0; padding-top: 0; }
+.simple-main .invitation-card { max-width: 700px; margin: 0 auto; padding: 28px; }
+.simple-main .invitation-card > svg { display: none; }
+.journey-dialog .journey-options { margin-top: 18px; }
+.journey-dialog .journey-options .field-label:first-of-type { margin-top: 5px; }
+@media (max-width: 800px) {
+  .simple-header { display: grid; grid-template-columns: 1fr auto; gap: 12px; padding: 15px 20px 0; }
+  .simple-account { justify-self: end; }
+  .simple-nav { grid-row: 2; grid-column: 1 / -1; justify-content: center; border-top: 1px solid var(--border); padding: 10px 0; }
+  .simple-nav > button { flex: 1; }
+  .simple-header:not(:has(.simple-nav)) { padding-bottom: 15px; }
+  .simple-journey-content { grid-template-columns: 1fr; gap: 5px; }
+}
+@media (max-width: 600px) {
+  .simple-main { padding: 24px 15px 15px; }
+  .simple-heading h1 { font-size: 23px; }
+  .simple-heading { align-items: start; }
+  .simple-heading p { font-size: 11px; }
+  .simple-nav button { padding: 8px; font-size: 11px; gap: 6px; }
+  .simple-welcome { margin: 20px auto 40px; padding: 24px; }
+  .simple-journey { padding: 18px; }
+  .simple-journey-heading { flex-wrap: wrap; }
+  .simple-journey-heading h2 { font-size: 18px; }
+  .simple-checkin { flex-direction: column; align-items: stretch; gap: 13px; padding: 14px; }
+  .simple-checkin button { width: 100%; }
+  .simple-primary-actions { display: grid; grid-template-columns: 1fr 1fr; }
+  .simple-primary-actions > button:first-child { grid-column: 1 / -1; }
+  .simple-request { padding: 17px; flex-wrap: wrap; }
+  .simple-request > button { width: 100%; }
+  .simple-main .member-profile { padding: 17px; }
+  .simple-main .honor-cabinet { padding: 15px; }
+  .simple-main .honor-grid { grid-template-columns: 1fr; }
+  .simple-main .honor-symbol { display: none; }
+  .simple-main .honor-tile h5 { margin-top: 9px; }
+  .simple-main .honor-progress-label { margin-top: 9px; }
+  .simple-main .invitation-card { padding: 20px; }
+  .simple-footer { font-size: 9px; }
+}

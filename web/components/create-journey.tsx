@@ -105,10 +105,7 @@ export function CreateJourney({
     >
       <DialogContent className="journey-dialog">
         <DialogHeader>
-          <span className="dialog-icon">
-            <ShieldIcon />
-          </span>
-          <DialogTitle>Let’s get you there.</DialogTitle>
+          <DialogTitle>New journey</DialogTitle>
           <DialogDescription>
             Choose your journey. A community guardian can join you along the
             way.
@@ -218,6 +215,8 @@ export function CreateJourney({
             The link is shared with your guardian. Live location comes from your
             device when you choose to share it.
           </p>
+          <details className="simple-details journey-options">
+          <summary>More options <span>Check-in timing, contact & wallet</span></summary>
           <label className="field-label" htmlFor="checkin">
             Guardian check-in interval
           </label>
@@ -260,11 +259,6 @@ export function CreateJourney({
               contact. Delivery requires a connected notification provider.
             </span>
           </label>
-          {error && (
-            <p className="inline-error" role="alert">
-              {error}
-            </p>
-          )}
           <label className="consent-row" htmlFor="chain-commitment">
             <Checkbox
               id="chain-commitment"
@@ -282,6 +276,8 @@ export function CreateJourney({
               ? 'Uses Devnet SOL for transaction fees. Ordinary check-ins and help remain available while transactions are pending.'
               : 'Optional: link a wallet in Account & wallet for signed commitments. Community records are published separately, without requiring your wallet.'}
           </p>
+          </details>
+          {error && <p className="inline-error" role="alert">{error}</p>}
           <CommunityNotice token={token} />
           <Button type="submit" className="primary-action" disabled={busy || !communityNotice.accepted}>
             {busy ? 'Creating your journey…' : 'Create guarded journey'}
@@ -295,7 +291,4 @@ export function CreateJourney({
       </DialogContent>
     </Dialog>
   );
-}
-function ShieldIcon() {
-  return <MapPin size={22} />;
 }

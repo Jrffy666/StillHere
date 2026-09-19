@@ -32,7 +32,7 @@ For an **optional V2 wallet-signed commitment**:
 3. A guardian applies. The rider signs a proposal; the guardian signs acceptance. Private access changes after acceptance is finalized.
 4. Guardians continue ordinary availability check-ins and sign at least one **contribution check-in** while assigned to qualify for a chain reward.
 5. For a relay, open a replacement request and repeat the rider proposal and new guardian acceptance. The former guardian loses private access.
-6. The rider confirms arrival in the app, then signs arrival and reward allocation. Each eligible guardian claims their contribution. Former guardians find receipts under **My community profile → Your chain journeys**.
+6. The rider confirms arrival in the app, then signs arrival and reward allocation. Each eligible guardian claims their contribution. Former guardians find receipts under **My profile → Wallet-signed journeys**.
 
 One V2 journey shares **25 points and 10 reputation** across up to **16 distinct eligible guardian wallets**. Returning guardians have one cumulative share. Finalized V2 claims update the older application balance exactly once. Separately, new official community journeys, including walletless journeys, share a 25/10 community contribution pool among guardians with recorded check-ins. Their public-reference ordering can allocate remainders differently from V2's wallet ordering. Profiles show finalized community records, pending recognition and legacy application records separately; V2 and community totals must not be added as additional rewards. Older journeys are not automatically imported.
 
@@ -51,7 +51,7 @@ Help, conversation, availability check-ins, and ending monitoring require no par
 
 React/Vinext serves the interface. Cloudflare Workers and SQLite-backed Durable Objects coordinate private data. Solana stores public commitments and rewards. Names, routes, contact details, messages, location, and credentials stay off chain.
 
-The [offline agent guide](docs/AGENT_HARNESS.md) explains the no-credits development phase. In a demo journey, choose **Guardian offline**, send a route concern, and inspect **Companion activity**. The mock uses fixed rules to exercise actual application tools. Adding an OpenAI key does not enable API calls; live-model integration remains a later step.
+The [offline agent guide](docs/AGENT_HARNESS.md) explains the no-credits development phase. The mock uses fixed rules to exercise actual application tools. Its scenario launcher and agent trace dashboard are no longer in the simplified human-journey interface. Adding an OpenAI key does not enable API calls; live-model integration remains a later step.
 
 ## Deployment status
 
@@ -61,7 +61,7 @@ The existing V1 program remains a legacy, separate single-guardian receipt. New 
 
 The frontend is published at **[Safety Guard](https://safety-guard-htn2026.klavander56.chatgpt.site)**. The [production Worker](https://safety-guard-api-production.2012044zj.workers.dev/api/ready) is deployed and passes readiness checks, with the published site configured as its canonical signing origin. A [hosted identity verification](docs/evidence/hosted-identity-2026-09-20.json) passed 36 checks covering wallet binding/login, recovery, replay/origin rejection, session revocation, and synthetic-account deletion. It submitted no blockchain transactions and persisted no credentials.
 
-The site permits its owner and one owner-requested demo viewer. The latest [appreciation wall and honor cabinet](docs/COMMUNITY_HONORS.md) release passed 14 projection tests, eight proxy tests, frontend type checking, lint, build, and 18 published asset checks. See [DEMO.md](docs/DEMO.md) to demonstrate recognition using separate rider and guardian identities.
+The site permits its owner and one owner-requested demo viewer. The [simplified frontend](docs/FRONTEND_SIMPLIFICATION.md) focuses on journeys, guardian requests, and personal contributions. The [appreciation wall and honor cabinet](docs/COMMUNITY_HONORS.md) remain available. Seven journey-progress tests, 14 honor-projection tests, eight proxy tests, frontend type checking, lint, and build pass. See [DEMO.md](docs/DEMO.md) to demonstrate recognition using separate rider and guardian identities.
 
 **All five live HTTP integration tests through the earlier published ledger release passed**, covering application-only guardian approval, relay, former-guardian access revocation, shared rewards, and isolated demonstrations. The 11 synthetic test accounts were deleted. Homepage, admin page, health, readiness, and configuration routes returned HTTP 200 in that run; see the [hosting receipt](docs/deployment/hosting.production.json).
 

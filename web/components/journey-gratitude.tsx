@@ -38,9 +38,8 @@ export function JourneyGratitudeCard({ trip, token, viewerId }: { trip: Trip; to
   if (dismissed) return <div className="gratitude-dismissed"><span>Your journey is closed.</span><Button variant="ghost" onClick={() => setDismissed(false)}>Leave a free thank-you</Button></div>;
   return (
     <article className="gratitude-card">
-      <div className="card-header"><h3><Award size={20} /> A little thank-you, freely given.</h3><span className="mini-tag">ALWAYS FREE</span></div>
-      <p>Your journey is already closed. If you wish, send one banner to each guardian who checked in, including someone who handed over. You can also skip.</p>
-      <p className="small-note">Banners add no contribution points. For journeys with community records, your community identifier, the guardian’s identifier and the banner category are published on Solana. Routes, names and messages stay off chain.</p>
+      <div className="card-header"><h3><Award size={20} /> Say thank you</h3><span className="mini-tag">FREE</span></div>
+      <p>Send an optional free banner to a guardian who checked in. It appears on their public appreciation wall after chain confirmation and adds no points.</p>
       {gratitude.isError ? <div className="profile-feedback" role="alert"><p>{errorMessage(gratitude.error)}</p><Button variant="outline" onClick={() => void gratitude.refetch()}>Retry</Button></div>
         : gratitude.data ? gratitude.data.gratitude.eligibleGuardians.length ? (
           <div className="gratitude-recipients">

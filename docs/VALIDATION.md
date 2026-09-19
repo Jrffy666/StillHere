@@ -4,7 +4,9 @@ Recorded September 20, 2026. This release integrates account recovery, V2 human 
 
 ## Automated checks
 
-The current [honors presentation release](deployment/community.honors.validation.json) is frontend version 7, accessible to the owner and one owner-requested demo viewer. It passed 14 honor-projection tests, eight proxy tests, frontend type checking, lint, build, and [18 published checks](deployment/frontend.honors.validation.json). No contract or Worker code changed, no new blockchain transaction was submitted, and AI remains an offline mock. Browser visual and interaction acceptance was not performed because the browser connection was unavailable.
+The current [simplified interface](FRONTEND_SIMPLIFICATION.md) is frontend version 8, accessible to the owner and the same authorized demo viewer. It passed seven journey-progress tests, 14 honor-projection tests, eight proxy tests, frontend type checking, lint, build, and [27 published checks](deployment/frontend.simple.validation.json), including exact root stylesheet hashes. The first-check-in prompt and zero-contribution arrival feedback cover the diagnosed missing-check-in flow. No contract or Worker code changed, no new blockchain transaction was submitted, and AI remains an offline mock. Browser visual and interaction acceptance was not performed because the browser connection was unavailable. See the [release receipt](deployment/frontend.core.validation.json).
+
+The earlier [honors presentation release](deployment/community.honors.validation.json) deployed frontend version 7. It passed 14 honor-projection tests, eight proxy tests, frontend type checking, lint, build, and [18 published checks](deployment/frontend.honors.validation.json).
 
 The earlier [community-ledger release](deployment/community.ledger.validation.json) deployed frontend version 6 with the production Worker and a separate Solana Devnet program. That release passed 166 Worker tests, 41 chain-client tests, 24 Rust tests, 18 operations tests, eight proxy tests, and frontend type checking, lint and production build. The [signed local community run](deployment/verification.community.localnet.json) confirmed 20 transactions and 19 expected rejection scenarios. The [hosted ledger workflow](deployment/community.ledger.hosted.devnet.json) passed 17 checks and independently verified 20 finalized public records, including an administrator-signed withdrawal. Five hosted HTTP workflows and eighteen published frontend checks also passed. All fourteen synthetic accounts from the two hosted runs were deleted.
 
@@ -12,6 +14,8 @@ The earlier [community v1 release](deployment/community.v1.validation.json) esta
 
 | Check | Result | What it establishes |
 | --- | --- | --- |
+| Journey progress tests | 7 passed | Missing guardian check-in, first-check-in prompts, relay participation, pending settlement, demo/cancelled states and simulated-guardian exclusion |
+| Published simplified frontend | 27 checks passed | Exact application and root stylesheet hashes, primary actions, receipt paths, core navigation and removal of promotion/simulation entry points |
 | Honor projection tests | 14 passed | Received versus sent banners, confirmation/withdrawal, cancellation, pagination, aggregate milestones, identity isolation, and safe receipts |
 | Published honors frontend | 18 checks passed | Exact deployed application assets and pennant artwork, collection styles, receipt controls, health response, and offline AI configuration |
 | Worker runtime tests | 166 passed | Existing API, identity, V2, offline agent and privacy controls, community profiles, durable source intents and community publisher/corrections |
