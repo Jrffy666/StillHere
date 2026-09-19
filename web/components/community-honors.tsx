@@ -31,27 +31,25 @@ export function CommunityHonors({ query, ownProfile }: {
     </div>}
     <section className="honor-cabinet" aria-labelledby={`${uid}-honors`}>
       <div className="collection-heading">
-        <div><span className="collection-kicker">TIME GIVEN. CARE REMEMBERED.</span>
-          <h4 id={`${uid}-honors`}>Honor cabinet<span className="collection-dot">.</span></h4>
-          <p>Small milestones, earned by showing up for someone.</p>
-        </div>
+        <h4 id={`${uid}-honors`}>Honor cabinet</h4>
         <span className="collection-count"><Award size={15} aria-hidden="true" /> {unlocked} of {honors.length} recognized</span>
       </div>
       <ul className="honor-grid">
         {honors.map((honor, index) => {
           const Icon = HONOR_ICONS[index];
           return <li key={honor.id} className={`honor-tile ${honor.unlocked ? 'honor-earned' : 'honor-locked'}`}>
-            <div className="honor-tile-top"><span className="honor-index">0{index + 1}</span>
-              <span className="honor-state">{honor.unlocked ? <Check size={12} aria-hidden="true" /> : <LockKeyhole size={12} aria-hidden="true" />}
-                {honor.unlocked ? 'Recognized' : 'Not yet reached'}</span></div>
-            <Icon className="honor-symbol" size={34} strokeWidth={1.3} aria-hidden="true" />
-            <h5>{honor.title}</h5><p>{honor.detail}</p>
-            <div className="honor-progress-label"><span>{honor.progress} / {honor.target}</span><span>{honor.unit}</span></div>
+            <Icon className="honor-symbol" size={22} strokeWidth={1.5} aria-hidden="true" />
+            <div className="honor-copy"><h5>{honor.title}</h5><p>{honor.detail}</p></div>
+            <span className="honor-state">
+              {honor.unlocked ? <Check size={13} aria-hidden="true" /> : <LockKeyhole size={12} aria-hidden="true" />}
+              <span className="sr-only">{honor.unlocked ? 'Recognized' : 'Not yet reached'}: </span>
+              <span>{honor.progress}/{honor.target}</span>
+            </span>
             <progress value={honor.progress} max={honor.target} aria-label={`${honor.title}: ${honor.progress} of ${honor.target} ${honor.unit}`} />
           </li>;
         })}
       </ul>
-      <p className="collection-footnote">Milestones reflect current confirmed contributions and appreciation. They add no points and are not separate on-chain awards.</p>
+      <p className="collection-footnote">Based on confirmed records. Milestones add no points and are not separate on-chain awards.</p>
     </section>
 
     <section className="banner-wall" aria-labelledby={`${uid}-banners`}>

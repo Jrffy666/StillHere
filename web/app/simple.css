@@ -79,15 +79,10 @@
 .simple-main .member-visibility { margin-bottom: 17px; font-size: 10px; }
 .simple-main .member-stats { margin-bottom: 10px; }
 .simple-main .community-showcase { margin-top: 24px; }
-.simple-main .honor-cabinet { padding: 20px; background: var(--honor-surface); }
 .simple-main .collection-kicker { display: none; }
-.simple-main .collection-heading h4 { font-size: 24px; }
-.simple-main .collection-heading { margin-bottom: 16px; }
+.simple-main .banner-wall .collection-heading h4 { font-size: 24px; }
+.simple-main .banner-wall .collection-heading { margin-bottom: 16px; }
 .simple-main .collection-heading p { font-size: 11px; margin-top: 7px; }
-.simple-main .honor-tile { padding: 15px; }
-.simple-main .honor-symbol { width: 24px; height: 24px; margin: 15px 0 10px; }
-.simple-main .honor-tile h5 { font-size: 14px; }
-.simple-main .honor-progress-label { margin-top: 15px; }
 .simple-main .banner-wall { margin-top: 24px; padding-top: 22px; }
 .simple-main .gratitude-art { max-width: 260px; }
 .simple-main .banner-wall-grid { gap: 14px; }
@@ -122,11 +117,6 @@
   .simple-request { padding: 17px; flex-wrap: wrap; }
   .simple-request > button { width: 100%; }
   .simple-main .member-profile { padding: 17px; }
-  .simple-main .honor-cabinet { padding: 15px; }
-  .simple-main .honor-grid { grid-template-columns: 1fr; }
-  .simple-main .honor-symbol { display: none; }
-  .simple-main .honor-tile h5 { margin-top: 9px; }
-  .simple-main .honor-progress-label { margin-top: 9px; }
   .simple-main .invitation-card { padding: 20px; }
   .simple-footer { font-size: 9px; }
 }

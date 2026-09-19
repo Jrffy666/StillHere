@@ -10,7 +10,7 @@ The **Appreciation wall** displays received banners using original pennant artwo
 
 Full personal profiles and member-profile dialogs show both collections. Compact candidate profiles preserve the short counters and community-record summary. There is no global leaderboard, purchase flow, manual award grant, or prepopulated recognition.
 
-In the simplified interface, open **My profile** to see the collection. Expand **Contribution history & receipts** for individual records; biography editing is under **Edit introduction**. The record eligibility and milestone rules are unchanged.
+In the simplified interface, open **My profile** to see the collection. Use **Edit** beside the member name to open the introduction dialog. Save updates the visible introduction; Cancel discards the draft. The honor cabinet uses compact entries with an icon, title, requirement, and progress, arranged across wider screens and stacked on phones. Expand **Contribution history & receipts** for individual records. The record eligibility and milestone rules are unchanged.
 
 ## Data rules
 

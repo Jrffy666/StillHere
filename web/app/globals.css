@@ -650,6 +650,12 @@ h1 {
   margin-bottom: 22px;
 }
 .member-heading { display: flex; align-items: center; gap: 14px; }
+.member-identity { flex: 1; min-width: 0; }
+.member-edit { flex-shrink: 0; gap: 6px; align-self: center; }
+.profile-edit-dialog { width: min(440px, calc(100vw - 32px)); max-width: 440px; max-height: calc(100dvh - 32px); overflow-y: auto; padding: 24px; }
+.profile-edit-dialog [data-slot='dialog-header'] { padding-right: 20px; }
+.profile-edit-dialog .profile-editor { border: 0; margin: 0; padding: 0; }
+.profile-edit-buttons { display: flex; align-items: center; gap: 6px; }
 .member-avatar {
   width: 48px; height: 48px; flex-shrink: 0; border-radius: 14px;
   display: grid; place-items: center; background: #263322; color: var(--primary);
@@ -699,21 +705,21 @@ h1 {
 .collection-dot { color: var(--primary); }
 .collection-heading p { margin-top: 10px; font-size: 12px; line-height: 1.7; color: var(--muted-foreground); max-width: 420px; }
 .collection-count { display: inline-flex; align-items: center; gap: 7px; color: var(--honor-accent); border: 1px solid var(--honor-border); background: #b6a3f50a; border-radius: 7px; padding: 8px 10px; font-size: 10px; white-space: nowrap; }
-.honor-cabinet { padding: 25px; border: 1px solid var(--honor-border); border-radius: 14px; background: linear-gradient(115deg, #242030 0%, var(--honor-surface) 75%); }
-.honor-grid { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(190px, 100%), 1fr)); gap: 12px; }
-.honor-tile { padding: 18px; border: 1px solid var(--border); border-radius: 10px; min-width: 0; background: #171920; }
+.honor-cabinet { padding: 16px; border: 1px solid var(--honor-border); border-radius: 12px; background: var(--honor-surface); }
+.honor-cabinet .collection-heading { align-items: center; gap: 8px; margin-bottom: 12px; }
+.honor-cabinet .collection-heading h4 { font-size: 16px; letter-spacing: -.2px; }
+.honor-cabinet .collection-count { border: 0; padding: 0; background: none; }
+.honor-cabinet .collection-footnote { margin-top: 10px; font-size: 10px; line-height: 1.6; }
+.honor-grid { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(230px, 100%), 1fr)); gap: 8px; }
+.honor-tile { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; align-items: center; column-gap: 9px; row-gap: 8px; padding: 12px; border: 1px solid var(--border); border-radius: 8px; min-width: 0; background: #171920; }
 .honor-earned { background: linear-gradient(140deg, #332c44, #1b1e25); border-color: #625174; }
-.honor-tile-top, .honor-progress-label { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
-.honor-index { font-size: 10px; font-family: var(--font-geist-mono), monospace; color: var(--muted-foreground); }
-.honor-state { display: inline-flex; align-items: center; gap: 5px; font-size: 9px; color: var(--muted-foreground); }
+.honor-state { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; color: var(--muted-foreground); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .honor-earned .honor-state { color: var(--primary); }
-.honor-symbol { color: var(--muted-foreground); margin: 24px 0 17px; }
+.honor-symbol { color: var(--muted-foreground); }
 .honor-earned .honor-symbol { color: var(--honor-accent); }
-.honor-tile h5 { margin: 0; font-weight: 500; font-size: 15px; line-height: 1.5; letter-spacing: -.25px; }
-.honor-tile p { margin-top: 6px; color: var(--muted-foreground); font-size: 11px; line-height: 1.6; }
-.honor-progress-label { color: var(--muted-foreground); margin-top: 22px; font-size: 10px; }
-.honor-progress-label > span:first-child { font-family: var(--font-geist-mono), monospace; }
-.honor-tile progress { display: block; width: 100%; height: 3px; margin-top: 9px; appearance: none; border: 0; border-radius: 10px; overflow: hidden; color: var(--honor-accent); background: #33323d; }
+.honor-tile h5 { margin: 0; font-weight: 500; font-size: 12px; line-height: 1.5; overflow-wrap: anywhere; }
+.honor-tile p { margin-top: 2px; color: var(--muted-foreground); font-size: 10px; line-height: 1.5; }
+.honor-tile progress { grid-column: 2 / -1; display: block; width: 100%; height: 3px; appearance: none; border: 0; border-radius: 10px; overflow: hidden; color: var(--honor-accent); background: #33323d; }
 .honor-tile progress::-webkit-progress-bar { background: #33323d; }
 .honor-tile progress::-webkit-progress-value { background: var(--honor-accent); }
 .honor-tile progress::-moz-progress-bar { background: var(--honor-accent); }
@@ -757,11 +763,9 @@ h1 {
 .banner-pending, .honors-refresh-error { display: block; padding: 12px; color: var(--honor-accent); font-size: 12px; line-height: 1.7; background: #b6a3f50d; border: 1px solid var(--honor-border); border-radius: 8px; margin-bottom: 18px; }
 .honors-refresh-error button { margin-top: 10px; }
 @media (max-width: 600px) {
-  .honor-cabinet { padding: 18px; }
+  .honor-cabinet { padding: 14px; }
   .collection-count { font-size: 9px; }
   .honor-grid { grid-template-columns: 1fr; }
-  .honor-tile { padding: 16px; }
-  .honor-symbol { margin: 18px 0 12px; }
   .banner-filters { gap: 6px; }
   .banner-filter { font-size: 10px; min-height: 40px; }
 }

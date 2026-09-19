@@ -24,7 +24,7 @@ Conversation and approval/relay controls remain directly accessible. Route/map, 
 
 New journey creation emphasizes origin, destination, and optional Uber link. **More options** contains check-in timing, a trusted contact and its existing delivery consent, and the optional wallet-signed commitment. The mandatory public-record notice remains visible and enforced. Form errors stay outside collapsed options.
 
-The closed rider view offers **Say thank you** using the existing free-banner mechanism. The personal profile retains public contribution counters, the honor cabinet, and appreciation wall. Raw evidence is under **Contribution history & receipts**, and biography editing is under **Edit introduction**. Compact approval previews show public counters and an explicit link to the full profile. Initial record-loading errors remain visible outside the collapsed ledger.
+The closed rider view offers **Say thank you** using the existing free-banner mechanism. The personal profile retains public contribution counters, a compact honor cabinet, and the appreciation wall. Raw evidence is under **Contribution history & receipts**. The **Edit** button beside the member name opens an introduction dialog with Save and Cancel; editing no longer occupies a separate profile section. Honor entries keep their icon, name, requirement, status, and progress in a compact grid that stacks on phones. Compact approval previews show public counters and an explicit link to the full profile. Initial record-loading errors remain visible outside the collapsed ledger.
 
 ## Compatibility and access
 

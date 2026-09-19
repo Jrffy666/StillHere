@@ -1,13 +1,13 @@
 {
-  "recordedAt": "2026-09-19T21:18:47.648Z",
+  "recordedAt": "2026-09-19T21:27:06.455Z",
   "frontend": {
     "url": "https://safety-guard-htn2026.klavander56.chatgpt.site",
     "projectId": "appgprj_6aaeb438ee7c81918e772f03d67510af",
-    "versionId": "appgprj_6aaeb438ee7c81918e772f03d67510af~appgver_950b3c3b41208191a9e4e494d880a0b9",
-    "versionNumber": 8,
-    "deploymentId": "appgdep_6aaefb742898819192c0c7ff1a14670e",
+    "versionId": "appgprj_6aaeb438ee7c81918e772f03d67510af~appgver_3892a4a72400819188e7e9df2d12c1c7",
+    "versionNumber": 9,
+    "deploymentId": "appgdep_6aaefe0e6db48191a17b3c69c55f1a71",
     "status": "succeeded",
-    "sourceCommit": "ab4c43005cb193f33518702c831428123e0f9235",
+    "sourceCommit": "aa4c235e2756a9b2ffd965988c81f60451cbd625",
     "environmentRevision": 2,
     "access": "owner and one explicitly authorized external demo viewer"
   },
@@ -145,6 +145,15 @@
       "workerChanged": false,
       "liveModel": false,
       "evidence": "community.honors.validation.json"
+    },
+    "compactProfile": {
+      "typecheck": true,
+      "lint": true,
+      "productionBuild": true,
+      "publishedChecksPassed": 20,
+      "browserVisualQa": false,
+      "browserInteractiveAcceptance": false,
+      "evidence": "profile.layout.validation.json"
     },
     "simplifiedFrontend": {
       "journeyProgressTestsPassed": 7,
