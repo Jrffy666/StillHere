@@ -43,6 +43,9 @@
   --danger: #ff9b92;
   --danger-surface: #2d1b20;
   --warning-surface: #29241a;
+  --honor-surface: #111319;
+  --honor-accent: #c6b5fc;
+  --honor-border: #423957;
   --radius: 14px;
 }
 * {
@@ -683,12 +686,85 @@ h1 {
 .profile-editor-actions small { color: var(--muted-foreground); }
 .profile-feedback { display: grid; gap: 12px; justify-items: start; }
 .profile-feedback p { overflow-wrap: anywhere; }
-.community-profile-dialog { width: min(620px, calc(100vw - 32px)); max-width: 620px; max-height: 88dvh; overflow-y: auto; padding: 24px; }
+.community-profile-dialog { width: min(920px, calc(100vw - 32px)); max-width: 920px; max-height: 88dvh; overflow-y: auto; padding: 24px; }
 .community-profile-dialog .member-profile { margin-bottom: 0; }
 .member-profile-compact { padding: 18px; margin-bottom: 0; }
 .member-profile-compact .member-stats { gap: 7px; }
 .member-profile-compact .member-stats > div { padding: 10px; }
 .member-profile-compact .member-stats dd { font-size: 24px; }
+.community-showcase { margin-top: 32px; min-width: 0; }
+.collection-heading { display: flex; align-items: start; justify-content: space-between; flex-wrap: wrap; gap: 14px; margin-bottom: 22px; }
+.collection-kicker { display: block; color: var(--honor-accent); font-size: 9px; font-weight: 600; letter-spacing: 1.6px; margin-bottom: 11px; }
+.collection-heading h4 { margin: 0; font-size: clamp(23px, 2.8vw, 31px); font-weight: 500; line-height: 1.2; letter-spacing: -1px; }
+.collection-dot { color: var(--primary); }
+.collection-heading p { margin-top: 10px; font-size: 12px; line-height: 1.7; color: var(--muted-foreground); max-width: 420px; }
+.collection-count { display: inline-flex; align-items: center; gap: 7px; color: var(--honor-accent); border: 1px solid var(--honor-border); background: #b6a3f50a; border-radius: 7px; padding: 8px 10px; font-size: 10px; white-space: nowrap; }
+.honor-cabinet { padding: 25px; border: 1px solid var(--honor-border); border-radius: 14px; background: linear-gradient(115deg, #242030 0%, var(--honor-surface) 75%); }
+.honor-grid { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(190px, 100%), 1fr)); gap: 12px; }
+.honor-tile { padding: 18px; border: 1px solid var(--border); border-radius: 10px; min-width: 0; background: #171920; }
+.honor-earned { background: linear-gradient(140deg, #332c44, #1b1e25); border-color: #625174; }
+.honor-tile-top, .honor-progress-label { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.honor-index { font-size: 10px; font-family: var(--font-geist-mono), monospace; color: var(--muted-foreground); }
+.honor-state { display: inline-flex; align-items: center; gap: 5px; font-size: 9px; color: var(--muted-foreground); }
+.honor-earned .honor-state { color: var(--primary); }
+.honor-symbol { color: var(--muted-foreground); margin: 24px 0 17px; }
+.honor-earned .honor-symbol { color: var(--honor-accent); }
+.honor-tile h5 { margin: 0; font-weight: 500; font-size: 15px; line-height: 1.5; letter-spacing: -.25px; }
+.honor-tile p { margin-top: 6px; color: var(--muted-foreground); font-size: 11px; line-height: 1.6; }
+.honor-progress-label { color: var(--muted-foreground); margin-top: 22px; font-size: 10px; }
+.honor-progress-label > span:first-child { font-family: var(--font-geist-mono), monospace; }
+.honor-tile progress { display: block; width: 100%; height: 3px; margin-top: 9px; appearance: none; border: 0; border-radius: 10px; overflow: hidden; color: var(--honor-accent); background: #33323d; }
+.honor-tile progress::-webkit-progress-bar { background: #33323d; }
+.honor-tile progress::-webkit-progress-value { background: var(--honor-accent); }
+.honor-tile progress::-moz-progress-bar { background: var(--honor-accent); }
+.collection-footnote { color: var(--muted-foreground); font-size: 10px; line-height: 1.8; margin-top: 16px; }
+.banner-wall { margin-top: 34px; padding-top: 26px; border-top: 1px solid var(--border); }
+.banner-filters { display: flex; flex-wrap: wrap; gap: 7px; margin: 0 0 22px; padding: 0; border: 0; min-width: 0; }
+.banner-filter { min-height: 36px; padding: 8px 12px; border: 1px solid var(--border); border-radius: 7px; font-size: 11px; color: var(--muted-foreground); }
+.banner-filter[aria-pressed='true'] { color: var(--honor-accent); border-color: #75648d; background: #b6a3f51a; }
+.banner-wall-grid { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(230px, 100%), 1fr)); gap: 18px; }
+.gratitude-exhibit { min-width: 0; border-radius: 12px; overflow: hidden; border: 1px solid var(--honor-border); background: var(--honor-surface); }
+.gratitude-exhibit figure { margin: 0; }
+.gratitude-art { position: relative; max-width: 330px; margin: 0 auto; aspect-ratio: 2 / 3; container-type: inline-size; }
+.gratitude-art > img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.gratitude-inscription { position: absolute; top: 23%; bottom: 32%; left: 30%; right: 30%; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; color: #f5edff; }
+.gratitude-inscription > svg { color: #d8f4a8; flex-shrink: 0; margin-bottom: 15px; width: 28px; height: 28px; }
+.gratitude-inscription > span { color: #d6c7e3; font-size: clamp(7px, 2.8cqi, 9px); letter-spacing: .8px; line-height: 1.5; text-transform: uppercase; }
+.gratitude-inscription h5 { font-size: clamp(17px, 7.2cqi, 24px); font-weight: 500; line-height: 1.35; letter-spacing: -.6px; margin: 14px 0 0; text-wrap: balance; }
+.gratitude-inscription > i { margin-top: 22px; font-size: 6px; font-size: clamp(6px, 2.2cqi, 7px); font-style: normal; letter-spacing: 1.8px; color: #d6c7e3; }
+.gratitude-exhibit figcaption { padding: 18px; border-top: 1px solid var(--border); }
+.banner-confirmed { display: inline-flex; gap: 6px; align-items: center; color: var(--primary); font-size: 10px; }
+.banner-giver { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 15px; font-size: 10px; }
+.banner-giver > span { color: var(--muted-foreground); }
+.banner-giver code { font-size: 10px; color: var(--honor-accent); }
+.gratitude-exhibit time { display: block; font-size: 10px; color: var(--muted-foreground); margin-top: 8px; }
+.banner-receipt-row { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; border-top: 1px solid var(--border); padding-top: 14px; margin-top: 16px; font-size: 10px; }
+.banner-receipt-row > span { color: var(--muted-foreground); }
+.banner-receipt-row a { display: inline-flex; align-items: center; gap: 6px; color: var(--honor-accent); min-height: 24px; }
+.banner-receipt-row a:hover { color: var(--foreground); text-decoration: underline; }
+.banner-dedication { margin-top: 12px; font-size: 10px; color: var(--muted-foreground); }
+.banner-dedication summary { padding: 8px 0; cursor: pointer; }
+.banner-dedication p, .banner-dedication dl { margin: 8px 0 0; line-height: 1.7; }
+.banner-dedication dt { margin-top: 10px; }
+.banner-dedication dd { margin: 3px 0 0; font-family: var(--font-geist-mono), monospace; overflow-wrap: anywhere; color: var(--foreground); }
+.banner-wall-empty { padding: 40px 24px; text-align: center; display: grid; justify-items: center; border: 1px dashed var(--honor-border); background: var(--honor-surface); border-radius: 12px; }
+.banner-wall-empty > svg { color: var(--honor-accent); }
+.banner-wall-empty h5 { margin: 18px 0 10px; font-size: 17px; line-height: 1.5; font-weight: 500; letter-spacing: -.3px; }
+.banner-wall-empty p { color: var(--muted-foreground); max-width: 410px; font-size: 12px; line-height: 1.8; }
+.banner-wall-empty > span { color: var(--honor-accent); font-size: 10px; line-height: 1.7; margin-top: 20px; }
+.banner-wall-footer { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-top: 18px; }
+.banner-wall-footer p { color: var(--muted-foreground); font-size: 10px; line-height: 1.8; }
+.banner-pending, .honors-refresh-error { display: block; padding: 12px; color: var(--honor-accent); font-size: 12px; line-height: 1.7; background: #b6a3f50d; border: 1px solid var(--honor-border); border-radius: 8px; margin-bottom: 18px; }
+.honors-refresh-error button { margin-top: 10px; }
+@media (max-width: 600px) {
+  .honor-cabinet { padding: 18px; }
+  .collection-count { font-size: 9px; }
+  .honor-grid { grid-template-columns: 1fr; }
+  .honor-tile { padding: 16px; }
+  .honor-symbol { margin: 18px 0 12px; }
+  .banner-filters { gap: 6px; }
+  .banner-filter { font-size: 10px; min-height: 40px; }
+}
 .invitation-profile { width: 100%; text-align: left; }
 .invitation-profile .member-profile { margin: 12px 0; }
 .invitation-card .member-heading p, .invitation-card .member-context { font-size: 11px; }

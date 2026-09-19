@@ -1,12 +1,45 @@
-# Human guarding and relay demonstration
+# Community contribution, appreciation, and human relay demonstration
 
-This walkthrough exercises the local human workflow without model credentials, voice, external notifications, or new chain transactions. Use the [README](../README.md) to start the app and [VALIDATION.md](VALIDATION.md) for checks already completed.
+Updated September 20, 2026. This walkthrough exercises ordinary human journeys and their sponsored Solana Devnet records. No model credentials, voice, or external notifications are needed. The [hosted ledger verification](deployment/community.ledger.hosted.devnet.json) already passed the HTTP-to-chain workflow; the steps below are a browser rehearsal, not a claim that manual browser acceptance has been completed. Use [COMMUNITY_LEDGER.md](COMMUNITY_LEDGER.md) for current rules and [VALIDATION.md](VALIDATION.md) for evidence.
 
-## Prepare three independent sessions
+## What is implemented
+
+Contribution points, completion records, free appreciation categories, public member profiles, an appreciation wall, an honor cabinet, and chain receipt links are implemented. Points are non-transferable recognition, not cash or a tradable token. Appreciation has no purchase price and adds no points. Cabinet milestones are visual summaries of confirmed records, not separately minted awards. There is no collectible NFT or global leaderboard.
+
+The built-in **Explore a demo journey** path is simulated and does not award official contributions. To demonstrate the recognition mechanism, use ordinary **New journey** creation with separate rider and guardian accounts. A controlled demonstration can use fictional participants and routes while creating actual Devnet records. Identify those participants as demonstration accounts; do not present their activity as real passenger trips.
+
+## Prepare access and accounts
+
+The published site allows the owner and the additional demo viewer requested by the owner. Both browser contexts must first pass that website access gate using an allowed login. Viewer access permits using the application, not editing or administering the site. Inside the application, create different guest identities with **Enter Safety Guard**, for example `Demo Rider` and `Demo Guardian`. Separate browser profiles or different browsers are preferable to duplicated tabs. Application identity and the website access login are different layers.
+
+Guest credentials are held in session storage. Keep the rehearsal sessions available; without an established recovery method or linked wallet, closing a session or signing out can lose access. Wallet identity is optional for participation and separate from the wallet-signed commitment option.
+
+Automated verification removed its synthetic accounts. It did not leave a populated demonstration profile for reuse. Prepare a dedicated rehearsal journey in advance and retain its accounts if you want existing records available during judging. Use a profile introduction that identifies the account as a controlled demonstration.
+
+## Minimal two-account contribution and banner walkthrough
+
+1. In the guardian session, open **My community profile** and show the initial counters. A fresh account should have zero confirmed points, contributions, and banners.
+2. In the rider session, choose **New journey**, enter fictional route details, accept the public-record notice using **Continue with public records**, and choose **Create guarded journey**. For this walkthrough, leave the optional wallet-signed commitment unchecked. Community publication still applies automatically. A 300-second guardian check-in interval gives more time for narration.
+3. Use **Copy guardian invite** and open it in the separate guardian context. Review the rider profile, accept the public-record notice and the check-in commitment, then choose **Apply to guard**.
+4. As the rider, review the candidate's profile and choose **Approve guardian**. As the guardian, select **I am here · Check in** at least once; **Resume & check in** is the equivalent control when marked unavailable. Approval alone does not qualify for a completion allocation.
+5. As the rider, choose **I've arrived**. The journey closes and its eligible contribution is queued for publication. Show **Public guarding history** and the distinction between pending, submitted, and **Chain confirmed** records. Publication is asynchronous; do not promise a fixed confirmation time.
+6. Once the contribution is confirmed and the profile refreshes, open the guardian's **My community profile**. For a fresh account with exactly this one eligible journey, expect **Confirmed points: 25**, **Confirmed contributions: 1**, and **Confirmed banners: 0**. The contribution record itself also shows **+10 reputation**. Creating a journey as the rider does not award the rider these guardian points.
+7. In the rider's closed journey, find **A little thank-you, freely given.** Choose a category and select **Send free banner**. Options are **Thank you for being there**, **Thank you for listening**, and **Thank you for taking over**. Sending is optional.
+8. After the gratitude record is chain confirmed, the guardian's **Confirmed banners** becomes **1**, while confirmed points remain **25**. Open **My community profile**: **First watch** and **A grateful connection** are now recognized in the **Honor cabinet**. **A steady presence** remains at **1 / 5 contributions**. The received pennant appears on the **Appreciation wall**, with its category, date, sender's public community reference, and **View receipt** link. Use that link to open its Devnet account evidence. Profile data refreshes periodically; saved gratitude and finalized on-chain gratitude are separate states.
+
+Use the wall's category buttons to filter received banners. **Load earlier records** loads another page of public history; older banners can be beyond the first page. Cabinet progress and the confirmed-banner total cover the whole account, whereas the displayed card count covers loaded matching banners. Open **Dedication details** to show the public sender, recipient, and journey references. A rider's sent banners remain in history but do not appear as received honors on the rider's wall.
+
+Every full community profile includes this collection, including profiles opened through **View profile**. Compact candidate previews retain their existing counters. With no received banners, the wall shows an honest empty state; there are no seeded awards. A confirmed withdrawal removes recognition from the wall and cabinet totals while retaining original receipts in the community record. Appreciation after a cancelled journey may unlock **A grateful connection** without unlocking **First watch**.
+
+For accounts with earlier activity, demonstrate the corresponding changes (+25 points, +1 contribution, +1 banner) rather than claiming their total must equal those values. Do not manually edit a balance or label hardcoded counters as finalized receipts.
+
+If the counters stay zero, first check that you are viewing the guardian account, that the journey is ordinary rather than the built-in sample, that an approved guardian actually checked in, and that the rider confirmed arrival rather than cancelled. Then inspect publication status; pending/retry records are not included in confirmed totals. Previously created legacy journeys are not automatically backfilled. An unresolved publication problem should be investigated through the existing operator tools, not disguised with seeded numbers.
+
+## Optional three-account relay demonstration
 
 Use separate browser profiles or private windows for a rider, guardian A, and guardian B. Duplicating a tab can copy its guest session. Use fictional route and contact details; live GPS permission is optional.
 
-The guest sessions demonstrate role authorization, not verified real-world identities. Keep the local Worker running throughout the walkthrough. Its server alarms do not continue after the developer machine or Worker stops.
+The guest sessions demonstrate role authorization, not verified real-world identities. The hosted backend runs its own alarms. When rehearsing locally instead, keep the local Worker running; its alarms stop with that process.
 
 ## Suggested four-minute walkthrough
 
@@ -16,9 +49,9 @@ The guest sessions demonstrate role authorization, not verified real-world ident
 
 **Request a relay.** Select **Request a human relay** from the rider or A, then **Copy relay invite**. The request has a ten-minute window; A stays assigned until a replacement is approved. Open the relay invitation as B, acknowledge the role, and choose **Apply to take over**. B still sees a redacted request.
 
-**Complete the handoff.** Approve B as the rider, then record B's check-in. Refresh A's earlier trip view or attempt an action: A no longer has permission to receive private trip updates or act as the guardian. A's earned balance is still available in **My impact**. Show the handoff in the activity history.
+**Complete the handoff.** Approve B as the rider, then record B's check-in. Refresh A's earlier trip view or attempt an action: A no longer has permission to receive private trip updates or act as the guardian. A's public participation evidence remains accessible in **My community profile**; this journey's completion contribution is allocated after arrival. Show the handoff in the activity history.
 
-**Arrive and share the contribution.** The rider confirms arrival. Two eligible guardians share one pool of 25 app points and 10 reputation. The guardian whose ID sorts first receives 13 points; the other receives 12. Both receive 5 reputation. No additional pool is created by the relay, and another arrival request cannot settle again.
+**Arrive and share the contribution.** The rider confirms arrival. Two distinct eligible guardians share one community pool of 25 points and 10 reputation. The guardian whose public community reference sorts first receives 13 points; the other receives 12. Both receive 5 reputation. No additional pool is created by the relay, and another arrival request cannot settle again. Wait for chain confirmation before presenting the allocations as confirmed. The rider may send one free banner to each eligible guardian, including A after handoff; each banner adds no points.
 
 ## Explain missed check-ins accurately
 
@@ -41,7 +74,7 @@ These are rehearsal steps, not assertions that browser interaction tests have pa
 | Guardian selects Resume & check in while a relay is open | Check-in availability resumes, but the relay is not automatically cancelled |
 | Former guardian applies again | Another rider approval is required; contribution stays one cumulative entry per person |
 | Approve two competing applications | Only a valid current application can become the guardian; a stale request cannot replace them |
-| Journey is cancelled | Pending applications/relay end and no real app rewards are issued |
+| Journey is cancelled | Pending applications/relay end; no completion contribution is issued, but eligible checked-in guardians can still receive a free banner |
 | Journey is completed twice | No duplicate reward allocations |
 | Guest session attempts a private read | Access is denied or a permitted redacted request is returned |
 
@@ -53,11 +86,11 @@ The single-person sample journey with simulated guardian Alex is useful for tryi
 
 Use separate actual guest sessions for approval, relay, privacy, and shared-reward evidence. A simulated handoff is not evidence of two independent participants.
 
-## Optional blockchain evidence
+## Blockchain evidence and the separate wallet-signed path
 
-The Solana program is already deployed and its CLI lifecycle has been verified on Devnet; see the [public report](deployment/verification.devnet.json). Showing that report or its transaction links does not require a new deployment.
+The community program is deployed at `7vuz78V9Tu53Bpt3iXHc37VSDBmRSYxcEguWewR9LXzm` on Devnet. See the [deployment receipt](deployment/deployment.community.devnet.json) and [hosted workflow](deployment/community.ledger.hosted.devnet.json). Each ordinary new journey publishes minimal platform attestations through dedicated issuer and sponsor identities. Participants need no wallet or SOL for this path. Public evidence excludes private routes, coordinates, and conversation.
 
-The chain remains a **single designated guardian** commitment with a 10-point reward. It does not follow app relays or the app's 25-point/10-reputation split. Guest identities are not bound to wallets. Browser-wallet signing remains a separate manual verification step; do not present this human-relay demo as proof that wallet transactions were exercised.
+The retained V2 wallet-signed commitment is an additional flow with separate receipts. Its protocol allocation is not added to community-ledger recognition. It is unnecessary for the minimal contribution/banner demonstration above. Browser wallet-extension acceptance is a separate manual check. Earlier V1-only descriptions and application-only allocation rules do not describe this current community workflow.
 
 ## Questions to be ready for
 
@@ -73,5 +106,5 @@ The chain remains a **single designated guardian** commitment with a 10-point re
 
 **Can this replace emergency services?** No. The current work coordinates people and records actions; no emergency dispatch is implemented.
 
-See [HUMAN_GUARDING.md](HUMAN_GUARDING.md) for the full rules and [SPONSORS.md](SPONSORS.md) for the earlier award research. AI/provider demonstrations are deferred from this walkthrough.
+See [COMMUNITY_LEDGER.md](COMMUNITY_LEDGER.md) for current community rules and [SPONSORS.md](SPONSORS.md) for award research. AI/provider demonstrations are deferred from this walkthrough.
 

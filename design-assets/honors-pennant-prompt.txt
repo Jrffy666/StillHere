@@ -1,0 +1,9 @@
+Use case: stylized-concept
+Asset type: original appreciation pennant artwork for the Safety Guard web3 community app; accessible HTML text will be layered over this artwork later.
+Primary request: ONE refined appreciation pennant hanging vertically on a slender brushed chrome crossbar, with an understated chrome ring centered at the top. Dark aubergine velvet/satin fabric, delicate pale lilac border and very subtle soft lime stitching. Long rectangular fabric with a shallow inverted V/swallowtail at its lower edge, restrained tassels. Refined realistic 3D materials with gentle lighting.
+Scene/backdrop: perfectly flat solid charcoal #101218 background, no environment, no floor, no props.
+Composition/framing: portrait 2:3 image, strict straight-on view, centered and symmetrical, entire pennant, ring, crossbar and tassels comfortably inside the image with generous padding. The center 55% of the fabric must be dark, quiet and COMPLETELY EMPTY, even and low contrast so real HTML text can be overlaid there later. Keep all decoration confined to the outer border.
+Lighting/mood: premium contemporary recognition for a caring web3 community; subtle directional studio material lighting only on the object, warm human care and understated dignity.
+Materials/textures: tactile dark aubergine fabric, fine pale lilac trim, very restrained lime stitching, slender brushed chrome.
+Text: NONE. Entire image is completely free of lettering.
+Avoid: letters, words, numbers, symbols, logos, watermark, cryptocurrency coins, embedded badges, emblem, medallion, ornament or any shape in the center of fabric; busy folds in the center, environmental scenery, background gradients.

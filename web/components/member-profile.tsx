@@ -8,6 +8,7 @@ import { api, errorMessage } from '@/lib/api';
 import type { GratitudeKind, MemberProfile } from '@/lib/types';
 import { MemberCommunityLedger, useCommunityRecords } from '@/components/community-records';
 import { CommunityNotice } from '@/components/community-notice';
+import { CommunityHonors } from '@/components/community-honors';
 
 export const GRATITUDE_LABELS: Record<GratitudeKind, string> = {
   companionship: 'Thank you for being there',
@@ -51,6 +52,7 @@ export function MemberProfileCard({ memberId, token, viewerId, editable = false,
             <div><dt>Confirmed contributions</dt><dd>{confirmed?.contributions ?? '—'}</dd></div>
             <div><dt>Confirmed banners</dt><dd>{confirmed?.banners ?? '—'}</dd></div>
           </dl>
+          {!compact && <CommunityHonors query={records} ownProfile={member.id === viewerId} />}
           <MemberCommunityLedger query={records} compact={compact} />
           {!compact && (
             <>

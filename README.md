@@ -4,7 +4,7 @@ A community journey-guarding application for Hack the North 2026. Riders approve
 
 The accepted [community v1 scope](docs/COMMUNITY_V1.md) adds member profiles, contextual contribution records, and free structured appreciation banners. Profiles and contribution values are visible to other authenticated community members before applying or approving; there is no visibility toggle or sitewide leaderboard. Availability and language matching remain future work in the [community direction](docs/COMMUNITY_DIRECTION.md).
 
-Companionship remains accessible without payment, staking, or a token balance. The [gratitude rules](docs/GRATITUDE_MECHANISM.md) allow optional free banners after closure without adding points or reputation. Financial tips and transferable tokens are deferred; this release does not integrate translation or change the site's owner-only access policy.
+Companionship remains accessible without payment, staking, or a token balance. The [gratitude rules](docs/GRATITUDE_MECHANISM.md) allow optional free banners after closure without adding points or reputation. Financial tips and transferable tokens are deferred; translation is not integrated. Site access is limited to the owner and the owner-requested demo viewer.
 
 The [community ledger](docs/COMMUNITY_LEDGER.md) implements the requirement for appreciation, contributions and guarding history to have Solana records. It adds a separate program, free sponsored platform attestations, ordered participation history, durable publication, independently readable receipts and administrator-signed corrections. The implementation report records deployment and validation status. See [the original design](docs/ONCHAIN_COMMUNITY.md) for the reasoning and trust boundaries.
 
@@ -44,7 +44,7 @@ Help, conversation, availability check-ins, and ending monitoring require no par
 | --- | --- |
 | Accounts | Verified wallet binding, stable identities, expiring/revocable sessions, wallet rotation, single-use recovery codes |
 | Human relay | Rider approval plus guardian acceptance, private-access changes, contributions across returning guardians |
-| Community | Always-visible member profiles, pre-decision profile review, redacted contribution history, and free appreciation banners independent of points |
+| Community | Always-visible member profiles, pre-decision profile review, redacted contribution history, a received-appreciation wall, and a contribution honor cabinet |
 | Offline agent | Durable mock runs, five validated tools, bounded retries, private action traces, and a human handoff summary; no live model calls |
 | Chain synchronization | Persistent journey mapping, durable outbox, finalized receipt verification, failure/expiry handling, idempotent credit |
 | Operations | Isolated environments, readiness checks, deployment/rollback tooling, reports/restrictions, retention/deletion, encrypted backup/restore |
@@ -61,7 +61,9 @@ The existing V1 program remains a legacy, separate single-guardian receipt. New 
 
 The frontend is published at **[Safety Guard](https://safety-guard-htn2026.klavander56.chatgpt.site)**. The [production Worker](https://safety-guard-api-production.2012044zj.workers.dev/api/ready) is deployed and passes readiness checks, with the published site configured as its canonical signing origin. A [hosted identity verification](docs/evidence/hosted-identity-2026-09-20.json) passed 36 checks covering wallet binding/login, recovery, replay/origin rejection, session revocation, and synthetic-account deletion. It submitted no blockchain transactions and persisted no credentials.
 
-The site currently permits its owner only. **All five live HTTP integration tests through the published frontend passed**, covering application-only guardian approval, relay, former-guardian access revocation, shared rewards, and isolated demonstrations. The 11 synthetic test accounts were deleted. Homepage, admin page, health, readiness, and configuration routes returned HTTP 200; see the [hosting receipt](docs/deployment/hosting.production.json).
+The site permits its owner and one owner-requested demo viewer. The latest [appreciation wall and honor cabinet](docs/COMMUNITY_HONORS.md) release passed 14 projection tests, eight proxy tests, frontend type checking, lint, build, and 18 published asset checks. See [DEMO.md](docs/DEMO.md) to demonstrate recognition using separate rider and guardian identities.
+
+**All five live HTTP integration tests through the earlier published ledger release passed**, covering application-only guardian approval, relay, former-guardian access revocation, shared rewards, and isolated demonstrations. The 11 synthetic test accounts were deleted. Homepage, admin page, health, readiness, and configuration routes returned HTTP 200 in that run; see the [hosting receipt](docs/deployment/hosting.production.json).
 
 **The complete signed workflow through the production Worker passed:** [14 checks and 10 finalized journey transactions](docs/deployment/application.v2.hosted.devnet.json) covered creation, guardian approval/acceptance, relay, contribution check-ins, completion, and both reward claims. Guardians received 12/13 points and 5/5 reputation; old private access and duplicate claims were rejected. The three synthetic accounts and private journey were deleted. This run used 0.06 test SOL plus a 5,000-lamport funding fee.
 

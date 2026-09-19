@@ -1,15 +1,15 @@
 {
-  "recordedAt": "2026-09-19T19:54:51.888Z",
+  "recordedAt": "2026-09-19T20:44:04.390Z",
   "frontend": {
     "url": "https://safety-guard-htn2026.klavander56.chatgpt.site",
     "projectId": "appgprj_6aaeb438ee7c81918e772f03d67510af",
-    "versionId": "appgprj_6aaeb438ee7c81918e772f03d67510af~appgver_a06a5fbfb4bc8191807bfbe118727477",
-    "versionNumber": 6,
-    "deploymentId": "appgdep_6aaee780f55081919ab9cf9a029ac02d",
+    "versionId": "appgprj_6aaeb438ee7c81918e772f03d67510af~appgver_6246483f74448191aa70cbd4cdc165dd",
+    "versionNumber": 7,
+    "deploymentId": "appgdep_6aaef3b8de208191b58fd6ee4d7e3612",
     "status": "succeeded",
-    "sourceCommit": "949b0876b578a8a63f598bf847d1d4ac0c579412",
+    "sourceCommit": "ce55c4220daf93ecc0ccf53b75cddbfcb2d8959c",
     "environmentRevision": 2,
-    "access": "owner-only"
+    "access": "owner and one explicitly authorized external demo viewer"
   },
   "backend": {
     "origin": "https://safety-guard-api-production.2012044zj.workers.dev",
@@ -131,9 +131,23 @@
       "liveModel": false,
       "publicAccessEnabled": false,
       "evidence": "community.ledger.validation.json"
+    },
+    "communityHonors": {
+      "honorProjectionTestsPassed": 14,
+      "proxyTestsPassed": 8,
+      "typecheck": true,
+      "lint": true,
+      "productionBuild": true,
+      "publishedChecksPassed": 18,
+      "browserVisualQa": false,
+      "browserInteractiveAcceptance": false,
+      "chainProgramChanged": false,
+      "workerChanged": false,
+      "liveModel": false,
+      "evidence": "community.honors.validation.json"
     }
   },
-  "remaining": "Manual browser and wallet-extension acceptance; Devnet sponsorship/abuse operations before any wider community launch. The site remains owner-only.",
+  "remaining": "Manual browser and wallet-extension acceptance; Devnet sponsorship/abuse operations before any wider community launch. Site access is limited to the owner and one explicitly authorized demo viewer.",
   "community": {
     "programId": "7vuz78V9Tu53Bpt3iXHc37VSDBmRSYxcEguWewR9LXzm",
     "network": "devnet",

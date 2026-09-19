@@ -1,0 +1,32 @@
+{
+  "recordedAt": "2026-09-19T20:43:06.499Z",
+  "frontendVersion": 7,
+  "sourceCommit": "ce55c4220daf93ecc0ccf53b75cddbfcb2d8959c",
+  "deploymentId": "appgdep_6aaef3b8de208191b58fd6ee4d7e3612",
+  "status": "succeeded",
+  "honorProjectionTestsPassed": 14,
+  "proxyTestsPassed": 8,
+  "typecheck": true,
+  "lint": true,
+  "productionBuild": true,
+  "publishedChecksPassed": 18,
+  "publishedEvidence": "frontend.honors.validation.json",
+  "access": {
+    "mode": "custom",
+    "owners": 1,
+    "externalViewers": 1,
+    "policyRevision": 2,
+    "requestedDemoViewerConfirmed": true,
+    "editorAccessGranted": false,
+    "publicAccessEnabled": false,
+    "viewerLoginAcceptanceTested": false
+  },
+  "browserVisualQa": false,
+  "browserInteractiveAcceptance": false,
+  "browserLimitation": "Browser runtime returned no available browser; no visual or interactive acceptance was claimed.",
+  "chainProgramChanged": false,
+  "workerChanged": false,
+  "newBlockchainTransactions": 0,
+  "liveModel": false,
+  "newRecognitionRecordsSeeded": false
+}
