@@ -131,6 +131,12 @@ describe('HTTP API, privacy, and durable state',()=>{
   });
   it('continues automated check-ins and queues only one escalation for unanswered prompts',async()=>{
     const rider = await session();const trip = await create(rider,true);await action(trip,rider,'takeover');const stub = env.TRIPS.getByName(trip.id);
+    expect((await request(`/api/trips/${trip.id}/assistance`,rider.token,{automatedCheckIns:true,timeoutContact:true,liveAiConsent:false,noticeVersion:'openai-assistance-v1'})).status).toBe(200);
+    await runInDurableObject(stub,async(_instance,state)=>{
+      const data=JSON.parse(state.storage.sql.exec<{data:string}>('SELECT data FROM trip_state').one().data);
+      data.trip.notificationConsent=true;data.trip.emergencyContact={name:'Synthetic contact',contact:'test-only-recipient'};
+      state.storage.sql.exec('UPDATE trip_state SET data = ?',JSON.stringify(data));
+    });
     async function makeDue() {
       await runInDurableObject(stub,async(_instance,state)=>{
         const row = state.storage.sql.exec<{data:string}>('SELECT data FROM trip_state').one();const data = JSON.parse(row.data);

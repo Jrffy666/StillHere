@@ -2,7 +2,9 @@ import { DurableObject } from 'cloudflare:workers';
 import { directoryName } from './accounts';
 import { allocateContributions } from './guarding';
 import { ruleAssessment, sendNotification } from './integrations';
-import { nextMockDecision, parseAgentToolCall, type AgentContext, type AgentRun, type AgentToolCall, type AgentToolResult, type AgentTrigger } from './agent';
+import { hasAgentConcern, buildAgentHandoff, renderAgentSummary, renderAgentCheckIn, redactAgentText, parseAgentToolCall, type AgentContext, type AgentRun, type AgentToolCall, type AgentToolResult, type AgentTrigger } from './agent';
+import { createMockProvider, runProviderDecision, AGENT_PROVIDER_LEASE_MS } from './agent-provider';
+import { assistanceInputSchema, defaultAssistance, assistanceEnabled, notificationAuthorized, notificationDispatchAuthorized } from './assistance';
 import type { ChainMember, ChainSnapshot } from './chain-types';
 import { tripSnapshotSchema } from './snapshots';
 import { captureCommunityEvents, randomCommunityReference, type SourceCommunityState, type SourceCommunityEvent } from './community-events';
@@ -10,6 +12,7 @@ import type { CommunityRecordView, CommunityCorrectionView } from './community-t
 import { fail, isClosed, isParticipant, ok, summary, type CreateTrip, type Notification, type Outcome, type Person, type Trip, type TripAction, type TripSummary, type WorkerEnv, type GratitudeKind, type GratitudeView } from './types';
 
 interface StoredTrip {
+  providerBudget?: {decisions:number;inputChars:number;runs:Record<string,{decisions:number;inputChars:number}>};
   community?:SourceCommunityState;
   communityEvents?:SourceCommunityEvent[];
   gratitude?: {id:string;guardianId:string;kind:GratitudeKind;createdAt:number;status:'pending'|'recorded'|'cancelled';nextAttemptAt:number;inFlightUntil:number}[];
@@ -35,6 +38,7 @@ const agent: Person = {id:'agent',name:'Safety Guard'};
 const pendingRun = (run: AgentRun) => run.status === 'queued' || run.status === 'running';
 
 export class TripRoom extends DurableObject<WorkerEnv> {
+  private providerCalls = new Map<string,{revision:number;attempt:number;controller:AbortController}>();
   constructor(ctx: DurableObjectState, env: WorkerEnv) {
     super(ctx, env);
     ctx.storage.sql.exec('CREATE TABLE IF NOT EXISTS trip_state (id INTEGER PRIMARY KEY CHECK(id = 1), data TEXT NOT NULL)');
@@ -45,6 +49,7 @@ export class TripRoom extends DurableObject<WorkerEnv> {
     const row = this.ctx.storage.sql.exec<{data:string}>('SELECT data FROM trip_state WHERE id = 1').toArray()[0];
     if (!row) return null;
     const state = {schemaVersion:1,monitoringStartedAt:null,indexVersion:1,indexedVersion:0,assessmentVersion:0,aiNextCheckInAt:null,aiMissedCheckIns:0,automatedEscalationSent:false,...JSON.parse(row.data)} as StoredTrip;
+    state.trip.assistance ??= defaultAssistance();
     if (state.trip.relay) {
       const person = state.trip.relay.requestedBy;
       state.trip.relay.requestedBy = {id:person.id,name:person.name,...(person.wallet?{wallet:person.wallet}:{}),...(person.simulated?{simulated:true}:{})};
@@ -71,15 +76,21 @@ export class TripRoom extends DurableObject<WorkerEnv> {
     state.trip.messages = state.trip.messages.slice(-150);
     if (state.trip.agent) {
       const harness = state.trip.agent;
-      if (isClosed(state.trip) || state.trip.guardMode !== 'ai') harness.followUpAt = null;
+      if (isClosed(state.trip) || state.trip.guardMode !== 'ai' || !assistanceEnabled(state.trip)) harness.followUpAt = null;
       for (const run of harness.runs.filter(pendingRun)) {
-        if (isClosed(state.trip) || state.trip.guardMode !== 'ai' || run.revision !== state.assessmentVersion) {
+        if (isClosed(state.trip) || state.trip.guardMode !== 'ai' || !assistanceEnabled(state.trip) || run.revision !== state.assessmentVersion) {
           run.status = 'cancelled'; run.leaseUntil = 0; run.updatedAt = Date.now();
           run.error = 'The journey ended, human monitoring resumed, or newer participant input superseded this run.';
         }
       }
       harness.runs = harness.runs.slice(-20);
+      for (const [id, call] of this.providerCalls) {
+        const run = harness.runs.find(item=>item.id===id);
+        if (!run || !pendingRun(run) || run.revision!==call.revision || run.attempts!==call.attempt) call.controller.abort();
+      }
+      if (state.providerBudget) for (const id of Object.keys(state.providerBudget.runs)) if (!harness.runs.some(run=>run.id===id)) delete state.providerBudget.runs[id];
     }
+    if (!assistanceEnabled(state.trip)) state.aiNextCheckInAt = null;
     this.ctx.storage.transactionSync(()=>{
       const old=this.ctx.storage.sql.exec<{data:string}>('SELECT data FROM trip_state WHERE id=1').toArray()[0];
       const events=captureCommunityEvents(old?JSON.parse(old.data) as StoredTrip:null,state);
@@ -153,6 +164,7 @@ export class TripRoom extends DurableObject<WorkerEnv> {
     const now = Date.now();
     const trip: Trip = {
       id,demo,chainEnabled:!demo && Boolean(input.chainEnabled),status:demo?'active':'open',rider,guardian:demo?{id:`demo-${id}`,name:'Alex',simulated:true}:null,
+      assistance:defaultAssistance(),
       guardianRequests:[],relay:null,contributions:[],
       guardMode:demo?'human':'waiting',origin:input.origin,destination:input.destination,
       location:{lat:input.origin.lat,lng:input.origin.lng,updatedAt:now},createdAt:now,updatedAt:now,
@@ -302,9 +314,10 @@ export class TripRoom extends DurableObject<WorkerEnv> {
     contribution.checkIns += 1; state.rewardEligible = true;
   }
   private queueNotification(state: StoredTrip, message: string, forceFailure = false): void {
+    if (!state.trip.demo && !notificationAuthorized(state.trip)) return;
     if (!forceFailure && Date.now() - state.lastNotificationAt < 30000) return;
     state.lastNotificationAt = Date.now();
-    const notice: Notification = {id:crypto.randomUUID(),at:Date.now(),status:forceFailure?'failed':'queued',channel:state.trip.demo?'demo':'none',message,
+    const notice: Notification = {id:crypto.randomUUID(),at:Date.now(),cause:state.trip.escalation?.cause,status:forceFailure?'failed':'queued',channel:state.trip.demo?'demo':'none',message,
       detail:forceFailure?'Simulated provider failure. No message was sent.':'Waiting for the notification provider.'};
     state.trip.notifications.push(notice);
     if (!forceFailure) state.notificationJobs[notice.id] = {attempts:0,retryAt:Date.now(),inFlightUntil:0};
@@ -312,11 +325,15 @@ export class TripRoom extends DurableObject<WorkerEnv> {
   }
   private takeover(state: StoredTrip, reason: string, requestedBy: Person = agent): void {
     state.trip.guardMode = 'ai'; state.trip.nextCheckInAt = null;
-    state.aiNextCheckInAt = Date.now() + Math.max(60,state.trip.checkInIntervalSeconds) * 1000;
+    state.aiNextCheckInAt = assistanceEnabled(state.trip) ? Date.now() + Math.max(60,state.trip.checkInIntervalSeconds) * 1000 : null;
     state.aiMissedCheckIns = 0;
     if (state.trip.status === 'open') { state.trip.status = 'active'; state.monitoringStartedAt = Date.now(); state.indexVersion += 1; }
     this.openRelay(state,requestedBy);
     if (state.trip.risk === 'normal') state.trip.risk = 'attention';
+    if (!assistanceEnabled(state.trip)) {
+      this.event(state.trip,'takeover','Guardian unavailable',`${reason} Automated check-ins are disabled. Replacement recruitment remains open.`);
+      return;
+    }
     this.event(state.trip,'takeover','Scheduled check-ins active',reason);
     const text = 'Your guardian has not confirmed availability. I am continuing check-ins using automated monitoring. Are you okay? Human help is not guaranteed; you can contact someone you trust at any time.';
     this.message(state.trip,agent,'agent',text);
@@ -325,7 +342,7 @@ export class TripRoom extends DurableObject<WorkerEnv> {
   }
 
   private queueAgent(state: StoredTrip, kind: AgentTrigger['kind'], eventId = crypto.randomUUID(), messageId?: string): void {
-    if (isClosed(state.trip) || state.trip.guardMode !== 'ai') return;
+    if (isClosed(state.trip) || state.trip.guardMode !== 'ai' || !assistanceEnabled(state.trip)) return;
     const harness = state.trip.agent ??= {provider:'mock',liveModel:false,runs:[],followUpAt:null,handoffSummary:null};
     if (harness.runs.some(run => run.trigger.id === eventId)) return;
     const now = Date.now();
@@ -338,20 +355,24 @@ export class TripRoom extends DurableObject<WorkerEnv> {
     const ageSeconds = Math.max(0, Math.floor((now - trip.location.updatedAt) / 1000));
     return {now,status:trip.status,guardMode:trip.guardMode,risk:trip.risk,
       location:{updatedAt:trip.location.updatedAt,ageSeconds,stale:ageSeconds >= 120 || trip.location.updatedAt > now},
-      messages:trip.messages.slice(-12).map(({id,at,role,text}) => ({id,at,role,text:text.slice(0,800)})),
+      messages:trip.messages.slice(-12).map(({id,at,role,text}) => ({id,at,role,text:redactAgentText(text,800)})),
       relayOpen:Boolean(trip.relay && trip.relay.expiresAt > now),
       notifications:trip.notifications.slice(-5).map(({id,status,detail}) => ({id,status,detail:detail.slice(0,500)})),
-      contactAvailable:Boolean(trip.notificationConsent && trip.emergencyContact)};
+      contactAvailable:Boolean(trip.notificationConsent && trip.emergencyContact),
+      escalationCause:trip.escalation?.cause ?? null,notificationAuthorized:notificationAuthorized(trip),
+      unresolvedConcerns:trip.agent?.concerns ?? []};
   }
 
   /** Tools are scoped to this object. No tool can invoke participant actions or wallet operations. */
-  private executeAgentTool(state: StoredTrip, call: AgentToolCall): AgentToolResult {
+  private executeAgentTool(state: StoredTrip, call: AgentToolCall, run:AgentRun): AgentToolResult {
     const trip = state.trip;
+    if (call.name !== 'get_journey_context' && !run.steps.some(step=>step.call.name==='get_journey_context' && step.status==='succeeded' && step.result?.context)) return {ok:false,code:'context_required',detail:'A successful current context read is required before any action.'};
     switch (call.name) {
       case 'get_journey_context': return {ok:true,code:'context_read',detail:'Read bounded private journey context at this timestamp.',context:this.agentContext(state)};
       case 'send_check_in':
-        this.message(trip,agent,'agent',call.arguments.text);
-        if (trip.risk !== 'urgent') trip.ai = {mode:'rules',lastAssessment:call.arguments.text};
+        // Provider text is never presented as a fact or delivery receipt.
+        this.message(trip,agent,'agent',renderAgentCheckIn(run.trigger,this.agentContext(state)));
+        if (trip.risk !== 'urgent') trip.ai = {mode:'rules',lastAssessment:renderAgentCheckIn(run.trigger,this.agentContext(state))};
         return {ok:true,code:'check_in_posted',detail:'Posted an automated message in this journey. This does not confirm anyone read it.'};
       case 'schedule_follow_up': {
         const due = Date.now() + call.arguments.delaySeconds * 1000;
@@ -366,10 +387,10 @@ export class TripRoom extends DurableObject<WorkerEnv> {
         return {ok:true,code:'relay_requested',detail:'Opened recruitment. No guardian was approved or given private access.'};
       case 'notify_trusted_contact': {
         if (!trip.notificationConsent || !trip.emergencyContact) return {ok:false,code:'consent_required',detail:'No current consent and configured trusted contact. No notification was queued.'};
-        if (trip.risk !== 'urgent') return {ok:false,code:'explicit_concern_required',detail:'A model inference alone cannot trigger external contact notifications.'};
+        if (!notificationAuthorized(trip)) return {ok:false,code:'explicit_concern_required',detail:'A model inference alone cannot trigger external contact notifications.'};
         if (trip.notifications.length) return {ok:true,code:'notification_already_exists',detail:'An existing notification owns delivery and retry. No second notification was queued.'};
         const count = trip.notifications.length;
-        this.queueNotification(state,'The rider requested help in Safety Guard. Please try to contact them.');
+        this.queueNotification(state,trip.escalation?.cause==='explicit_help'?'A journey participant requested help in Safety Guard. Please try to contact the rider.':'The rider authorized a notification after unanswered check-ins. Connectivity may be unavailable.');
         return trip.notifications.length > count
           ? {ok:true,code:'notification_queued',detail:'Queued a notification for the configured contact. Check notification status for delivery; no receipt is assumed.'}
           : {ok:true,code:'notification_rate_limited',detail:'A recent notification already covers this interval. No duplicate was queued.'};
@@ -388,7 +409,7 @@ export class TripRoom extends DurableObject<WorkerEnv> {
         run.status = 'failed'; run.error = 'Run retry or age limit reached. Baseline monitoring remains active.';
         run.updatedAt = Date.now(); this.save(state); continue;
       }
-      run.status = 'running'; run.attempts += 1; run.leaseUntil = Date.now() + 10000; run.updatedAt = Date.now();
+      run.status = 'running'; run.attempts += 1; run.leaseUntil = Date.now() + AGENT_PROVIDER_LEASE_MS; run.updatedAt = Date.now();
       const attempt = run.attempts;
       this.save(state); await this.schedule();
       try {
@@ -396,7 +417,7 @@ export class TripRoom extends DurableObject<WorkerEnv> {
           state = this.load(); if (!state) return;
           this.expire(state); this.save(state);
           let current = state.trip.agent?.runs.find(item => item.id === run.id);
-          if (!current || current.status !== 'running' || current.attempts !== attempt) break;
+          if (!current || current.status !== 'running' || current.attempts !== attempt || current.leaseUntil <= Date.now()) break;
           const previousContext = current.steps.find(item => item.call.name === 'get_journey_context' && item.status === 'succeeded')?.result?.context;
           if (previousContext && this.agentContextChanged(previousContext,this.agentContext(state))) {
             current.status = 'cancelled'; current.leaseUntil = 0; current.updatedAt = Date.now();
@@ -406,16 +427,25 @@ export class TripRoom extends DurableObject<WorkerEnv> {
           }
           let step = current.steps.find(item => item.status === 'pending');
           if (!step) {
-            // A future provider must implement the same decision boundary. This release always uses the offline mock.
-            let timeout: ReturnType<typeof setTimeout> | undefined;
-            const decision = await Promise.race([
-              nextMockDecision(current.trigger,structuredClone(current.steps)),
-              new Promise<never>((_,reject) => { timeout = setTimeout(() => reject(new Error('Provider deadline exceeded')),3000); }),
-            ]).finally(() => { if (timeout !== undefined) clearTimeout(timeout); });
+            const budget = state.providerBudget ??= {decisions:0,inputChars:0,runs:{}};
+            const runBudget = budget.runs[current.id] ??= {decisions:0,inputChars:0};
+            const inputChars = JSON.stringify({trigger:current.trigger,steps:current.steps}).length;
+            if (budget.decisions >= 240 || budget.inputChars + inputChars > 1200000 || runBudget.decisions >= 24 || runBudget.inputChars + inputChars > 120000) {
+              current.status='failed';current.leaseUntil=0;current.error='Provider decision budget exhausted. Baseline monitoring remains active.';
+              this.save(state);break;
+            }
+            budget.decisions++;budget.inputChars+=inputChars;runBudget.decisions++;runBudget.inputChars+=inputChars;
+            current.leaseUntil=Date.now()+AGENT_PROVIDER_LEASE_MS;
+            const controller = new AbortController();
+            const activeCall = {revision:current.revision,attempt,controller};
+            this.providerCalls.set(current.id,activeCall);
+            this.save(state);await this.schedule();
+            const decision = await runProviderDecision({provider:createMockProvider(),trigger:current.trigger,steps:current.steps,signal:controller.signal})
+              .finally(()=>{if(this.providerCalls.get(run.id)===activeCall)this.providerCalls.delete(run.id);});
             state = this.load(); if (!state) return;
             this.expire(state); this.save(state);
             current = state.trip.agent?.runs.find(item => item.id === run.id);
-            if (!current || current.status !== 'running' || current.attempts !== attempt) break;
+            if (!current || current.status !== 'running' || current.attempts !== attempt || current.leaseUntil <= Date.now()) break;
             if (previousContext && this.agentContextChanged(previousContext,this.agentContext(state))) {
               current.status = 'cancelled'; current.leaseUntil = 0; current.updatedAt = Date.now();
               current.error = 'Journey context changed while a decision was pending. A new context check was queued.';
@@ -424,7 +454,9 @@ export class TripRoom extends DurableObject<WorkerEnv> {
             }
             if (decision.type === 'complete') {
               current.status = 'completed'; current.leaseUntil = 0; current.updatedAt = Date.now();
-              current.summary = decision.summary.slice(0,1200); state.trip.agent!.handoffSummary = current.summary;
+              const context=this.agentContext(state);
+              current.summary = renderAgentSummary(current.steps,context); state.trip.agent!.handoffSummary = current.summary;
+              state.trip.agent!.structuredHandoff = buildAgentHandoff(current.steps,context);
               this.event(state.trip,'agent-run','Offline agent run completed','Tool results and a handoff summary are available. No live language model was used.');
               this.save(state); break;
             }
@@ -442,7 +474,7 @@ export class TripRoom extends DurableObject<WorkerEnv> {
             this.save(state); break;
           }
           if (current.steps.filter(item => item.call.name === call.name && item.status !== 'pending').length || current.steps.length > 8) throw new Error('Repeated tool rejected');
-          step.result = this.executeAgentTool(state,call);
+          step.result = this.executeAgentTool(state,call,current);
           step.status = step.result.ok ? 'succeeded' : 'rejected'; current.updatedAt = Date.now();
           this.save(state);
         }
@@ -463,7 +495,23 @@ export class TripRoom extends DurableObject<WorkerEnv> {
   private agentContextChanged(before: AgentContext, after: AgentContext): boolean {
     const notices = (context: AgentContext) => context.notifications.map(item => `${item.id}:${item.status}`).join('|');
     return before.location.stale !== after.location.stale || before.risk !== after.risk
-      || before.contactAvailable !== after.contactAvailable || notices(before) !== notices(after);
+      || before.contactAvailable !== after.contactAvailable || before.notificationAuthorized !== after.notificationAuthorized
+      || before.escalationCause !== after.escalationCause || notices(before) !== notices(after);
+  }
+  async setAssistance(userId:string,input:unknown):Promise<Outcome<Trip>> {
+    const parsed=assistanceInputSchema.safeParse(input);if(!parsed.success)return fail(400,'Invalid assistance settings.');
+    let state=this.load();if(!state)return fail(404,'Journey not found.');
+    if(state.trip.rider.id!==userId)return fail(403,'Only the rider can change assistance settings.');
+    this.expire(state);if(isClosed(state.trip)){this.save(state);return fail(409,'This journey is closed.');}
+    const wasEnabled=assistanceEnabled(state.trip);
+    state.trip.assistance={...parsed.data,updatedAt:Date.now()};state.assessmentVersion++;
+    if(state.trip.agent){state.trip.agent.handoffSummary=null;state.trip.agent.structuredHandoff=null;}
+    if (!wasEnabled && parsed.data.automatedCheckIns && state.trip.guardMode==='ai') {
+      state.aiNextCheckInAt=Date.now()+Math.max(60,state.trip.checkInIntervalSeconds)*1000;state.aiMissedCheckIns=0;
+    }
+    this.event(state.trip,'assistance-settings','Assistance preferences updated','Live model calls remain disabled. Notification authority is checked separately for every dispatch.');
+    this.save(state);await this.schedule();await this.deliverNotifications();await this.schedule();
+    state=this.load();return state?ok(state.trip):fail(410,'Private journey data has been erased.');
   }
   async act(user: Person, action: TripAction): Promise<Outcome<Trip | TripSummary>> {
     const identity=action.action==='accept'?await this.env.USERS.getByName(user.id).communityIdentity():null;
@@ -547,7 +595,8 @@ export class TripRoom extends DurableObject<WorkerEnv> {
       }
       case 'check-in': {
         if (rider) {
-          trip.risk = 'normal';
+          trip.risk = trip.escalation?.cause==='explicit_help'?'urgent':trip.agent?.concerns?.length?'attention':'normal';
+          if(trip.escalation?.cause==='user_authorized_timeout_policy')delete trip.escalation;
           if (trip.agent) trip.agent.followUpAt = null;
           state.aiMissedCheckIns = 0; state.automatedEscalationSent = false;
           if (trip.guardMode === 'ai') state.aiNextCheckInAt = Date.now() + Math.max(60,trip.checkInIntervalSeconds) * 1000;
@@ -586,6 +635,7 @@ export class TripRoom extends DurableObject<WorkerEnv> {
       case 'help': {
         trip.risk = 'urgent';
         this.message(trip,user,rider?'rider':'guardian',action.text || 'I need help.');
+        trip.escalation={cause:'explicit_help',at:Date.now(),sourceId:trip.messages.at(-1)!.id};
         this.event(trip,'help','Help requested','Escalation was requested explicitly.');
         const result = ruleAssessment(action.text || '',true); trip.ai = {mode:result.mode,lastAssessment:result.message};
         this.message(trip,agent,'agent',result.message);
@@ -596,15 +646,31 @@ export class TripRoom extends DurableObject<WorkerEnv> {
         this.message(trip,user,rider?'rider':'guardian',action.text);
         if (rider) {
           state.aiMissedCheckIns = 0;
-          const rule = ruleAssessment(action.text);
-          if (rule.risk === 'urgent') {
-            trip.risk = 'urgent'; trip.ai = {mode:'rules',lastAssessment:rule.message};
-            this.message(trip,agent,'agent',rule.message);
-            this.queueNotification(state,'The rider expressed an urgent concern. Please contact them.');
+          state.automatedEscalationSent = false;
+          if(trip.escalation?.cause==='user_authorized_timeout_policy')delete trip.escalation;
+          if (hasAgentConcern(action.text)) {
+            const source=trip.messages.at(-1)!;
+            const harness=trip.agent??={provider:'mock',liveModel:false,runs:[],followUpAt:null,handoffSummary:null};
+            harness.handoffSummary=null;harness.structuredHandoff=null;
+            harness.concerns??=[];
+            if(harness.concerns.length<8)harness.concerns.push({id:source.id,observedAt:source.at,receivedAt:Date.now(),text:redactAgentText(source.text)});
+            else this.event(trip,'concern-capacity','Additional concern in conversation',`Eight earlier concerns remain pinned. Review additional source ${source.id} in conversation history.`);
+            if(trip.escalation?.cause!=='explicit_help')trip.escalation={cause:'model_concern',at:Date.now(),sourceId:source.id};
+            if(trip.risk==='normal')trip.risk='attention';
+            trip.ai={mode:'rules',lastAssessment:'A possible concern was recorded from your message. Use Request help if you want to alert your trusted contact.'};
           }
           const latestRiderMessage = [...trip.messages].reverse().find(item => item.role === 'rider')!;
           if (trip.guardMode === 'ai') this.queueAgent(state,'rider-message',latestRiderMessage.id,latestRiderMessage.id);
         }
+        break;
+      }
+      case 'resolve-concern': {
+        if(!rider)return fail(403,'Only the rider can resolve a concern.');
+        const concern=trip.agent?.concerns?.find(item=>item.id===action.requestId);
+        if(!concern)return fail(404,'Unresolved concern not found.');
+        trip.agent!.concerns=trip.agent!.concerns!.filter(item=>item.id!==concern.id);
+        trip.agent!.handoffSummary=null;trip.agent!.structuredHandoff=null;
+        this.event(trip,'concern-resolved','Concern resolved by rider',`The rider resolved source ${concern.id}. This does not withdraw an explicit help request.`);
         break;
       }
       case 'location': {
@@ -640,7 +706,7 @@ export class TripRoom extends DurableObject<WorkerEnv> {
     await this.syncIndexes();
     await this.deliverNotifications();
     if (trip.status === 'arrived') await this.settleReward();
-    await this.runAgent(); await this.deliverNotifications(); await this.syncIndexes();
+    if(action.action!=='help')await this.runAgent(); await this.deliverNotifications(); await this.syncIndexes();
     await this.deliverCommunity();await this.schedule(); return this.read(user.id);
   }
   private async deliverNotifications(): Promise<void> {
@@ -658,6 +724,10 @@ export class TripRoom extends DurableObject<WorkerEnv> {
       const job = state.notificationJobs[id];
       if (!job || job.retryAt > Date.now() || job.inFlightUntil > Date.now()) continue;
       const notice = state.trip.notifications.find(item => item.id === id); if (!notice) continue;
+      if(!notificationDispatchAuthorized(state.trip,notice)) {
+        notice.status='failed';notice.detail='Current notification authorization is absent or was revoked; no send was attempted.';
+        delete state.notificationJobs[id];this.save(state);continue;
+      }
       job.attempts += 1; job.inFlightUntil = Date.now() + 30000;
       if (!state.trip.demo && state.trip.notificationConsent && state.trip.emergencyContact && this.env.NOTIFICATIONS_ENABLED === 'true' && this.env.NOTIFICATION_WEBHOOK_URL && this.env.NOTIFICATION_WEBHOOK_SECRET) notice.channel = 'webhook';
       this.save(state); await this.schedule();
@@ -665,6 +735,10 @@ export class TripRoom extends DurableObject<WorkerEnv> {
       state = this.load(); if (!state || isClosed(state.trip)) continue;
       const liveNotice = state.trip.notifications.find(item => item.id === id);
       if (!liveNotice || !state.notificationJobs[id]) continue;
+      if(!notificationDispatchAuthorized(state.trip,liveNotice)) {
+        liveNotice.status='failed';liveNotice.detail='Notification authorization changed before dispatch; no send was attempted.';
+        delete state.notificationJobs[id];this.save(state);continue;
+      }
       const result = await sendNotification(this.env,state.trip,liveNotice);
       state = this.load(); if (!state) return;
       const current = state.trip.notifications.find(item => item.id === id);
@@ -738,15 +812,16 @@ export class TripRoom extends DurableObject<WorkerEnv> {
         this.event(trip,'expired','Trip monitoring expired','The maximum monitoring period ended. Start a new trip if needed.');
       } else {
         if (trip.guardMode === 'human' && trip.nextCheckInAt !== null && trip.nextCheckInAt <= now) this.takeover(state,'The server detected a missed guardian check-in, even without an open browser.');
-        if (trip.guardMode === 'ai' && state.aiNextCheckInAt !== null && state.aiNextCheckInAt <= now) {
+        if (trip.guardMode === 'ai' && assistanceEnabled(trip) && state.aiNextCheckInAt !== null && state.aiNextCheckInAt <= now) {
           state.aiMissedCheckIns += 1;
           state.aiNextCheckInAt = now + Math.max(60,trip.checkInIntervalSeconds) * 1000;
           this.event(trip,'agent-check-in','Automated check-in','The server scheduled a new check-in while the human guardian is unavailable.');
           this.message(trip,agent,'agent','Checking in: are you okay? Confirm your status when it is safe. An unanswered check-in may be caused by a closed browser or lost connectivity.');
           if (trip.agent) trip.agent.followUpAt = null;
           this.queueAgent(state,'follow-up');
-          if (state.aiMissedCheckIns >= 2 && !state.automatedEscalationSent) {
+          if (state.aiMissedCheckIns >= 2 && !state.automatedEscalationSent && trip.assistance?.timeoutContact && trip.notificationConsent) {
             state.automatedEscalationSent = true;
+            if(trip.escalation?.cause!=='explicit_help')trip.escalation={cause:'user_authorized_timeout_policy',at:now};
             this.queueNotification(state,'The rider has not answered two automated check-ins while the guardian is unavailable. Please try to contact them. This may be due to lost connectivity.');
           }
         }
@@ -754,7 +829,7 @@ export class TripRoom extends DurableObject<WorkerEnv> {
           state.staleAlerted = true;
           if (trip.risk === 'normal') trip.risk = 'attention';
           this.event(trip,'stale-location','Location update is overdue','No position update has arrived in two minutes. Last known location may be stale.');
-          this.message(trip,agent,'agent','Your location has not updated for two minutes. Are you okay? Please open the app and check in when safe.');
+          if(assistanceEnabled(trip))this.message(trip,agent,'agent','Your location has not updated for two minutes. Are you okay? Please open the app and check in when safe.');
           this.queueAgent(state,'stale-location');
         }
         if (trip.guardMode === 'ai' && trip.agent?.followUpAt && trip.agent.followUpAt <= now) {

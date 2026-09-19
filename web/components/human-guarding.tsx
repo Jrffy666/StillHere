@@ -215,6 +215,7 @@ export function HumanGuarding({
               <p>
                 {trip.guardMode === 'human'
                   ? `${trip.guardian?.name || 'Your guardian'} remains assigned and should keep checking in until a replacement is approved.`
+                  : trip.assistance?.automatedCheckIns===false ? 'No human has confirmed coverage. Automated reminders are off; you can still find a replacement or request help.'
                   : 'No human has confirmed coverage. Scheduled reminders continue while you find a replacement.'}
               </p>
             </div>

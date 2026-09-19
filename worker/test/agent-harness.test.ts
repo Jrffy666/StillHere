@@ -327,9 +327,15 @@ describe('Offline durable agent harness',()=>{
     const noticeId=crypto.randomUUID();
     await mutate(trip,stored=>{
       stored.trip.risk='urgent'; stored.lastNotificationAt=Date.now()-60000;
+      stored.trip.escalation={cause:'explicit_help',at:Date.now()-60000};
       stored.trip.notifications.push({id:noticeId,at:Date.now()-60000,status:'failed',channel:'none',message:'Existing contact workflow.',detail:'Provider did not confirm delivery.'});
-      const run=queuedRun(stored); queuedId=run.id; stepId=`${run.id}:0`;
-      run.steps=[{id:stepId,at:Date.now(),status:'pending',call:{name:'notify_trusted_contact',arguments:{reason:'Proposed repeat contact workflow.'}}}];
+      const run=queuedRun(stored); queuedId=run.id; stepId=`${run.id}:1`;
+      const context={now:Date.now(),status:stored.trip.status,guardMode:stored.trip.guardMode,risk:stored.trip.risk,
+        location:{updatedAt:stored.trip.location.updatedAt,ageSeconds:0,stale:false},messages:[],relayOpen:true,
+        notifications:stored.trip.notifications.map(({id,status,detail})=>({id,status,detail})),contactAvailable:true,
+        notificationAuthorized:true,escalationCause:'explicit_help' as const,unresolvedConcerns:[]};
+      run.steps=[{id:`${run.id}:0`,at:Date.now(),status:'succeeded',call:{name:'get_journey_context',arguments:{}},result:{ok:true,code:'context_read',detail:'Persisted context.',context}},
+        {id:stepId,at:Date.now(),status:'pending',call:{name:'notify_trusted_contact',arguments:{reason:'Proposed repeat contact workflow.'}}}];
       stored.trip.agent!.runs.push(run);
     });
     const network=vi.spyOn(globalThis,'fetch').mockRejectedValue(new Error('No duplicate contact effect allowed.'));

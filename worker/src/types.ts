@@ -1,4 +1,5 @@
 import type { AgentState } from './agent';
+import type { Assistance, Escalation } from './assistance';
 export interface Person { id: string; name: string; simulated?: boolean; wallet?: string | null }
 export interface User extends Person { points: number; reputation: number; completedGuards: number; recoveryConfigured?: boolean; bio?: string; communityNoticeVersion?: string | null }
 export type GratitudeKind = 'companionship' | 'thoughtfulness' | 'relay';
@@ -18,6 +19,7 @@ export interface TripMessage {
 }
 export interface TripEvent { id: string; at: number; type: string; title: string; detail: string }
 export interface Notification {
+  cause?: Escalation['cause'];
   id: string; at: number;
   status: 'queued' | 'sent' | 'failed' | 'acknowledged' | 'simulated';
   channel: 'webhook' | 'demo' | 'none'; message: string; detail: string;
@@ -31,6 +33,8 @@ export interface GuardianContribution {
   points: number; reputation: number; rewardStatus: 'pending' | 'credited' | 'ineligible' | 'demo';
 }
 export interface Trip {
+  assistance?: Assistance;
+  escalation?: Escalation;
   agent?: AgentState;
   chainEnabled?: boolean; privacyExpiresAt?: number | null;
   id: string; demo: boolean; status: 'open' | 'active' | 'arrived' | 'cancelled';
@@ -59,7 +63,7 @@ export interface CreateTrip {
   emergencyContact?: {name: string; contact: string}; notificationConsent: boolean;
 }
 export interface TripAction {
-  action: 'accept' | 'withdraw-application' | 'approve-guardian' | 'reject-guardian' | 'request-relay' | 'cancel-relay' | 'check-in' | 'takeover' | 'resume' | 'arrive' | 'cancel' | 'help' | 'message' | 'location' | 'simulate';
+  action: 'accept' | 'withdraw-application' | 'approve-guardian' | 'reject-guardian' | 'request-relay' | 'cancel-relay' | 'check-in' | 'takeover' | 'resume' | 'arrive' | 'cancel' | 'help' | 'message' | 'location' | 'simulate' | 'resolve-concern';
   requestId?: string; text?: string; lat?: number; lng?: number;
   scenario?: 'guardian-offline' | 'route-deviation' | 'stale-location' | 'notification-failure';
 }

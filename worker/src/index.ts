@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { assistanceInputSchema } from './assistance';
 import { digest, safeEqual } from './accounts';
 import { boundedJson, configuration } from './integrations';
 import { authenticate, createGuestSession, handleIdentity, IdentityError } from './identity';
@@ -27,7 +28,7 @@ const createSchema = z.object({
   notificationConsent:z.boolean().default(false),
 }).strict();
 const actionSchema = z.object({
-  action:z.enum(['accept','withdraw-application','approve-guardian','reject-guardian','request-relay','cancel-relay','check-in','takeover','resume','arrive','cancel','help','message','location','simulate']),
+  action:z.enum(['accept','withdraw-application','approve-guardian','reject-guardian','request-relay','cancel-relay','check-in','takeover','resume','arrive','cancel','help','message','location','simulate','resolve-concern']),
   requestId:z.uuid().optional(),text:z.string().trim().max(1500).optional(),lat:z.number().finite().min(-90).max(90).optional(),lng:z.number().finite().min(-180).max(180).optional(),
   scenario:z.enum(['guardian-offline','route-deviation','stale-location','notification-failure']).optional(),
 }).strict();
@@ -186,9 +187,14 @@ async function handle(request: Request, env: WorkerEnv): Promise<Response> {
       return result(await room.sendGratitude(user.id,input.guardianId,input.kind),'gratitude');
     }
   }
-  const match = new RegExp(`^/api/trips/(${uuid})(/actions|/voice)?$`).exec(path);
+  const match = new RegExp(`^/api/trips/(${uuid})(/actions|/voice|/assistance)?$`).exec(path);
   if (match) {
     const stub = env.TRIPS.getByName(match[1]);
+    if (method === 'POST' && match[2] === '/assistance') {
+      const input = assistanceInputSchema.parse(await body(request));
+      if (!await env.USERS.getByName(user.id).allow('assistance',30,60000)) throw new HttpError(429,'Too many assistance changes.');
+      return result(await stub.setAssistance(user.id,input),'trip');
+    }
     if (method === 'GET' && !match[2]) return result(await stub.read(user.id),'trip');
     if (method === 'POST' && match[2] === '/actions') {
       const input = actionSchema.parse(await body(request));

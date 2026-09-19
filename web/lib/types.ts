@@ -80,7 +80,11 @@ export interface TripSummary {
   application: { id: string; expiresAt: number } | null;
 }
 export interface Trip {
+  assistance?: {automatedCheckIns:boolean;timeoutContact:boolean;liveAiConsent:boolean;noticeVersion:'openai-assistance-v1';updatedAt:number};
+  escalation?: {cause:'explicit_help'|'user_authorized_timeout_policy'|'model_concern';at:number;sourceId?:string};
   agent?: {
+    concerns?: {id:string;observedAt:number;receivedAt:number;text:string}[];
+    structuredHandoff?: {snapshotAt:number} | null;
     provider: 'mock';
     liveModel: false;
     followUpAt: number | null;

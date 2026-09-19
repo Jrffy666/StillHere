@@ -23,7 +23,10 @@ export function parseAgentToolCall(input: unknown): AgentToolCall {
   return ToolCallSchema.parse(input);
 }
 
-/** No identity, contact address, wallet, shared URL, or coordinates are exposed. */
+/** A rider concern remains unresolved until the rider explicitly resolves it. */
+export interface AgentConcern { id: string; observedAt: number; receivedAt: number; text: string }
+
+/** Structured identifiers are omitted; free text still requires minimization. */
 export interface AgentContext {
   now: number;
   status: 'open' | 'active' | 'arrived' | 'cancelled';
@@ -34,6 +37,38 @@ export interface AgentContext {
   relayOpen: boolean;
   notifications: { id: string; status: 'queued' | 'sent' | 'failed' | 'acknowledged' | 'simulated'; detail: string }[];
   contactAvailable: boolean;
+  escalationCause?: 'explicit_help' | 'user_authorized_timeout_policy' | 'model_concern' | null;
+  notificationAuthorized?: boolean;
+  unresolvedConcerns?: AgentConcern[];
+}
+
+export interface AgentEvidence {
+  id: string;
+  source: 'journey_snapshot' | 'message' | 'retained_concern' | 'tool_receipt' | 'notification';
+  actor: 'rider' | 'guardian' | 'agent' | 'system';
+  observedAt: number | null;
+  receivedAt: number | null;
+  freshness: 'recent' | 'older' | 'unverified';
+  text: string;
+}
+export interface AgentHandoff {
+  version: 1;
+  mode: 'offline_rules';
+  snapshotAt: number;
+  snapshotSourceId: string;
+  status: AgentContext['status'];
+  guardMode: AgentContext['guardMode'];
+  risk: AgentContext['risk'];
+  escalationCause: NonNullable<AgentContext['escalationCause']> | null;
+  notificationAuthorized: boolean;
+  location: { observedAt: number | null; freshness: 'fresh' | 'stale_or_unverified' };
+  sources: AgentEvidence[];
+  unresolvedConcerns: (AgentConcern & { sourceId: string })[];
+  actions: {
+    sourceId: string; tool: AgentToolCall['name']; at: number;
+    status: 'succeeded' | 'rejected' | 'unconfirmed'; code: string | null; summary: string;
+  }[];
+  notifications: { sourceId: string; id: string; status: AgentContext['notifications'][number]['status'] }[];
 }
 
 export interface AgentToolResult { ok: boolean; code: string; detail: string; context?: AgentContext }
@@ -65,11 +100,17 @@ export interface AgentState {
   runs: AgentRun[];
   followUpAt: number | null;
   handoffSummary: string | null;
+  concerns?: AgentConcern[];
+  structuredHandoff?: AgentHandoff | null;
 }
 export type AgentDecision = { type: 'tool'; call: AgentToolCall } | { type: 'complete'; summary: string };
 
 const timestamp = z.number().int().min(0).max(8_640_000_000_000_000);
 const identifier = z.string().min(1).max(200);
+const sourceIdentifier = z.string().min(1).max(240);
+const concernSchema: z.ZodType<AgentConcern> = z.object({ id: identifier, observedAt: timestamp, receivedAt: timestamp, text: z.string().max(600) }).strict();
+const escalationCauseSchema = z.enum(['explicit_help', 'user_authorized_timeout_policy', 'model_concern']).nullable();
+const notificationStateSchema = z.enum(['queued', 'sent', 'failed', 'acknowledged', 'simulated']);
 const contextSchema: z.ZodType<AgentContext> = z.object({
   now: timestamp,
   status: z.enum(['open', 'active', 'arrived', 'cancelled']),
@@ -78,9 +119,46 @@ const contextSchema: z.ZodType<AgentContext> = z.object({
   location: z.object({ updatedAt: timestamp, ageSeconds: z.number().nonnegative(), stale: z.boolean() }).strict(),
   messages: z.array(z.object({ id: identifier, at: timestamp, role: z.enum(['rider', 'guardian', 'agent', 'system']), text: z.string().max(2000) }).strict()).max(12),
   relayOpen: z.boolean(),
-  notifications: z.array(z.object({ id: identifier, status: z.enum(['queued', 'sent', 'failed', 'acknowledged', 'simulated']), detail: z.string().max(1000) }).strict()).max(20),
+  notifications: z.array(z.object({ id: identifier, status: notificationStateSchema, detail: z.string().max(1000) }).strict()).max(20),
   contactAvailable: z.boolean(),
+  escalationCause: escalationCauseSchema.optional(),
+  notificationAuthorized: z.boolean().optional(),
+  unresolvedConcerns: z.array(concernSchema).max(8).optional(),
 }).strict();
+export const agentHandoffSchema: z.ZodType<AgentHandoff> = z.object({
+  version: z.literal(1), mode: z.literal('offline_rules'), snapshotAt: timestamp, snapshotSourceId: sourceIdentifier,
+  status: z.enum(['open', 'active', 'arrived', 'cancelled']), guardMode: z.enum(['waiting', 'human', 'ai']),
+  risk: z.enum(['normal', 'attention', 'urgent']), escalationCause: escalationCauseSchema, notificationAuthorized: z.boolean(),
+  location: z.object({ observedAt: timestamp.nullable(), freshness: z.enum(['fresh', 'stale_or_unverified']) }).strict(),
+  sources: z.array(z.object({
+    id: sourceIdentifier, source: z.enum(['journey_snapshot', 'message', 'retained_concern', 'tool_receipt', 'notification']),
+    actor: z.enum(['rider', 'guardian', 'agent', 'system']), observedAt: timestamp.nullable(), receivedAt: timestamp.nullable(),
+    freshness: z.enum(['recent', 'older', 'unverified']), text: z.string().max(600),
+  }).strict()).max(49),
+  unresolvedConcerns: z.array(z.object({ id: identifier, observedAt: timestamp, receivedAt: timestamp, text: z.string().max(600), sourceId: sourceIdentifier }).strict()).max(8),
+  actions: z.array(z.object({
+    sourceId: sourceIdentifier, tool: z.enum(['get_journey_context', 'send_check_in', 'schedule_follow_up', 'request_human_relay', 'notify_trusted_contact']),
+    at: timestamp, status: z.enum(['succeeded', 'rejected', 'unconfirmed']), code: z.string().max(100).nullable(), summary: z.string().max(600),
+  }).strict()).max(8),
+  notifications: z.array(z.object({ sourceId: sourceIdentifier, id: identifier, status: notificationStateSchema }).strict()).max(20),
+}).strict().superRefine((handoff, validation) => {
+  const byId = new Map(handoff.sources.map(source => [source.id, source]));
+  const invalid = (message: string) => validation.addIssue({ code: 'custom', message });
+  if (byId.size !== handoff.sources.length) invalid('Evidence source IDs must be unique.');
+  const snapshot = byId.get(handoff.snapshotSourceId);
+  if (snapshot?.source !== 'journey_snapshot' || snapshot.observedAt !== handoff.snapshotAt) invalid('Snapshot must reference its supplied server evidence.');
+  for (const concern of handoff.unresolvedConcerns) {
+    const source = byId.get(concern.sourceId);
+    if (source?.source !== 'retained_concern' || source.actor !== 'rider' || source.observedAt !== concern.observedAt || source.receivedAt !== concern.receivedAt || source.text !== concern.text) invalid('Unresolved concern must match its supplied rider evidence.');
+  }
+  for (const action of handoff.actions) {
+    const source = byId.get(action.sourceId);
+    if (source?.source !== 'tool_receipt' || source.observedAt !== action.at || source.text !== action.summary) invalid('Action must match its execution evidence.');
+  }
+  for (const notice of handoff.notifications) {
+    if (byId.get(notice.sourceId)?.source !== 'notification') invalid('Notification must reference its supplied server evidence.');
+  }
+});
 const toolResultSchema = z.object({ ok: z.boolean(), code: z.string().min(1).max(100), detail: z.string().max(1000), context: contextSchema.optional() }).strict();
 const stepSchema = z.object({
   id: identifier, call: ToolCallSchema, status: z.enum(['pending', 'succeeded', 'rejected']), at: timestamp, result: toolResultSchema.optional(),
@@ -96,12 +174,42 @@ export const agentStateSchema: z.ZodType<AgentState> = z.object({
     attempts: z.number().int().min(0).max(3), nextAttemptAt: timestamp, leaseUntil: timestamp,
   }).strict()).max(20),
   followUpAt: timestamp.nullable(), handoffSummary: z.string().max(4000).nullable(),
+  concerns: z.array(concernSchema).max(8).optional(), structuredHandoff: agentHandoffSchema.nullable().optional(),
 }).strict();
 
 const recentWindowMs = 300_000;
 const concernPattern = /\b(route|detour|lost|uncomfortable|worried|strange|wrong|not sure|uneasy)\b|路线|绕路|不对|不安|担心|迷路|不确定|不舒服|不太放心|ruta|desv[ií]o|inquiet|d[ée]tour/i;
 const urgentPattern = /\b(help|unsafe|danger|threat|weapon|attack|emergency|scared|following|won.t let me|can.t (?:leave|get out))\b|救命|危险|害怕|求助|需要帮助|无法下车|不能下车|ayuda|peligro|au secours/i;
 const okayPattern = /\b(i(?:['’]m| am) (?:okay|ok|fine)|all (?:good|fine)|feel safe)\b|我没事|我很好|一切正常|没问题|estoy bien|tout va bien/i;
+
+/** A bounded heuristic for retaining possible concerns, never proof of danger or contact authority. */
+export function hasAgentConcern(text: string): boolean {
+  const remaining = text.slice(0, 2000)
+    .replace(/\b(?:do not|don['’]t|does not|doesn['’]t|no longer|never|not)\s+(?:need|want)\s+(?:any\s+)?help\b/gi, ' ')
+    .replace(/\b(?:not|never|no longer)\s+(?:currently\s+)?(?:in\s+)?(?:any\s+)?(?:danger|unsafe|scared|worried|uneasy|uncomfortable|lost|wrong|strange)\b/gi, ' ')
+    .replace(/\bno\s+(?:danger|threat|weapon|attack|emergency)\b/gi, ' ')
+    .replace(/(?:没有|并无)(?:危险|威胁)|(?:并不|不)(?:害怕|担心)|不需要(?:求助|帮助)/g, ' ')
+    .replace(/\bno\s+(?:necesito\s+ayuda|hay\s+peligro)\b|\bpas\s+en\s+danger\b/gi, ' ');
+  if (/\b(?:not|don['’]t feel|do not feel)\s+(?:okay|ok|fine|safe|comfortable)\b|\bno estoy seguro\b|\b(?:changed|different|unfamiliar)\s+route\b/i.test(remaining)) return true;
+  // Merely mentioning a route is not a concern. More specific terms remain available to the shared patterns.
+  const specific = remaining.replace(/\b(?:route|ruta)\b|路线/gi, ' ');
+  return concernPattern.test(specific) || urgentPattern.test(specific);
+}
+
+/** Best-effort bounded minimization, not guaranteed anonymity or a live-AI consent mechanism. */
+export function redactAgentText(text: string, maxLength = 600): string {
+  const limit = Math.max(0, Math.min(2000, Number.isFinite(maxLength) ? Math.floor(maxLength) : 600));
+  return text.slice(0, 10_000)
+    .replace(/\b(?:https?:\/\/|www\.)[^\s<>"']+/gi, '[redacted URL]')
+    .replace(/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi, '[redacted email]')
+    .replace(/\bBearer\s+[^\s,;]+/gi, 'Bearer [redacted]')
+    .replace(/\b(?:api[_ -]?key|access[_ -]?token|token|secret|password)\s*[:=]\s*["']?[^\s,;"']+["']?/gi, '[redacted credential]')
+    .replace(/\b(?:sk-|gh[pousr]_|github_pat_)[A-Za-z0-9_-]{8,}\b/g, '[redacted credential]')
+    .replace(/\b0x[A-Fa-f0-9]{32,}\b/g, '[redacted identifier]')
+    .replace(/\+?\d(?:[\s().-]*\d){7,}\b/g, '[redacted phone]')
+    .replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, '')
+    .slice(0, limit);
+}
 
 function recentRiderMessages(context: AgentContext) {
   return context.messages
@@ -110,7 +218,7 @@ function recentRiderMessages(context: AgentContext) {
 }
 
 function locationUncertain(context: AgentContext): boolean {
-  return context.location.stale || !Number.isFinite(context.location.updatedAt) || context.location.updatedAt > context.now;
+  return context.location.stale || !Number.isFinite(context.location.updatedAt) || context.location.updatedAt <= 0 || context.location.updatedAt > context.now;
 }
 
 function notificationStatus(context: AgentContext): string {
@@ -125,13 +233,14 @@ function notificationStatus(context: AgentContext): string {
   }
 }
 
-function buildPlan(trigger: AgentTrigger, context: AgentContext): AgentToolCall[] {
+/** Fixed server wording: a provider cannot invent delivery, assignment, or safety claims. */
+export function renderAgentCheckIn(trigger: AgentTrigger, context: AgentContext): string {
   // Array order, stale reassurance, and future timestamps cannot override a newer concern.
   // Only rider messages are evidence; text never selects a tool, recipient, or URL.
   const recent = recentRiderMessages(context);
   const latest = recent[0];
   const tied = latest ? recent.filter(message => message.at === latest.at) : [];
-  const concern = tied.some(message => concernPattern.test(message.text));
+  const concern = Boolean(context.unresolvedConcerns?.length) || tied.some(message => concernPattern.test(message.text));
   const urgent = context.risk === 'urgent' || tied.some(message => urgentPattern.test(message.text));
   const reassurance = !concern && !urgent && tied.some(message => okayPattern.test(message.text));
   const uncertainty = locationUncertain(context);
@@ -139,10 +248,16 @@ function buildPlan(trigger: AgentTrigger, context: AgentContext): AgentToolCall[
   let prompt: string;
   if (trigger.kind === 'notification-failure') {
     prompt = `${notificationStatus(context) || 'Contact notification delivery was not confirmed. Can you safely contact someone you trust directly?'} This run will not resend the notification.`;
-  } else if (urgent) {
+  } else if (context.escalationCause === 'explicit_help') {
     prompt = 'Your request for help remains active. If you are in immediate danger, contact your local emergency service when safe. Can you safely contact someone you trust?';
+  } else if (context.escalationCause === 'user_authorized_timeout_policy') {
+    prompt = 'The response deadline in your authorized timeout policy was reached. This does not establish danger. Are you okay, and can you contact someone you trust if needed?';
+  } else if (urgent) {
+    prompt = 'An offline rule flagged possible concern; it cannot establish danger or a request for help. What has changed, and do you need help?';
   } else if (concern) {
-    prompt = 'Your latest message suggests uncertainty about the journey. What has changed, and do you feel comfortable with the current route? Use “I need help” if you need escalation.';
+    prompt = context.unresolvedConcerns?.length
+      ? 'An earlier rider concern is still unresolved. What has changed, and do you feel comfortable with the current route? Only your explicit resolve action clears saved concerns.'
+      : 'An offline rule found possible uncertainty in your latest message. What has changed, and do you feel comfortable with the current route? Use “I need help” if you need escalation.';
   } else if (uncertainty || trigger.kind === 'stale-location') {
     prompt = 'The location update is missing or out of date. This alone does not establish danger. Are you okay, and can you share a fresh update when safe?';
   } else if (reassurance) {
@@ -155,7 +270,11 @@ function buildPlan(trigger: AgentTrigger, context: AgentContext): AgentToolCall[
   const delivery = trigger.kind === 'notification-failure' ? '' : notificationStatus(context);
   const freshness = uncertainty && (concern || urgent || trigger.kind === 'notification-failure')
     ? ' Location is out of date or unverified; it does not establish danger.' : '';
-  const text = `Offline mock guardian: ${prompt}${freshness}${delivery ? ` ${delivery}` : ''}`;
+  return `Offline mock guardian: ${prompt}${freshness}${delivery ? ` ${delivery}` : ''}`;
+}
+
+function buildPlan(trigger: AgentTrigger, context: AgentContext): AgentToolCall[] {
+  const text = renderAgentCheckIn(trigger, context);
   const calls: AgentToolCall[] = [parseAgentToolCall({ name: 'send_check_in', arguments: { text } })];
   // Notification failure is a bounded status update, never a second notification loop.
   if ((trigger.kind === 'takeover' || trigger.kind === 'rider-message') && !context.relayOpen) {
@@ -163,30 +282,104 @@ function buildPlan(trigger: AgentTrigger, context: AgentContext): AgentToolCall[
   }
   // Consent and urgency must also be rechecked by the executor immediately before effect.
   // An existing notification owns delivery/retry; the provider never duplicates it.
-  if (trigger.kind !== 'notification-failure' && context.risk === 'urgent' && context.contactAvailable && context.notifications.length === 0) {
-    calls.push({ name: 'notify_trusted_contact', arguments: { reason: 'Offline mock: an urgent request remains active. Start the consented contact workflow and report its actual result.' } });
+  if (trigger.kind !== 'notification-failure' && context.notificationAuthorized === true && context.risk === 'urgent' && context.contactAvailable && context.notifications.length === 0) {
+    calls.push({ name: 'notify_trusted_contact', arguments: { reason: 'Offline mock: the server reports a currently authorized contact workflow. Check that authorization again and report its actual result.' } });
   }
-  calls.push({ name: 'schedule_follow_up', arguments: { delaySeconds: urgent ? 30 : 60 } });
+  calls.push({ name: 'schedule_follow_up', arguments: { delaySeconds: context.risk === 'urgent' ? 30 : 60 } });
   return calls;
 }
 
-function completionSummary(steps: AgentStep[], context: AgentContext): string {
-  const effects = steps.filter(step => step.call.name !== 'get_journey_context');
-  const succeeded = effects.filter(step => step.status === 'succeeded' && step.result?.ok).length;
-  const rejected = effects.length - succeeded;
-  const contact = effects.find(step => step.call.name === 'notify_trusted_contact');
+function evidenceFreshness(at: number | null, now: number): AgentEvidence['freshness'] {
+  return at === null || !Number.isFinite(at) || at > now ? 'unverified' : now - at <= recentWindowMs ? 'recent' : 'older';
+}
+
+/** Only allowlisted executor result codes establish an effect; arbitrary result prose is ignored. */
+function receiptSummary(step: AgentStep): string {
+  if (step.status === 'pending' || !step.result) return 'No completed execution receipt; the action is unconfirmed.';
+  if (step.status !== 'succeeded' || !step.result.ok) return 'The action did not succeed; no completed effect is established.';
+  const summaries: Partial<Record<AgentToolCall['name'], Record<string, string>>> = {
+    send_check_in: { check_in_posted: 'An automated check-in was posted; reading it is unconfirmed.' },
+    schedule_follow_up: { follow_up_scheduled: 'A server follow-up was scheduled.' },
+    request_human_relay: {
+      demo_relay: 'A relay request was simulated; no real guardian was recruited.',
+      relay_already_open: 'Recruitment was already open; rider approval is still required.',
+      relay_requested: 'Recruitment was opened; no guardian was approved or granted private access.',
+    },
+    notify_trusted_contact: {
+      notification_already_exists: 'An existing notification owns delivery; no additional notification was queued.',
+      notification_queued: 'A contact notification was queued; delivery and recipient response are unconfirmed.',
+      notification_rate_limited: 'No additional notification was queued because a recent notification covers this interval.',
+    },
+  };
+  return summaries[step.call.name]?.[step.result.code] ?? 'The executor reported success; this result code does not establish a specific effect.';
+}
+
+/** Build from supplied source records and server receipts, never from a proposed model summary. */
+export function buildAgentHandoff(steps: AgentStep[], context: AgentContext): AgentHandoff {
+  const snapshotStep = steps.filter(step => step.call.name === 'get_journey_context' && step.status === 'succeeded' && step.result?.ok).at(-1);
+  // A completion render may use fresh server state after the original read. Do not
+  // attribute that newer evidence to a receipt containing a different snapshot.
+  const matchesRead = snapshotStep?.result?.context && JSON.stringify(snapshotStep.result.context) === JSON.stringify(context);
+  const snapshotSourceId = snapshotStep && matchesRead ? `snapshot:${snapshotStep.id}` : `snapshot:${context.now}`;
+  const sources: AgentEvidence[] = [{
+    id: snapshotSourceId, source: 'journey_snapshot', actor: 'system', observedAt: context.now, receivedAt: context.now,
+    freshness: 'recent', text: `Server snapshot: journey ${context.status}, coverage ${context.guardMode}, recorded risk ${context.risk}. These fields do not establish real-world safety.`,
+  }];
+  const messages = [...new Map(context.messages.slice(-12).map(message => [message.id, message])).values()];
+  for (const message of messages) sources.push({
+    id: `message:${message.id}`, source: 'message', actor: message.role, observedAt: message.at, receivedAt: null,
+    freshness: evidenceFreshness(message.at, context.now), text: redactAgentText(message.text),
+  });
+  const unresolvedConcerns = [...new Map((context.unresolvedConcerns ?? []).map(concern => [concern.id, concern])).values()].slice(0, 8).map(concern => ({
+    ...concern, text: redactAgentText(concern.text), sourceId: `concern:${concern.id}`,
+  }));
+  for (const concern of unresolvedConcerns) sources.push({
+    id: concern.sourceId, source: 'retained_concern', actor: 'rider', observedAt: concern.observedAt, receivedAt: concern.receivedAt,
+    freshness: evidenceFreshness(concern.observedAt, context.now), text: concern.text,
+  });
+  const effectSteps = [...new Map(steps.filter(step => step.call.name !== 'get_journey_context').map(step => [step.id, step])).values()].slice(-8);
+  const actions: AgentHandoff['actions'] = effectSteps.map(step => ({
+    sourceId: `tool:${step.id}`, tool: step.call.name, at: step.at,
+    status: !step.result || step.status === 'pending' ? 'unconfirmed' : step.status === 'succeeded' && step.result.ok ? 'succeeded' : 'rejected',
+    code: step.result?.code ?? null, summary: receiptSummary(step),
+  }));
+  for (const action of actions) sources.push({
+    id: action.sourceId, source: 'tool_receipt', actor: 'system', observedAt: action.at, receivedAt: null,
+    freshness: evidenceFreshness(action.at, context.now), text: action.summary,
+  });
+  const notifications = [...new Map(context.notifications.slice(-20).map(notice => [notice.id, notice])).values()].map(notice => ({ sourceId: `notification:${notice.id}`, id: notice.id, status: notice.status }));
+  for (const notice of notifications) sources.push({
+    id: notice.sourceId, source: 'notification', actor: 'system', observedAt: null, receivedAt: null, freshness: 'unverified',
+    text: notificationStatus({ ...context, notifications: [{ id: notice.id, status: notice.status, detail: '' }] }),
+  });
+  return {
+    version: 1, mode: 'offline_rules', snapshotAt: context.now, snapshotSourceId,
+    status: context.status, guardMode: context.guardMode, risk: context.risk,
+    escalationCause: context.escalationCause ?? null, notificationAuthorized: context.notificationAuthorized === true,
+    location: { observedAt: Number.isFinite(context.location.updatedAt) && context.location.updatedAt > 0 ? context.location.updatedAt : null, freshness: locationUncertain(context) ? 'stale_or_unverified' : 'fresh' },
+    sources, unresolvedConcerns, actions, notifications,
+  };
+}
+
+/** Server-only factual rendering; no provider-authored summary or tool argument is accepted. */
+export function renderAgentSummary(steps: AgentStep[], context: AgentContext): string {
+  const handoff = buildAgentHandoff(steps, context);
+  const succeeded = handoff.actions.filter(action => action.status === 'succeeded').length;
+  const rejected = handoff.actions.filter(action => action.status === 'rejected').length;
+  const pending = handoff.actions.filter(action => action.status === 'unconfirmed').length;
+  const contact = handoff.actions.find(action => action.tool === 'notify_trusted_contact');
+  const relay = handoff.actions.find(action => action.tool === 'request_human_relay');
   const contactDetail = contact
-    ? ` Contact workflow ${contact.status === 'succeeded' && contact.result?.ok ? 'accepted' : 'not confirmed'}: ${contact.result?.detail.slice(0, 180) ?? 'No result recorded.'} Recipient response is not established by this run.`
-    : ` ${notificationStatus(context) || 'No contact notification was recorded at this snapshot.'}`;
-  const relay = effects.find(step => step.call.name === 'request_human_relay');
-  const relayDetail = relay
-    ? `Relay workflow ${relay.status === 'succeeded' && relay.result?.ok ? 'accepted' : 'did not succeed'}: ${relay.result?.detail.slice(0, 180) ?? 'No result recorded.'}`
-    : context.relayOpen ? 'A relay request was open at the snapshot.' : 'No open relay was recorded at the snapshot.';
+    ? `Contact workflow ${contact.status === 'succeeded' ? 'receipt recorded' : 'not confirmed'} [${contact.sourceId}]: ${contact.summary}`
+    : notificationStatus(context) || 'No contact notification was recorded at this snapshot.';
+  const relayDetail = relay ? `Relay [${relay.sourceId}]: ${relay.summary}`
+    : context.relayOpen ? 'A relay request was open at the snapshot; guardian approval is not established.' : 'No open relay was recorded at the snapshot.';
+  const concerns = handoff.unresolvedConcerns.length
+    ? ` Unresolved rider concerns (only explicit rider resolution clears them): ${handoff.unresolvedConcerns.map(concern => `[${concern.sourceId}; observed ${new Date(concern.observedAt).toISOString()}; received ${new Date(concern.receivedAt).toISOString()}] ${JSON.stringify(redactAgentText(concern.text, 80))}`).join('; ')}.`
+    : ' No unresolved rider concern was stored in this snapshot.';
   const latest = recentRiderMessages(context)[0];
-  const riderDetail = latest
-    ? ` Latest recent rider text (${new Date(latest.at).toISOString()}): ${JSON.stringify(latest.text.slice(0, 160))}.`
-    : ' No recent rider message was available.';
-  return `Offline mock run, context snapshot ${new Date(context.now).toISOString()}. Recorded risk: ${context.risk}. Location: ${locationUncertain(context) ? 'stale or unverified' : 'fresh at snapshot'}.${riderDetail} ${relayDetail}${contactDetail} ${succeeded} tool action${succeeded === 1 ? '' : 's'} succeeded${rejected ? `; ${rejected} did not succeed` : ''}.`.slice(0, 1200);
+  const riderDetail = latest ? ` Recent rider claim [message:${latest.id}; ${new Date(latest.at).toISOString()}]: ${JSON.stringify(redactAgentText(latest.text, 80))}.` : ' No recent rider message was available.';
+  return `Offline mock run (rule inference, no LLM), context snapshot ${new Date(context.now).toISOString()} [${handoff.snapshotSourceId}]. Recorded risk: ${context.risk}. Location: ${locationUncertain(context) ? 'stale or unverified' : 'fresh at snapshot'}.${concerns}${riderDetail} ${relayDetail} ${contactDetail} ${succeeded} tool action${succeeded === 1 ? '' : 's'} succeeded${rejected ? `; ${rejected} did not succeed` : ''}${pending ? `; ${pending} unconfirmed` : ''}.`.slice(0, 4000);
 }
 
 /**
@@ -206,5 +399,6 @@ export async function nextMockDecision(trigger: AgentTrigger, steps: AgentStep[]
   }
   const attempted = new Set(steps.map(step => step.call.name));
   const call = buildPlan(trigger, context).find(candidate => !attempted.has(candidate.name));
-  return call ? { type: 'tool', call } : { type: 'complete', summary: completionSummary(steps, context) };
+  // The provider's bounded proposal is not the canonical participant-facing summary.
+  return call ? { type: 'tool', call } : { type: 'complete', summary: renderAgentSummary(steps, context).slice(0, 1200) };
 }

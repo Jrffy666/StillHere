@@ -177,3 +177,5 @@
   .simple-main .invitation-card { padding: 20px; }
   .simple-footer { font-size: 9px; }
 }
+/* Assistance stays in the existing secondary disclosure list. */
+.assistance-options{display:grid;gap:14px;margin:16px 0}.assistance-options label{display:flex;align-items:flex-start;gap:12px;line-height:1.5;font-size:14px}.assistance-options [data-slot="checkbox"]{margin-top:3px}.assistance-concerns{margin:18px 0}.assistance-concern{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px 0;border-bottom:1px solid var(--border)}.assistance-concern p{margin:0;overflow-wrap:anywhere}.assistance-concern time{font-size:12px;opacity:.65}.assistance-summary{font-size:13px;line-height:1.7;overflow-wrap:anywhere}

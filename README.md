@@ -1,6 +1,8 @@
 ﻿# Safety Guard
 
-A community journey-guarding application for Hack the North 2026. Riders approve human guardians and arrange relays when someone needs a break. Deterministic reminders continue after missed check-ins. AI-provider integration remains deferred.
+A community journey-guarding application for Hack the North 2026. Riders approve human guardians and arrange relays when someone needs a break. Optional deterministic reminders continue after missed check-ins. Live AI-provider integration remains deferred.
+
+The [offline assistance boundary](docs/AGENT_HARNESS.md) adds rider-controlled reminders, separate timeout-contact authorization, private unresolved concerns, and evidence-based handoffs. Provider proposals pass strict tool validation, cancellation and durable execution budgets. OpenAI is hard-disabled: this release makes no model calls and spends no API credits. Open a journey's **Automated assistance** disclosure to review preferences and resolve concerns.
 
 The accepted [community v1 scope](docs/COMMUNITY_V1.md) adds member profiles, contextual contribution records, and free structured appreciation banners. Profiles and contribution values are visible to other authenticated community members before applying or approving; there is no visibility toggle or sitewide leaderboard. Availability and language matching remain future work in the [community direction](docs/COMMUNITY_DIRECTION.md).
 

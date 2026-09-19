@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { JourneyMap } from '@/components/journey-map';
 import { HumanGuarding, JourneyParticipation } from '@/components/human-guarding';
 import { JourneyPrivacy } from '@/components/journey-privacy';
+import { JourneyAssistance } from '@/components/journey-assistance';
 import { JourneyGratitudeCard } from '@/components/journey-gratitude';
 import { MemberProfileButton } from '@/components/member-profile';
 import { JourneyCommunityRecords } from '@/components/community-records';
@@ -177,6 +178,7 @@ export function TripDetail({ trip, user, token, busy, act, onProfile }: {
     </div>
     {!closed && <div className="journey-conversation">{conversation}</div>}
       <section className="journey-secondary" aria-label="Journey details">
+        <JourneyAssistance trip={trip} token={token} viewerId={user.id} busy={busy} act={act} />
         {!trip.demo && <details className="simple-details journey-receipts">
           <summary>Contribution & chain receipts</summary>
           <JourneyParticipation trip={trip} viewerId={user.id} />
