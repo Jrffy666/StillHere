@@ -24,6 +24,7 @@ import type { ActionBody } from '@/components/trip-detail';
 import { MemberProfileCard, MemberProfileButton, useMemberProfile } from '@/components/member-profile';
 import { CommunityNotice, useCommunityNotice } from '@/components/community-notice';
 import { useCommunityRecords } from '@/components/community-records';
+import { canCompactRelay } from '@/lib/journey-layout';
 
 function remaining(at: number, now: number) {
   const seconds = Math.max(0, Math.ceil((at - now) / 1000));
@@ -181,7 +182,7 @@ export function HumanGuarding({
   );
   const approvalValid =
     approval && candidates.some((candidate) => candidate.id === approval.id);
-  const contributions = trip.contributions || [];
+  const compactRelay = canCompactRelay(trip, now);
   async function approve() {
     if (!approvalValid || !approval || !applicantProfile.data || applicantProfile.isError || !applicantRecords.data || applicantRecords.isError) return;
     try {
@@ -194,7 +195,8 @@ export function HumanGuarding({
   return (
     <>
       {!trip.demo && !closed && (
-        <article className="human-relay-card">
+        <article className={`human-relay-card ${compactRelay ? 'relay-compact' : ''}`} aria-label="Guardian requests and relay">
+          {compactRelay ? <span className="relay-compact-label"><Users size={16} aria-hidden="true" /> Need a different guardian?</span> : <>
           <div className="card-header">
             <h3>
               <Users size={17} />{' '}
@@ -222,6 +224,7 @@ export function HumanGuarding({
               assigned guardian keeps access until that handoff.
             </p>
           )}
+          </>}
           <div className="relay-actions">
             {(trip.status === 'open' || relay) && (
               <Button variant="outline" onClick={() => void share()}>
@@ -299,48 +302,13 @@ export function HumanGuarding({
               </div>
             ))}
           </div>}
-          {rider && (
+          {rider && (trip.status === 'open' || relay || candidates.length > 0) && (
             <p className="small-note">
               Guest names are not verified. Check who is applying before
               approving access.
             </p>
           )}
         </article>
-      )}
-      {contributions.length > 0 && (
-        <details className="simple-details">
-          <summary>Participation on this journey</summary>
-          {contributions.map((item) => (
-            <div className="contribution-row" key={item.guardian.id}>
-              <div>
-                <strong>
-                  {item.guardian.name}
-                  {item.guardian.id === user.id ? ' (you)' : ''}
-                </strong>
-                <span>
-                  {item.checkIns} check-in{item.checkIns === 1 ? '' : 's'} ·{' '}
-                  {item.endedAt === null && !closed
-                    ? 'Assigned now'
-                    : 'Shift ended'}
-                </span>
-              </div>
-              <small>
-                {item.rewardStatus === 'credited'
-                  ? 'Journey credit recorded'
-                  : item.rewardStatus === 'demo'
-                    ? 'Demo only'
-                    : closed && item.rewardStatus === 'pending'
-                      ? 'Settlement pending'
-                      : item.rewardStatus === 'ineligible'
-                        ? 'No completion credit'
-                        : item.checkIns > 0
-                          ? 'Checked in'
-                          : 'Check-in needed'}
-              </small>
-            </div>
-          ))}
-          <p className="small-note">Confirmed contributions appear in the chain receipts and each guardian’s profile.</p>
-        </details>
       )}
       <Dialog
         open={Boolean(approval)}
@@ -391,4 +359,22 @@ export function HumanGuarding({
       </Dialog>
     </>
   );
+}
+
+export function JourneyParticipation({ trip, viewerId }: { trip: Trip; viewerId: string }) {
+  const closed = trip.status === 'arrived' || trip.status === 'cancelled';
+  if (!trip.contributions.length) return null;
+  return <section className="journey-participation" aria-label="Guardian check-ins">
+    <h4>Guardian check-ins</h4>
+    {trip.contributions.map(item => <div className="contribution-row" key={item.guardian.id}>
+      <div><strong>{item.guardian.name}{item.guardian.id === viewerId ? ' (you)' : ''}</strong>
+        <span>{item.checkIns} check-in{item.checkIns === 1 ? '' : 's'} · {item.endedAt === null && !closed ? 'Assigned now' : 'Shift ended'}</span></div>
+      <small>{item.rewardStatus === 'credited' ? 'Journey credit recorded'
+        : item.rewardStatus === 'demo' ? 'Demo only'
+          : closed && item.rewardStatus === 'pending' ? 'Settlement pending'
+            : item.rewardStatus === 'ineligible' ? 'No completion credit'
+              : item.checkIns > 0 ? 'Checked in' : 'Check-in needed'}</small>
+    </div>)}
+    <p className="simple-note">Check-ins record participation. Chain confirmation is shown separately below.</p>
+  </section>;
 }

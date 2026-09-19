@@ -4,7 +4,9 @@ Recorded September 20, 2026. This release integrates account recovery, V2 human 
 
 ## Automated checks
 
-The current [simplified interface](FRONTEND_SIMPLIFICATION.md) is frontend version 9, accessible to the owner and the same authorized demo viewer. This profile refinement moves introduction editing to an **Edit** button beside the name and compresses the honor cabinet into compact responsive entries. Frontend type checking, lint, build, and [20 published checks](deployment/frontend.profile.validation.json) passed, including exact JavaScript and root stylesheet hashes. No contract or Worker code changed, no new blockchain transaction was submitted, and AI remains an offline mock. Browser visual and interaction acceptance was not performed because no browser was available. See the [profile release receipt](deployment/profile.layout.validation.json).
+The current [simplified interface](FRONTEND_SIMPLIFICATION.md) is frontend version 10, accessible to the owner and the same authorized demo viewer. This release puts active guarding beside conversation, uses a compact relay row when no attention is needed, folds ended-journey history, previews three appreciation banners, and combines account actions into an avatar menu. Thirteen journey-interface tests, 14 honor-projection tests, frontend type checking, lint, build, and [26 published checks](deployment/frontend.layout.validation.json) passed. Published JavaScript, root stylesheets and the pennant asset match the validated build. No contract or Worker code changed, no new blockchain transaction was submitted, and AI remains an offline mock. Browser visual and interaction acceptance was not performed because no browser was available. See the [layout release receipt](deployment/journey.layout.validation.json).
+
+The earlier frontend version 9 moved introduction editing to an **Edit** button beside the name and compressed the honor cabinet. Frontend type checking, lint, build, and [20 published checks](deployment/frontend.profile.validation.json) passed. See the [profile release receipt](deployment/profile.layout.validation.json).
 
 The earlier frontend version 8 passed seven journey-progress tests, 14 honor-projection tests, eight proxy tests, frontend type checking, lint, build, and [27 published checks](deployment/frontend.simple.validation.json). Its first-check-in prompt and zero-contribution arrival feedback cover the diagnosed missing-check-in flow. Those unchanged logic tests were not rerun for the version 9 layout refinement. See the [version 8 release receipt](deployment/frontend.core.validation.json).
 
@@ -16,6 +18,8 @@ The earlier [community v1 release](deployment/community.v1.validation.json) esta
 
 | Check | Result | What it establishes |
 | --- | --- | --- |
+| Journey layout states | 6 passed | Attention/expiry/first-check-in visibility and empty/partial/pending/complete gratitude delivery |
+| Published journey layout | 26 checks passed | Exact served assets, unified account menu, core actions, compact relay, folded conversation, appreciation previews, receipts, health and offline AI configuration |
 | Journey progress tests | 7 passed | Missing guardian check-in, first-check-in prompts, relay participation, pending settlement, demo/cancelled states and simulated-guardian exclusion |
 | Published simplified frontend | 27 checks passed | Exact application and root stylesheet hashes, primary actions, receipt paths, core navigation and removal of promotion/simulation entry points |
 | Honor projection tests | 14 passed | Received versus sent banners, confirmation/withdrawal, cancellation, pagination, aggregate milestones, identity isolation, and safe receipts |

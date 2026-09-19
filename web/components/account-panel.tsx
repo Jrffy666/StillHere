@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, type RefObject } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -27,12 +27,14 @@ export function AccountPanel({
   session,
   user,
   onSession,
+  returnFocus,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   session: Session | null;
   user?: User;
   onSession: (session: Session | null) => void;
+  returnFocus?: RefObject<HTMLElement | null>;
 }) {
   const [busy, setBusy] = useState(false),
     [error, setError] = useState('');
@@ -75,7 +77,7 @@ export function AccountPanel({
         }
       }}
     >
-      <DialogContent className="account-dialog">
+      <DialogContent className="account-dialog" finalFocus={returnFocus}>
         <DialogHeader>
           <DialogTitle>Your account & privacy</DialogTitle>
           <DialogDescription>
@@ -193,19 +195,6 @@ export function AccountPanel({
                 }
               >
                 Export my data
-              </Button>
-              <Button
-                variant="outline"
-                disabled={busy}
-                onClick={() =>
-                  void run(async () => {
-                    await api('/auth/logout', session.token, {});
-                    onSession(null);
-                    onOpenChange(false);
-                  })
-                }
-              >
-                Sign out
               </Button>
             </div>
             <details>

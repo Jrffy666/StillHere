@@ -1,11 +1,12 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Award, Check, HeartHandshake } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select';
 import { GRATITUDE_LABELS, MemberProfileButton } from '@/components/member-profile';
 import { api, errorMessage } from '@/lib/api';
+import { gratitudeSummary } from '@/lib/journey-layout';
 import type { GratitudeKind, JourneyGratitude, Trip } from '@/lib/types';
 
 export function JourneyGratitudeCard({ trip, token, viewerId }: { trip: Trip; token: string; viewerId: string }) {
@@ -20,6 +21,25 @@ export function JourneyGratitudeCard({ trip, token, viewerId }: { trip: Trip; to
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [dismissed, setDismissed] = useState(false);
+  const [showSaved, setShowSaved] = useState(false);
+  const { saved, allSaved } = gratitudeSummary(gratitude.data?.gratitude);
+  const pending = gratitude.data?.gratitude.banners.filter(banner => banner.status === 'pending').length ?? 0;
+  const regionRef = useRef<HTMLElement>(null);
+  const focusedControl = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    if (focusedControl.current && !focusedControl.current.isConnected && document.activeElement === document.body) {
+      const next = regionRef.current?.querySelector<HTMLElement>('[data-gratitude-focus]:not(:disabled)');
+      (next || regionRef.current)?.focus();
+      focusedControl.current = null;
+    }
+  }, [allSaved, showSaved, dismissed, busy, error, gratitude.isError, gratitude.data?.gratitude.eligibleGuardians.length]);
+  function region(content: ReactNode) {
+    return <section ref={regionRef} tabIndex={-1} className="gratitude-region" aria-label="Journey appreciation"
+      onFocusCapture={event => { focusedControl.current = event.target; }}
+      onBlurCapture={event => { if (event.relatedTarget && !event.currentTarget.contains(event.relatedTarget as Node)) focusedControl.current = null; }}>
+      {content}
+    </section>;
+  }
   async function send(guardianId: string, kind: GratitudeKind) {
     if (busy) return;
     setBusy(guardianId); setError(''); setNotice('');
@@ -35,11 +55,17 @@ export function JourneyGratitudeCard({ trip, token, viewerId }: { trip: Trip; to
     } catch (error) { setError(errorMessage(error)); }
     finally { setBusy(''); }
   }
-  if (dismissed) return <div className="gratitude-dismissed"><span>Your journey is closed.</span><Button variant="ghost" onClick={() => setDismissed(false)}>Leave a free thank-you</Button></div>;
-  return (
+  if (!gratitude.isError && !error && allSaved && !showSaved) return region(<div className="gratitude-summary">
+    <Check size={18} aria-hidden="true" /><div aria-live="polite"><strong>Thank-you {saved === 1 ? 'banner' : 'banners'} sent to {saved} {saved === 1 ? 'guardian' : 'guardians'}</strong>
+      <p>Saved. See contribution receipts for chain confirmation.</p></div>
+    <Button variant="ghost" data-gratitude-focus onClick={() => { setShowSaved(true); setDismissed(false); }}>View details</Button>
+  </div>);
+  if (!gratitude.isError && !error && gratitude.data && !gratitude.data.gratitude.eligibleGuardians.length) return region(<p className="gratitude-empty">No checked-in guardians to thank on this journey.</p>);
+  if (dismissed && !gratitude.isError && !error) return region(<div className="gratitude-dismissed"><span>{pending ? `${pending} thank-you ${pending === 1 ? 'banner needs' : 'banners need'} recording.` : 'A free thank-you is still available.'}</span><Button variant="ghost" data-gratitude-focus onClick={() => setDismissed(false)}>{pending ? 'Review & retry' : 'Say thank you'}</Button></div>);
+  return region(
     <article className="gratitude-card">
       <div className="card-header"><h3><Award size={20} /> Say thank you</h3><span className="mini-tag">FREE</span></div>
-      <p>Send an optional free banner to a guardian who checked in. It appears on their public appreciation wall after chain confirmation and adds no points.</p>
+      <p>A free banner appears on your guardian’s wall after chain confirmation. It adds no points.</p>
       {gratitude.isError ? <div className="profile-feedback" role="alert"><p>{errorMessage(gratitude.error)}</p><Button variant="outline" onClick={() => void gratitude.refetch()}>Retry</Button></div>
         : gratitude.data ? gratitude.data.gratitude.eligibleGuardians.length ? (
           <div className="gratitude-recipients">
@@ -63,7 +89,7 @@ export function JourneyGratitudeCard({ trip, token, viewerId }: { trip: Trip; to
         ) : <p>No checked-in guardians to thank on this journey.</p> : <output>Loading your companions…</output>}
       {error && <p role="alert" className="inline-error">{error}</p>}
       {notice && <output>{notice}</output>}
-      <Button variant="ghost" onClick={() => setDismissed(true)}>Done for now</Button>
+      <Button variant="ghost" data-gratitude-focus disabled={Boolean(busy)} onClick={() => { setShowSaved(false); setDismissed(true); }}>{allSaved ? 'Close details' : 'Maybe later'}</Button>
     </article>
   );
 }

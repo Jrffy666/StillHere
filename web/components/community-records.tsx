@@ -33,13 +33,11 @@ export function CommunityRecordList({ records }: { records: CommunityRecord[] })
               <time dateTime={new Date(record.event.observedAt * 1000).toISOString()}>{new Date(record.event.observedAt * 1000).toLocaleString()}</time>
             </div>
             {receipt && <a href={receipt} target="_blank" rel="noopener noreferrer">View receipt <ExternalLink size={12} /></a>}
-            <p>Platform-attested · Journey {record.event.journeyId.slice(0, 8)} · Event {record.event.sequence + 1}
-              {record.event.kind === 'contribution' && <span className="ledger-value"> · {record.withdrawn ? 'Excluded from totals' : `+${record.points} points · +${record.reputation} reputation`}</span>}
-            </p>
+            {record.event.kind === 'contribution' && <p className="ledger-value">{record.withdrawn ? 'Excluded from totals' : `${record.status === 'finalized' ? '+' : 'Pending: '}${record.points} points · ${record.reputation} reputation`}</p>}
             {record.status === 'retry' && <p>Publication will retry automatically. This record is not yet chain confirmed.</p>}
             {record.withdrawn && <p>The original receipt remains public. A later correction excludes this journey’s recognition from current totals.</p>}
             {record.withdrawal && <CommunityCorrectionNotice correction={record.withdrawal} network={record.network} />}
-            <details className="ledger-record-identifiers"><summary>Public identifiers</summary><p>Journey: <code>{record.event.journeyId}</code></p><p>Recorded actor: <code>{record.event.actorId === '0'.repeat(64) ? 'Automated relay' : record.event.actorId}</code></p><p>Recorded subject: <code>{record.event.subjectId}</code></p><p>Assignment: {record.event.assignment} · Rule version: 1</p></details>
+            <details className="ledger-record-identifiers"><summary>Record details</summary><p>Platform-attested · Event {record.event.sequence + 1}</p><p>Journey: <code>{record.event.journeyId}</code></p><p>Recorded actor: <code>{record.event.actorId === '0'.repeat(64) ? 'Automated relay' : record.event.actorId}</code></p><p>Recorded subject: <code>{record.event.subjectId}</code></p><p>Assignment: {record.event.assignment} · Rule version: 1</p></details>
           </li>
         );
       })}

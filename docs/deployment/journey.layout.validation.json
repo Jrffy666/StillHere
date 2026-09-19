@@ -1,0 +1,31 @@
+{
+  "recordedAt": "2026-09-19T23:01:17.581Z",
+  "frontendVersion": 10,
+  "sourceCommit": "45aafd43ed552560895f4a66181685e00fbef861",
+  "deploymentId": "appgdep_6aaf141dc0108191bf0734c1c465da29",
+  "status": "succeeded",
+  "journeyProgressTestsPassed": 7,
+  "journeyLayoutTestsPassed": 6,
+  "honorProjectionTestsPassed": 14,
+  "typecheck": true,
+  "lint": true,
+  "productionBuild": true,
+  "publishedChecksPassed": 26,
+  "publishedEvidence": "frontend.layout.validation.json",
+  "access": {
+    "mode": "custom",
+    "owners": 1,
+    "externalViewers": 1,
+    "policyRevision": 2,
+    "requestedDemoViewerPreserved": true,
+    "publicAccessEnabled": false
+  },
+  "browserVisualQa": false,
+  "browserInteractiveAcceptance": false,
+  "browserLimitation": "No browser was available; no visual or interactive acceptance is claimed.",
+  "workerChanged": false,
+  "chainProgramChanged": false,
+  "newBlockchainTransactions": 0,
+  "liveModel": false,
+  "previousDataModified": false
+}

@@ -4,7 +4,7 @@ import { ArrowRight, Check, HeartHandshake, Send, LocateFixed, ExternalLink, Ale
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { JourneyMap } from '@/components/journey-map';
-import { HumanGuarding } from '@/components/human-guarding';
+import { HumanGuarding, JourneyParticipation } from '@/components/human-guarding';
 import { JourneyPrivacy } from '@/components/journey-privacy';
 import { JourneyGratitudeCard } from '@/components/journey-gratitude';
 import { MemberProfileButton } from '@/components/member-profile';
@@ -23,6 +23,7 @@ export function TripDetail({ trip, user, token, busy, act, onProfile }: {
     [info, setInfo] = useState('');
   const [locationBusy, setLocationBusy] = useState(false);
   const [sharing, setSharing] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
   const watching = useRef<number | null>(null),
     lastLocation = useRef(0);
   const messageViewport = useRef<HTMLDivElement>(null);
@@ -38,7 +39,7 @@ export function TripDetail({ trip, user, token, busy, act, onProfile }: {
   useEffect(() => {
     const viewport = messageViewport.current;
     if (viewport) viewport.scrollTop = viewport.scrollHeight;
-  }, [trip.messages.length]);
+  }, [trip.messages.length, historyOpen, closed]);
   useEffect(
     () => () => {
       if (watching.current !== null)
@@ -115,8 +116,23 @@ export function TripDetail({ trip, user, token, busy, act, onProfile }: {
   const progress = journeyProgress(trip);
   const assignedGuardian = !rider && trip.guardian?.id === user.id;
   const [mapOpen, setMapOpen] = useState(false);
+  const conversation = <article className="chat-card">
+    {!closed && <div className="card-header"><h3><HeartHandshake size={17} />Conversation</h3></div>}
+    {closed && trip.messages.length > 35 && <p className="simple-note">Showing the latest 35 messages.</p>}
+    <div ref={messageViewport} className="messages" aria-live={closed ? 'off' : 'polite'} aria-relevant="additions">
+      {trip.messages.length === 0 ? <p className="simple-note">{closed ? 'No messages on this journey.' : 'Say hello to your travel companion.'}</p> : trip.messages.slice(-35).map(message => <div key={message.id} className={'message ' + (message.senderId === user.id ? 'mine' : '') + (message.role === 'agent' ? ' agent-message' : '')}>
+        <div><strong>{message.senderId === user.id ? 'You' : message.role === 'agent' ? 'Automated reminder' : message.senderName}</strong><time>{timeLabel(message.at)}</time></div><p>{message.text}</p>
+      </div>)}
+    </div>
+    {!closed && <form className="message-form" onSubmit={event => void send(event).catch(() => {})}>
+      <Input aria-label="Message your companion" placeholder="Write a message…" maxLength={1500} value={text} onChange={event => setText(event.target.value)} />
+      <Button size="icon" type="submit" aria-label="Send message" disabled={busy || !text.trim()}><Send size={16} /></Button>
+    </form>}
+  </article>;
   return <>
     {trip.demo && <p className="simple-notice">Sample journey · Simulated participation earns no community contribution.</p>}
+    <div className={`journey-workspace ${closed ? 'journey-workspace-ended' : ''}`}>
+    <div className="journey-focus">
     <section className="simple-journey" aria-label="Current journey">
       <div className="simple-journey-heading">
         <div><span className="simple-label">{closed ? 'Journey ended' : rider ? 'You are the rider' : 'You are the guardian'}</span>
@@ -150,7 +166,7 @@ export function TripDetail({ trip, user, token, busy, act, onProfile }: {
       </>}
       {!closed && assignedGuardian && trip.guardMode === 'human' && <Button variant="ghost" disabled={busy} onClick={() => void act({ action: 'takeover' }).catch(() => {})}>I am unavailable — request cover</Button>}
       {closed && <div className="simple-completion">
-        <strong>{progress.noContributionAtArrival ? 'No contribution earned on this journey' : trip.status === 'cancelled' ? 'Journey cancelled' : 'You have arrived'}</strong>
+        <strong>{progress.noContributionAtArrival ? 'No contribution earned on this journey' : trip.status === 'cancelled' ? 'Journey cancelled' : rider ? 'You have arrived' : 'Your rider has arrived'}</strong>
         <p>{trip.demo ? 'This sample creates no official community contribution.' : progress.noContributionAtArrival ? 'No guardian check-in was recorded before arrival. Arrival is on chain, but it does not award contribution points.' : trip.status === 'cancelled' ? 'Cancelled journeys award no completion points. You can still thank a guardian who checked in.' : 'Check the contribution receipts below for publication status. Your profile counts only confirmed records.'}</p>
         {!trip.demo && <Button variant="outline" onClick={onProfile}>View my contributions</Button>}
       </div>}
@@ -158,20 +174,20 @@ export function TripDetail({ trip, user, token, busy, act, onProfile }: {
     {info && <output className="notice">{info}<button onClick={() => setInfo('')} aria-label="Dismiss notification">×</button></output>}
     {!closed && <HumanGuarding trip={trip} user={user} token={token} now={now} busy={busy} act={act} share={share} />}
     {closed && rider && !trip.demo && <JourneyGratitudeCard trip={trip} token={token} viewerId={user.id} />}
-    <div className="simple-journey-content">
-      <article className="chat-card">
-        <div className="card-header"><h3><HeartHandshake size={17} />Conversation</h3></div>
-        <div ref={messageViewport} className="messages" aria-live="polite" aria-relevant="additions">
-          {trip.messages.length === 0 ? <p className="simple-note">Say hello to your travel companion.</p> : trip.messages.slice(-35).map(message => <div key={message.id} className={'message ' + (message.senderId === user.id ? 'mine' : '') + (message.role === 'agent' ? ' agent-message' : '')}>
-            <div><strong>{message.senderId === user.id ? 'You' : message.role === 'agent' ? 'Automated reminder' : message.senderName}</strong><time>{timeLabel(message.at)}</time></div><p>{message.text}</p>
-          </div>)}
-        </div>
-        {!closed && <form className="message-form" onSubmit={event => void send(event).catch(() => {})}>
-          <Input aria-label="Message your companion" placeholder="Write a message…" maxLength={1500} value={text} onChange={event => setText(event.target.value)} />
-          <Button size="icon" type="submit" aria-label="Send message" disabled={busy || !text.trim()}><Send size={16} /></Button>
-        </form>}
-      </article>
-      <section className="simple-journey-details" aria-label="Journey details">
+    </div>
+    {!closed && <div className="journey-conversation">{conversation}</div>}
+      <section className="journey-secondary" aria-label="Journey details">
+        {!trip.demo && <details className="simple-details journey-receipts">
+          <summary>Contribution & chain receipts</summary>
+          <JourneyParticipation trip={trip} viewerId={user.id} />
+          <JourneyCommunityRecords tripId={trip.id} token={token} viewerId={user.id} />
+        </details>}
+        {trip.demo && trip.contributions.length > 0 && <details className="simple-details">
+          <summary>Sample participation</summary><JourneyParticipation trip={trip} viewerId={user.id} />
+        </details>}
+        {closed && <details className="simple-details conversation-history" open={historyOpen} onToggle={event => setHistoryOpen(event.currentTarget.open)}>
+          <summary>Conversation history</summary>{conversation}
+        </details>}
         <details className="simple-details" onToggle={event => setMapOpen(event.currentTarget.open)}>
           <summary>Route & shared location</summary>
           {mapOpen && <JourneyMap trip={trip} />}
@@ -189,10 +205,6 @@ export function TripDetail({ trip, user, token, busy, act, onProfile }: {
         <JourneyPrivacy trip={trip} user={user} token={token} />
       </section>
     </div>
-    {!trip.demo && <details className="simple-details" open={closed}>
-      <summary>Contribution & chain receipts</summary>
-      <JourneyCommunityRecords tripId={trip.id} token={token} viewerId={user.id} />
-    </details>}
     {!closed && rider && <div className="cancel-row"><button disabled={busy} onClick={() => {
       if (window.confirm('Cancel this journey and stop check-ins?')) void act({ action: 'cancel' }).catch(() => {});
     }}>Cancel journey</button></div>}

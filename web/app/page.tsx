@@ -1,10 +1,11 @@
 'use client';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useSessionValue, useClientReady, useInvite } from '@/lib/session-storage';
 import { QueryClient, QueryClientProvider, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowRight, ShieldCheck, HeartHandshake, Route, Plus, RefreshCw, AlertCircle, LogOut, UserRound } from 'lucide-react';
+import { ArrowRight, ShieldCheck, HeartHandshake, Route, Plus, RefreshCw, AlertCircle, LogOut, UserRound, ChevronDown, Settings2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Menu } from '@/components/ui/menu';
 import { Input } from '@/components/ui/input';
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select';
 import { CreateJourney } from '@/components/create-journey';
@@ -59,6 +60,7 @@ function GuardApp() {
     [chosenId, setSelected] = useState(''),
     [createOpen, setCreateOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
+  const accountTrigger = useRef<HTMLButtonElement>(null);
   const [busy, setBusy] = useState(false),
     [error, setError] = useState('');
   const config = useQuery({
@@ -192,13 +194,24 @@ function GuardApp() {
           ))}
         </nav>}
         <div className="simple-account">
-          <Button variant="ghost" onClick={() => setAccountOpen(true)}><UserRound size={16} />{session ? 'Account' : 'Sign in with wallet'}</Button>
-          {session && <Button variant="ghost" size="icon" aria-label="Sign out" disabled={busy} onClick={() => void logout()}><LogOut size={15} /></Button>}
+          {session ? <Menu.Root modal={false}>
+            <Menu.Trigger ref={accountTrigger} render={<Button variant="ghost" className="account-menu-trigger" aria-label="Open account menu" />}>
+              <span className="account-avatar" aria-hidden="true">{(user?.name || session.user.name).slice(0, 1).toUpperCase()}</span><ChevronDown size={13} aria-hidden="true" />
+            </Menu.Trigger>
+            <Menu.Portal><Menu.Positioner sideOffset={8} align="end" className="account-menu-positioner">
+              <Menu.Popup className="account-menu" finalFocus={accountOpen ? false : undefined}>
+                <div className="account-menu-identity"><strong>{user?.name || session.user.name}</strong><span>{user?.wallet ? 'Wallet linked' : 'Guest account'}</span></div>
+                <Menu.Item onClick={() => setAccountOpen(true)}><Settings2 size={15} aria-hidden="true" />Wallet & settings</Menu.Item>
+                <Menu.Separator className="account-menu-separator" />
+                <Menu.Item disabled={busy} onClick={() => void logout()}><LogOut size={15} aria-hidden="true" />Sign out</Menu.Item>
+              </Menu.Popup>
+            </Menu.Positioner></Menu.Portal>
+          </Menu.Root> : <Button ref={accountTrigger} variant="ghost" onClick={() => setAccountOpen(true)}><UserRound size={16} />Sign in with wallet</Button>}
         </div>
       </header>
       <main className="simple-main" id="main-content" tabIndex={-1}>
         {session && <div className="simple-heading">
-          <div><h1>{titles[tab]}</h1><p>{tab === 'journeys' ? 'Choose a guardian. Check in. Arrive together.' : tab === 'community' ? 'Offer your time to someone on their way.' : 'Your contributions and the thanks you received.'}</p></div>
+          <div><h1>{titles[tab]}</h1></div>
           {tab === 'journeys' && <Button onClick={() => setCreateOpen(true)}><Plus size={16} />New journey</Button>}
         </div>}
         {error && <div className="error-banner" role="alert"><AlertCircle size={17} /><span>{error}</span><button onClick={() => setError('')} aria-label="Dismiss error">×</button></div>}
@@ -258,7 +271,7 @@ function GuardApp() {
         <footer className="simple-footer"><span>Free human companionship</span><span>Solana Devnet · Not an emergency service</span></footer>
       </main>
       {session && <CreateJourney open={createOpen} onOpenChange={setCreateOpen} token={session.token} chainAvailable={Boolean(user?.wallet && config.data?.chainV2.configured)} onCreated={choose} />}
-      <AccountPanel open={accountOpen} onOpenChange={setAccountOpen} session={session} user={user} onSession={updateSession} />
+      <AccountPanel open={accountOpen} onOpenChange={setAccountOpen} session={session} user={user} onSession={updateSession} returnFocus={accountTrigger} />
     </div>
   );
 }

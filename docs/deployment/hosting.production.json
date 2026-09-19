@@ -1,13 +1,13 @@
 {
-  "recordedAt": "2026-09-19T21:27:06.455Z",
+  "recordedAt": "2026-09-19T23:01:17.581Z",
   "frontend": {
     "url": "https://safety-guard-htn2026.klavander56.chatgpt.site",
     "projectId": "appgprj_6aaeb438ee7c81918e772f03d67510af",
-    "versionId": "appgprj_6aaeb438ee7c81918e772f03d67510af~appgver_3892a4a72400819188e7e9df2d12c1c7",
-    "versionNumber": 9,
-    "deploymentId": "appgdep_6aaefe0e6db48191a17b3c69c55f1a71",
+    "versionId": "appgprj_6aaeb438ee7c81918e772f03d67510af~appgver_1b06539d02888191a01327eaa58f0bbf",
+    "versionNumber": 10,
+    "deploymentId": "appgdep_6aaf141dc0108191bf0734c1c465da29",
     "status": "succeeded",
-    "sourceCommit": "aa4c235e2756a9b2ffd965988c81f60451cbd625",
+    "sourceCommit": "45aafd43ed552560895f4a66181685e00fbef861",
     "environmentRevision": 2,
     "access": "owner and one explicitly authorized external demo viewer"
   },
@@ -145,6 +145,18 @@
       "workerChanged": false,
       "liveModel": false,
       "evidence": "community.honors.validation.json"
+    },
+    "journeyLayout": {
+      "journeyProgressTestsPassed": 7,
+      "journeyLayoutTestsPassed": 6,
+      "honorProjectionTestsPassed": 14,
+      "typecheck": true,
+      "lint": true,
+      "productionBuild": true,
+      "publishedChecksPassed": 26,
+      "browserVisualQa": false,
+      "browserInteractiveAcceptance": false,
+      "evidence": "journey.layout.validation.json"
     },
     "compactProfile": {
       "typecheck": true,

@@ -12,7 +12,7 @@
     "test:operations": "node --test tests/operations.test.mjs tests/rpc-configuration.test.mjs",
     "test:proxy": "node --experimental-strip-types --test tests/proxy.test.mjs",
     "test:honors": "node --experimental-strip-types --test tests/community-honors.test.mjs",
-    "test:journey-ui": "node --experimental-strip-types --test tests/journey-progress.test.mjs",
+    "test:journey-ui": "node --experimental-strip-types --test tests/journey-progress.test.mjs tests/journey-layout.test.mjs",
     "lint": "npm --prefix web run lint",
     "typecheck": "npm --prefix worker run typecheck && npm --prefix web run typecheck && npm --prefix chain run typecheck",
     "build": "npm --prefix web run build && npm --prefix worker run build",

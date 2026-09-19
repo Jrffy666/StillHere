@@ -12,6 +12,8 @@ Full personal profiles and member-profile dialogs show both collections. Compact
 
 In the simplified interface, open **My profile** to see the collection. Use **Edit** beside the member name to open the introduction dialog. Save updates the visible introduction; Cancel discards the draft. The honor cabinet uses compact entries with an icon, title, requirement, and progress, arranged across wider screens and stacked on phones. Expand **Contribution history & receipts** for individual records. The record eligibility and milestone rules are unchanged.
 
+The wall initially previews up to three banners. Use **View all banners** for full-size exhibits, category filters and **Load earlier records**. The preview is based on loaded records; confirmed aggregate counts can exceed it. Empty walls hide category filters. After giving every eligible guardian a banner, the journey shows a compact sent summary. Application delivery is still separate from chain confirmation.
+
 ## Data rules
 
 - Use the shared `useCommunityRecords` infinite query and its existing 15-second refresh. No extra API or contract is required.

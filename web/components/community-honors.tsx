@@ -14,12 +14,13 @@ export function CommunityHonors({ query, ownProfile }: {
   query: ReturnType<typeof useCommunityRecords>; ownProfile: boolean;
 }) {
   const [filter, setFilter] = useState<BannerFilter>('all');
+  const [expanded, setExpanded] = useState(false);
   const uid = useId();
   const ledger = query.data?.pages[0]?.ledger;
   if (!ledger) return null; // The shared ledger renders loading and initial error states.
   const honors = communityHonors(ledger.finalized);
   const received = receivedBanners(query.data!.pages);
-  const visible = received.filter(record => filter === 'all' || bannerCategory(record.event.value) === filter);
+  const visible = expanded ? received.filter(record => filter === 'all' || bannerCategory(record.event.value) === filter) : received.slice(0, 3);
   const unlocked = honors.filter(honor => honor.unlocked).length;
   const filters: BannerFilter[] = ['all', 'companionship', 'thoughtfulness', 'relay'];
   if (received.some(record => bannerCategory(record.event.value) === 'other')) filters.push('other');
@@ -54,50 +55,61 @@ export function CommunityHonors({ query, ownProfile }: {
 
     <section className="banner-wall" aria-labelledby={`${uid}-banners`}>
       <div className="collection-heading">
-        <div><span className="collection-kicker">A LITTLE THANK-YOU. KEPT FOREVER.</span>
-          <h4 id={`${uid}-banners`}>Appreciation wall<span className="collection-dot">.</span></h4>
-          <p>{ownProfile ? 'The care you gave, remembered by the people you accompanied.' : 'Gratitude from the people this member accompanied.'}</p>
+        <div>
+          <h4 id={`${uid}-banners`}>Appreciation wall</h4>
         </div>
-        <span className="collection-count">{ledger.finalized.banners} confirmed {ledger.finalized.banners === 1 ? 'banner' : 'banners'}</span>
+        <div className="banner-wall-controls"><span className="collection-count">{ledger.finalized.banners} confirmed {ledger.finalized.banners === 1 ? 'banner' : 'banners'}</span>
+      {(received.length > 0 || (ledger.finalized.banners > 0 && query.hasNextPage)) && <Button variant="ghost" className="banner-wall-toggle" aria-expanded={expanded} aria-controls={`${uid}-collection`}
+        onClick={() => { setExpanded(!expanded); setFilter('all'); }}>
+        {expanded ? 'Show less' : 'View all banners'}
+      </Button>}
+        </div>
       </div>
-      <fieldset className="banner-filters">
+      {expanded && ledger.finalized.banners > 0 && <fieldset className="banner-filters">
         <legend className="sr-only">Filter appreciation banners</legend>
         {filters.map(category => <Button key={category} variant="ghost" className="banner-filter"
           aria-pressed={filter === category} onClick={() => setFilter(category)}>
           {category === 'all' ? 'All banners' : BANNER_CATEGORIES[category].label}
         </Button>)}
-      </fieldset>
+      </fieldset>}
       {ledger.pending.banners > 0 && <output className="banner-pending">
         {ledger.pending.banners} received {ledger.pending.banners === 1 ? 'banner is' : 'banners are'} awaiting chain confirmation. {ownProfile ? 'Your' : 'This'} wall updates after confirmation.
       </output>}
-      {visible.length ? <ul className="banner-wall-grid">
-        {visible.map(record => <BannerCard key={record.id} record={record} />)}
-      </ul> : <div className="banner-wall-empty">
-        <HeartHandshake size={32} strokeWidth={1.3} aria-hidden="true" />
-        <h5>{ledger.finalized.banners === 0 ? 'The first thank-you starts with being there.' : 'No matching banners in the loaded records.'}</h5>
+      <div id={`${uid}-collection`}>
+      {visible.length ? <ul className={expanded ? 'banner-wall-grid' : 'banner-preview-grid'}>
+        {visible.map(record => <BannerCard key={record.id} record={record} compact={!expanded} />)}
+      </ul> : <div className="banner-empty-compact">
+        <HeartHandshake size={20} strokeWidth={1.5} aria-hidden="true" />
         <p>{ledger.finalized.banners === 0
-          ? 'After a journey closes, a rider can send their guardian a free appreciation banner. Confirmed banners appear here.'
-          : query.hasNextPage ? 'Load earlier records to find more of this collection, or choose another category.' : 'Choose another category to explore this collection.'}</p>
-        <span>Freely given · No purchase · No extra points</span>
+          ? 'No banners yet. Free thank-you banners appear here after chain confirmation.'
+          : query.hasNextPage ? expanded ? 'Load earlier records to find more banners.' : 'Banners are in earlier records. Open the full wall to load them.' : 'No matching banners in the loaded records.'}</p>
       </div>}
-      <div className="banner-wall-footer">
-        <p aria-live="polite">{visible.length} displayed{query.hasNextPage ? ' from loaded records · Earlier records available' : ' · All records loaded'}.
-          {' '}Only received, confirmed banners are exhibited.</p>
-        {query.hasNextPage && <Button variant="outline" disabled={query.isFetchingNextPage} onClick={() => void query.fetchNextPage()}>
+      {(visible.length > 0 || expanded) && <div className="banner-wall-footer">
+        <p aria-live="polite">{expanded ? `${visible.length} displayed` : `${visible.length} recent banners shown`}{query.hasNextPage ? ' from loaded records.' : expanded || received.length <= 3 ? ' · All records loaded.' : '.'}</p>
+        {expanded && query.hasNextPage && <Button variant="outline" disabled={query.isFetchingNextPage} onClick={() => void query.fetchNextPage()}>
           {query.isFetchingNextPage ? 'Loading earlier records…' : 'Load earlier records'}
         </Button>}
+      </div>}
       </div>
       {ledger.withdrawn > 0 && <p className="collection-footnote">Withdrawn recognition stays in the community record below and is excluded from this collection.</p>}
     </section>
   </div>;
 }
 
-function BannerCard({ record }: { record: CommunityRecord }) {
+function BannerCard({ record, compact = false }: { record: CommunityRecord; compact?: boolean }) {
   const category = bannerCategory(record.event.value);
   const presentation = BANNER_CATEGORIES[category];
   const Icon = CATEGORY_ICONS[category];
   const receipt = communityReceiptUrl(record);
   const date = new Date(record.event.observedAt * 1000);
+  if (compact) return <li className="banner-preview-card">
+    <Image src="/images/honors-pennant.png" alt="" width={80} height={120} unoptimized loading="lazy" />
+    <div><span className="banner-confirmed"><ShieldCheck size={12} aria-hidden="true" />{record.network === 'devnet' ? 'Devnet confirmed' : 'Localnet confirmed'}</span>
+      <h5>{presentation.title}</h5>
+      <p>From {record.event.actorId.slice(0, 8)} · <time dateTime={date.toISOString()}>{date.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' })} UTC</time></p>
+      {receipt && <a href={receipt} target="_blank" rel="noopener noreferrer" aria-label={`View ${presentation.label.toLowerCase()} banner receipt`}>View receipt <ExternalLink size={12} aria-hidden="true" /></a>}
+    </div>
+  </li>;
   return <li className={`gratitude-exhibit gratitude-exhibit-${category}`}>
     <figure>
       <div className="gratitude-art">
