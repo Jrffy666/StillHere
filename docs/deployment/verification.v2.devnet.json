@@ -1,0 +1,122 @@
+{
+  "purpose": "V2 signed relay and exact-once reward verification; no real funds",
+  "cluster": "devnet",
+  "genesis": "EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG",
+  "programId": "23f7UAfNbQCGdfQbJV3Tois98dETDfXnAXgjE5qTH5gb",
+  "verifiedAt": "2026-09-19T16:03:01.024Z",
+  "journeyAddress": "DZSdukasX4NecYxkELtY3qrJfKMQK3d5PrwCGw71UHkY",
+  "reference": "850a79d002f35338de5d3ad0fa70d16fa451a5f93fd7a5ca4232c02674adf903",
+  "signatures": [
+    {
+      "label": "fund-rider",
+      "signature": "3SvQjhWFE7ftXWsvV518mAy5Ju87Jk3UcaWw4ePyFcvezgCMsRuuKsuLw5KXoEpiLZn6xP3kTtfSTMWFAd8FZ9UF"
+    },
+    {
+      "label": "fund-guardianA",
+      "signature": "3KXR5AVzaEh7HLHpeFj2eNAGpdq4f1WtwMQBC27W7caTpCFHUDzKRfECtNzVXN13DR5j9WLQzBbV4czhHTmZXUed"
+    },
+    {
+      "label": "fund-guardianB",
+      "signature": "3n4EA6KYgFkRaJ1wAVaSXjGNKqgXLwLKT22UsxcBWtySLUXRSep3nqfobCQeBYEeQofwT6RGFUP5s1UsJaTV5y4P"
+    },
+    {
+      "label": "fund-outsider",
+      "signature": "2zWsTNRbaggirNHpWwFwa3z55t7j94nMY9n1Z6Y8UCYCjDKKfJFDxMWzgztSK7zAgkWGoDkUm4kpXDTjCmYBvbGF"
+    },
+    {
+      "label": "create",
+      "signature": "4oNcW19MFHUxTWeumv1FTRsBdfbLPz8GcQE9CSbX1t6nSqFbWUcRcr9LGjD94Z272vBjqwmvVMDZCZ7mqSELAh7N"
+    },
+    {
+      "label": "propose-A",
+      "signature": "mckeb9ZBWRkbmQqr99YSVT2qbNYp7dqAK8kMJ9DyhvokLk7yThV88GXEdK9px2SEkiZvfVfbMLowP9kuV3U8VcX"
+    },
+    {
+      "label": "accept-A",
+      "signature": "CiFgee4nxTFUXZv5NVqWMk7vKPBB2NPZZXZiRevXRmFJQqGENbqFETSdxdRZZyycVsPjuvvwApBzuCF52vRA4rx"
+    },
+    {
+      "label": "check-A",
+      "signature": "3jp5mTDJM1vZyNrN8xMg8RrjAiraTY5FSnFciqAZduCi8Zq8dLXAw4FmHLc6MEz7RCQFUSVurjDB34xVbWuLK5Mk"
+    },
+    {
+      "label": "propose-B",
+      "signature": "3xQe3VMtzZ65yeXnND9y38Aicoah4zw5tUE1oi9tg6WwkdvuDign1yY4HdFY4WZUubrpCVH7T9PJ1XEJfJeDkLx7"
+    },
+    {
+      "label": "accept-B",
+      "signature": "UW36eq5AJZM6LGnsc4WhGhUE7NsqHawpQoWRHr5rn4AT5WNVzgV7Nqje7vwgoyPe2pcEzLUHWVUJR1j3KcaP6oG"
+    },
+    {
+      "label": "check-B",
+      "signature": "4ZcXcE7xfzQSgNWnDM5eUTYP5Xv5tKru1CwEHxiu6cFDiEKWRMEg8ExvtHB4uHUsXe8ueiR2fkWtGihK1jtP7Pre"
+    },
+    {
+      "label": "propose-returning-A",
+      "signature": "4ByNsM3SrVJhZUkqZdbnyCm49w2YQkrbQrmVJLkdJrbc9yAcV6R8DbiGkPAGPhh6bESaTgopubgJnuNHBty1LH9z"
+    },
+    {
+      "label": "accept-returning-A",
+      "signature": "2bJLra8ChcMK4MXDEboJsr9WbTMeo2LKziBhP3ALmXrBXtxgBZ9646V946oAug5cz9ttWXDWiLeKonLrq9dBwG2f"
+    },
+    {
+      "label": "check-returning-A",
+      "signature": "2SvDDikQFNXEoofQQ9eYEtNmh4gGFwC4BUraj6MAwpx2zDZRRRUV4wepEughJMa745Ch83SSPXpK116kvcRUvqcc"
+    },
+    {
+      "label": "complete",
+      "signature": "2fWdvdHQzDGsnhaBqQWLrKtYgGZFaMF35XbGsDKcTnnrFqshdht4KNzwyprctoP2z2Vg5s5p8s5ZRYVmtG7XyUtE"
+    },
+    {
+      "label": "claim-A",
+      "signature": "3K257CNE2tCNid9PbSuhWmKEogBRFiKkAhRTpDzXgTtn5ZYg4WRMon8oHWyiEtq8LbqiXNY4AorgHbVB2jFz1aTx"
+    },
+    {
+      "label": "claim-B",
+      "signature": "24omFzFDHC7m3p53SKtohULVsXrFxFVteNXrq8HRzx6yQrWNwdKRyDASLCij9CPu2TFcy6NquouML41EWwSWhAzi"
+    },
+    {
+      "label": "create-cancelled",
+      "signature": "3Cj8nUuEk9vGeCR6P2vuapQ2Ji2y6GtFNuUsWbMgQ7USCquEmcWHYYQC3eFC4KuEpoXM58QYnrQFsRYU1gvD61tP"
+    },
+    {
+      "label": "cancel",
+      "signature": "3fd7Z9NPSNhtJBRG3ktWNk39dr2nLYPiZyTQpiaHCrJPsHPVubExPZYkwBoXtC1DBadhRfMc83dEFG5ZwQY5Zbyk"
+    }
+  ],
+  "rejectionChecks": [
+    "stale-accept",
+    "outsider-accept",
+    "wrong-rider",
+    "complete-without-checkin",
+    "stale-cancel-proposal",
+    "former-guardian-checkin",
+    "returning-guardian-old-sequence",
+    "duplicate-claim",
+    "duplicate-complete",
+    "outsider-claim",
+    "cancelled-cannot-propose"
+  ],
+  "contributions": [
+    {
+      "guardian": "H5hmFWwKAU8h2PAxT4PYvfMCMjxP9fHtN4CjkyFVH6ug",
+      "checkIns": 2,
+      "lastCheckInAt": 1789833743,
+      "startedAt": 1789833691,
+      "endedAt": 1789833746,
+      "points": "12",
+      "reputation": "5",
+      "claimed": true
+    },
+    {
+      "guardian": "8V62GWUHAfDwDpNCUnrrjj8j1S9iqaj1JqT1TK3Cv9og",
+      "checkIns": 1,
+      "lastCheckInAt": 1789833714,
+      "startedAt": 1789833708,
+      "endedAt": 1789833721,
+      "points": "13",
+      "reputation": "5",
+      "claimed": true
+    }
+  ]
+}

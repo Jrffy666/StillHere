@@ -1,0 +1,21 @@
+{
+    "recordedAt":  "2026-09-19T14:12:21.0944008Z",
+    "backend":  "http://127.0.0.1:8787/api/config",
+    "frontend":  "http://localhost:5173/api/config",
+    "backendChain":  {
+                         "provider":  "solana",
+                         "network":  "devnet",
+                         "configured":  true,
+                         "programId":  "6QoP3pGGBpCDdpCzK8DZhx5rZa99D4RZwkbNteSwY6kK",
+                         "rpcUrl":  "https://api.devnet.solana.com"
+                     },
+    "frontendChain":  {
+                          "provider":  "solana",
+                          "network":  "devnet",
+                          "configured":  true,
+                          "programId":  "6QoP3pGGBpCDdpCzK8DZhx5rZa99D4RZwkbNteSwY6kK",
+                          "rpcUrl":  "https://api.devnet.solana.com"
+                      },
+    "configuredProgramMatchesVerifiedDeployment":  true,
+    "browserWalletWorkflowVerified":  false
+}

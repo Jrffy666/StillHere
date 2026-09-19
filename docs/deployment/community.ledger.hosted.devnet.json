@@ -1,0 +1,86 @@
+{
+  "verifiedAt": "2026-09-19T19:54:39.549Z",
+  "status": "passed",
+  "origin": "https://safety-guard-htn2026.klavander56.chatgpt.site",
+  "programId": "7vuz78V9Tu53Bpt3iXHc37VSDBmRSYxcEguWewR9LXzm",
+  "checks": [
+    "RPC is Solana Devnet",
+    "All participants use free walletless accounts",
+    "Source and chain preserve every ordered event",
+    "A → B → A retains three distinct guarding assignments",
+    "One fixed 25-point contribution pool",
+    "Repeated thanks does not duplicate a banner",
+    "All receipts identify the platform attestation and deployed program",
+    "Public records exclude private journey IDs, names, routes and credentials",
+    "Every published record is independently readable from program-owned accounts",
+    "Every public event, allocation and issuer matches its independently decoded receipt",
+    "Profile recognition matches independent chain reconstruction",
+    "Published contributions are neither legacy credits nor counted twice",
+    "Profile recognition matches independent chain reconstruction",
+    "Published contributions are neither legacy credits nor counted twice",
+    "Cancellation preserves appreciation without awarding completion points",
+    "Correction preserves original evidence and excludes recognition",
+    "Deleting private journey details retains public receipts"
+  ],
+  "receipts": [
+    {
+      "journeyId": "af00895273ceeb9104341184376387167031d6b5d5b5de7c4a2fe7622641697b",
+      "records": 14,
+      "asOfSlot": 501019839,
+      "addresses": [
+        "F2xvw5qDog92SxtZnM1g14acSzbJ28pAkRm7D3KNPcSt",
+        "HfXbdS4wiHYDWkUuMn2Gx9aHxGNHmmLWbhjXV85Fst8h",
+        "8faP2WeQ92DWdbC2TBusU2twyLX9wGfSukJmFvn5b7Qj",
+        "5X7686UZq6iF4qDW1H9vDHE1i6rAyS7rDbjrYFZ3z6mp",
+        "3RAW4XeM2typzeBcgoFxfw5C8PBtDgE9153a9s6Br3J7",
+        "B9nuCsAMF3dCcPvY4z2ke8tSGXtEyYXaqgZDeJ8wef79",
+        "77fZKTGL8mMMXdoVtuDvLNL8JUuUCGUJWvTWkanyzhCT",
+        "2sxDruk7V6AiW3S5A3kVnH9XW9qP12g6h1A5NojyqDno",
+        "G5iCXxQ1wscwo94QBEV7ZvrPuB8mRoTVoz9nz7rJytvP",
+        "8c3BPXXJdKvCefAvVmu9g2pmwAh2LmAgTRRfPoRbhuy4",
+        "3K6nrkVE4dRbmmbtWLzxRomTnkzRszJpscwFJtyCVDZN",
+        "5dq4S7mh4kFUYGwjFVLqErEHF7q1Z7NiCfCiw4W9tT6S",
+        "FK3vMEG7Uq2W6zNEknGTneRDpxtyR4ni87eH1HQcs5bB",
+        "Eud5EubMQSmVN7oFzCVHEKcvKKeYfhRQLTxgsEAJ4mbL"
+      ],
+      "signatures": [
+        "4eiokKuUv6rWub6PRgkWmPsNVuMHVBFRj1bcCiV9nyNb3hzieQk3KTKZWaX5fN6zeVuTuhK6UKyBxBt7MW1DqrtV",
+        "2HN2dzMzFyEzYNbfWtAvNAcRm1dcPNv5ST3g85HSBthQr12xVJ376HKNs3v7Yz4sFNYrtrhUW7YudYA6uaUamJer",
+        "3PtWV6JKd2b9137Ri3fkfzzs56hCi4FZX4Q3nwkZp5icJYG9CZ1NMigWdqHCS3xtB8vsvRSxRkZLnFJpPsozPDm",
+        "3JmWF235G7sJaecrQWJTkWiXQKMvbd3MdRLxj9gz8RJyPjqyp1qNF1mjZuFXLePaZGUr5P4HrWvcr3DQAp1En3jc",
+        "gtUsXRGX1TnufLghTLezGR5VQLh6zdKmRY9occzNgba2KQHxb7gERgopJioEv15FhKDPKr51H4SHry69kLPSYSS",
+        "hK7CfPxrweFj6AF7hyCQ5toMdwfHaueRsZdWgi2caEo8yzo5pWsBrvLB9AiQJ1nexKjGvbV1hZQRs2BxRUbfVCo",
+        "3ZRaY2GWrCXMfKccLNxMMg8HFxSgAAT1eeCrUWEPEPYjyzvDY3AFsgXSa35yz8Jxgcapn7nipMYqweAdP1P85MBW",
+        "4US57ra4k5kM722LVnj6AYUD4fAK26B2qjDo2shcj8grRYVtMT3vKEGYnnrNcG9rH7prPqDBKdbQYSDwJefQ7CRd",
+        "5Lf59xPPyt34X4n9bTZmTdWEK5qmhdHhNLPfr7VpPrgaYuTiZymnthXxe8Nj8xhJhXvUMCsoPvTaxJXGoVcdoCrF",
+        "5E9kQ9HiAV5aE2sTFWaX8WqkC7oM8strsgwWW6sDi3NZKvdNKLbx9hBBrCwRPmbr39NEbGTGVnWi8rDnfqo5hZ6d",
+        "5JdsWuvhzcpuvCkuptbuLXNLdszjuXUJkoehGb8U2f4D9qrFPw49bcS5qU6Kqtie4nefX53B4cwkzzjcKETM4xEY",
+        "5dNke22Lo6YFzzbMC2bWycdHBpTcTz1YTZbvJNds3pcZN9adK59NQt7JJmt62BFq216LCbbLR2ExAxr8XvSsgM1T",
+        "42Yg12JWwM47HysGxsayC4uGFhA5odCBpsexdMSnt7oBpt1MaVGqHVtDtd3BYA9SsbnS8Y2wsDPQmzeaqqN41gZ2",
+        "3FMeyzWpFkdJgCCDJc16WSqYsp95uZcCCrrMw9BvA9Gkdi8z21zinyhLrPSoHbco1ZG6KwFma5fqujf2zBHb9ohU"
+      ],
+      "withdrawalAddress": "HAktLmidzRKhXr3ptKwrV6Q9jubPTe3adSrAKaUWQke9"
+    },
+    {
+      "journeyId": "266ec9781a0fedea1a0a7e3c9898e84c1839029f9477a3344dff00d8ec875d91",
+      "records": 5,
+      "asOfSlot": 501020207,
+      "addresses": [
+        "3JcgLM48wSkc46Whs9eXfLsXpK2Pn832SvADXUQohZ8b",
+        "2kCts8yPD5brUdFnLcx5WGYgkaKv2jCAMvaopGnNQ65j",
+        "DzDwV2jWGQSnKKZknqyJVmz3pKs3gZgnA3HEMQqdk9ie",
+        "jVCYZkVgTkwfKUhmsnBBHAPwv3qw5P16brfHQ5w4T9K",
+        "7dbjhzXFX9ZLFXf7D2PiZ7YYvn52hZ2GVyFWmTeJkYuT"
+      ],
+      "signatures": [
+        "3eP4mKek1ZarQA13n7KHcbXockyPjAPZVhXVvp2UVjMr3BWBnpNepXQ69W55zCBnhobrp2seUd2tJJdTdYaxKUjS",
+        "2xjJHjz6Grp1Jjd5a8WtjBXnacqGnwM2JHdRHtjV3r2wR8yeuZhc7TVFjpk3CiAMXfadYS7T95g2wNEUCPzPYH9X",
+        "2F65sxGQsxGY81qdtBd3MF7jveYJHrj9Z3D7kyPyX6gd5XeMWBX1xKZGJVi7iqixxuVZVpJz6LYHQ73kNztRLeWn",
+        "4K1QcmFQMLPiCdhr4QP6GG4iYnrSMz4jPeo37Z1w6nNHLkBWehbJKetroiDZFaysfiYiCMwJL45ukUB1s8r1NncV",
+        "2nhHhyr9PmfR3r1ZEMdKkCHP31Q73PbfnWBxxqS7kHMB7DqRUEMTrHmAzYAn3d1pp7qJ6NEpaYMv476vaiPWNiRx"
+      ]
+    }
+  ],
+  "syntheticAccountsCreated": 3,
+  "syntheticAccountsDeleted": 3
+}

@@ -1,0 +1,120 @@
+{
+  "schemaVersion": 2,
+  "purpose": "Safety Guard test-network lifecycle and authorization verification; public evidence only, not a production safety certification.",
+  "cluster": "devnet",
+  "rpc": "https://api.devnet.solana.com",
+  "genesisHash": "EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG",
+  "programId": "6QoP3pGGBpCDdpCzK8DZhx5rZa99D4RZwkbNteSwY6kK",
+  "startedAt": "2026-09-19T14:10:13.201Z",
+  "finishedAt": "2026-09-19T14:11:03.558Z",
+  "status": "passed",
+  "verified": true,
+  "funding": {
+    "mode": "project-test-deployer",
+    "funder": "AHdX6zJn3xYQXCBix3TvEqXUyV9x8PdPcEstsCkyhdE8",
+    "lamportsPerParticipant": 50000000
+  },
+  "participants": {
+    "rider": "32e7XoZqZQfCrHdH3VpXNgqckDtbxSo2fz7P9EZfGAVv",
+    "guardian": "Ek6EKVFEYJ4gWz8Fy6uYQmKFsCFinFpcjQPA9xaeT3wB",
+    "attacker": "FN2cunUJ6Uf3e8JeQvH85eavBrC1DGkvruDZZkSXoNEh"
+  },
+  "taskAddress": "AEfPC4bGdGkDjLYgKnajELXn2wR2xnX2wJsTgSSJAHSG",
+  "cancelledTaskAddress": "CA8mG44ipezyMjfACdnrh6RTsFYviWPaerGroS5VvWmN",
+  "transactions": [
+    {
+      "label": "fund test participants (0.05 SOL each)",
+      "signature": "5FFThdqAPWkZDYfUeWnTUpCMsrThHQ5BusJ51Cn4LkrCzPimYsBMxn57y9E7funrkaPXLg52vGZf7AAS376u4fnY"
+    },
+    {
+      "label": "create task",
+      "signature": "KgW3Jse2rqUXu75R5ECy8oiBYXV7jS6zyRLARfk3WEYMDtCY6tpTeA1AG6zVcSRE1d5QfULiKAa1NSbKwDCmMHE"
+    },
+    {
+      "label": "accept task",
+      "signature": "WXTz2tvfLQvhNSh1hGgCMn9TYGQUHFG9mMqRSq2WqCmD75djdR93QCCcqNNKY1MWVLyfSMGVkP2NG2pG8LN5QSM"
+    },
+    {
+      "label": "guardian check-in",
+      "signature": "5q2FrsUyt4oKd58iRkojyDKzwbfgS7x2QHjUg1nGnMZrNHKYeMKGzQDWqWp4Waf1WqdXJbk9xjUB7U9dni6HnSGo"
+    },
+    {
+      "label": "complete task",
+      "signature": "55GTQfXib8QTN6xV7ccc2nX8DiHCWea62TpZxLSw6x2Y1uuuaV69FhveautRRwq7r79AS9k54Now6Ehe6JmdVQJL"
+    },
+    {
+      "label": "create cancellation task",
+      "signature": "3NUQGUdQjmMDscV1wCxzg2db1vcvTbPCS4bcashGHwXTBFjajV374fxjjb2ni2kL8GvktcipraDRBrxLkGGGMa47"
+    },
+    {
+      "label": "cancel task",
+      "signature": "49Pkqvnz5LtMbtmGGnc6gVSm57LvUngqNrejgYR33uQUwDBduZjhPbrytSh6yfxPzHbdecNzuEjdFXXVGBpDSLwL"
+    }
+  ],
+  "submittedTransactions": [
+    {
+      "label": "fund test participants (0.05 SOL each)",
+      "signature": "5FFThdqAPWkZDYfUeWnTUpCMsrThHQ5BusJ51Cn4LkrCzPimYsBMxn57y9E7funrkaPXLg52vGZf7AAS376u4fnY",
+      "status": "confirmed"
+    },
+    {
+      "label": "create task",
+      "signature": "KgW3Jse2rqUXu75R5ECy8oiBYXV7jS6zyRLARfk3WEYMDtCY6tpTeA1AG6zVcSRE1d5QfULiKAa1NSbKwDCmMHE",
+      "status": "confirmed"
+    },
+    {
+      "label": "accept task",
+      "signature": "WXTz2tvfLQvhNSh1hGgCMn9TYGQUHFG9mMqRSq2WqCmD75djdR93QCCcqNNKY1MWVLyfSMGVkP2NG2pG8LN5QSM",
+      "status": "confirmed"
+    },
+    {
+      "label": "guardian check-in",
+      "signature": "5q2FrsUyt4oKd58iRkojyDKzwbfgS7x2QHjUg1nGnMZrNHKYeMKGzQDWqWp4Waf1WqdXJbk9xjUB7U9dni6HnSGo",
+      "status": "confirmed"
+    },
+    {
+      "label": "complete task",
+      "signature": "55GTQfXib8QTN6xV7ccc2nX8DiHCWea62TpZxLSw6x2Y1uuuaV69FhveautRRwq7r79AS9k54Now6Ehe6JmdVQJL",
+      "status": "confirmed"
+    },
+    {
+      "label": "create cancellation task",
+      "signature": "3NUQGUdQjmMDscV1wCxzg2db1vcvTbPCS4bcashGHwXTBFjajV374fxjjb2ni2kL8GvktcipraDRBrxLkGGGMa47",
+      "status": "confirmed"
+    },
+    {
+      "label": "cancel task",
+      "signature": "49Pkqvnz5LtMbtmGGnc6gVSm57LvUngqNrejgYR33uQUwDBduZjhPbrytSh6yfxPzHbdecNzuEjdFXXVGBpDSLwL",
+      "status": "confirmed"
+    }
+  ],
+  "rejectedOperations": [
+    {
+      "label": "wrong guardian",
+      "evidence": "Program custom error during transaction simulation; no confirmed transaction signature."
+    },
+    {
+      "label": "completion without check-in",
+      "evidence": "Program custom error during transaction simulation; no confirmed transaction signature."
+    },
+    {
+      "label": "duplicate reward",
+      "evidence": "Program custom error during transaction simulation; no confirmed transaction signature."
+    },
+    {
+      "label": "completed task cancellation",
+      "evidence": "Program custom error during transaction simulation; no confirmed transaction signature."
+    },
+    {
+      "label": "completed task recreation",
+      "evidence": "Program custom error during transaction simulation; no confirmed transaction signature."
+    },
+    {
+      "label": "cancelled task acceptance",
+      "evidence": "Program custom error during transaction simulation; no confirmed transaction signature."
+    }
+  ],
+  "guardianPoints": "10",
+  "guardianCompletedTasks": "1",
+  "receipt": "55GTQfXib8QTN6xV7ccc2nX8DiHCWea62TpZxLSw6x2Y1uuuaV69FhveautRRwq7r79AS9k54Now6Ehe6JmdVQJL"
+}

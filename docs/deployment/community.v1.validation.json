@@ -1,0 +1,55 @@
+{
+  "recordedAt": "2026-09-19T19:07:10.239Z",
+  "status": "passed",
+  "frontend": {
+    "url": "https://safety-guard-htn2026.klavander56.chatgpt.site",
+    "projectId": "appgprj_6aaeb438ee7c81918e772f03d67510af",
+    "versionId": "appgprj_6aaeb438ee7c81918e772f03d67510af~appgver_538eab39d8708191978bcf45f7e5a58a",
+    "versionNumber": 5,
+    "deploymentId": "appgdep_6aaedc59e90081918ac1f1e374dd1771",
+    "status": "succeeded",
+    "sourceCommit": "61dc0cf0f4349fbbdeef5a310396b28c3bf71942",
+    "environmentRevision": 2,
+    "access": "owner-only"
+  },
+  "backend": {
+    "origin": "https://safety-guard-api-production.2012044zj.workers.dev",
+    "versionId": "aa3b7e1c-fb09-4d7c-813f-f226edfc97f4",
+    "deploymentId": "699958d9-3a27-4fff-bd6d-005b1c1d1c4a",
+    "readinessPassed": true
+  },
+  "checks": {
+    "workerTestsPassed": 137,
+    "newCommunityTestsPassed": 23,
+    "typecheck": true,
+    "lint": true,
+    "productionBuild": true,
+    "workerProductionDryRun": true,
+    "proxyTestsPassed": 8,
+    "operationsTestsPassed": 16,
+    "hostedAssetChecksPassed": 13,
+    "hostedHttpTestsPassed": 5,
+    "syntheticAccountsDeleted": 11,
+    "browserVisualQa": false,
+    "browserInteractiveAcceptance": false,
+    "chainProgramChanged": false,
+    "blockchainTransactions": 0,
+    "liveModel": false,
+    "evidence": "community.v1.validation.json"
+  },
+  "hostedWorkflows": [
+    "Always-visible authenticated profiles before application/approval; editable introduction; strict private-data projection",
+    "Rider-approved guardian with one credited contribution; free gratitude is idempotent and leaves balances unchanged",
+    "Human relay revokes former private access while still allowing a free banner to the former checked-in guardian",
+    "Withdrawn/rejected applicants cannot receive banners; checked-in guardians can be thanked after cancellation without points",
+    "Simulated demo and offline agent remain isolated from real contributions, gratitude, model calls and notifications"
+  ],
+  "assetEvidence": "frontend.community.validation.json",
+  "limitations": [
+    "Website remains owner-only; this is not a public community rollout",
+    "Browser connection unavailable; no screenshot or interactive browser acceptance",
+    "Public contribution history contains up to20 credited journeys; cancelled participation can receive gratitude but earns no completion points",
+    "Existing chain/Rust/signed Devnet evidence is historical; no new on-chain program or transaction in this release",
+    "Translation, language matching, availability/capacity controls, member blocking, financial tips and tradable tokens are deferred"
+  ]
+}

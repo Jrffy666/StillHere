@@ -1,0 +1,19 @@
+{
+  "name": "safety-guard",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22.13.0" },
+  "scripts": {
+    "setup": "node scripts/setup.mjs",
+    "sync:chain": "node scripts/sync-chain.mjs",
+    "dev": "node scripts/dev.mjs",
+    "test": "npm --prefix worker test && npm --prefix chain test && npm run test:proxy && npm run test:operations",
+    "test:operations": "node --test tests/operations.test.mjs tests/rpc-configuration.test.mjs",
+    "test:proxy": "node --experimental-strip-types --test tests/proxy.test.mjs",
+    "lint": "npm --prefix web run lint",
+    "typecheck": "npm --prefix worker run typecheck && npm --prefix web run typecheck && npm --prefix chain run typecheck",
+    "build": "npm --prefix web run build && npm --prefix worker run build",
+    "test:integration": "node --test tests/api.integration.test.mjs"
+  }
+}

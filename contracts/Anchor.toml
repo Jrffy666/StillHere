@@ -1,0 +1,19 @@
+[toolchain]
+anchor_version = "0.32.1"
+
+[features]
+resolution = true
+skip-lint = false
+
+[programs.localnet]
+safety_guard = "Fg6PaFpoGXkYsidMpWxTWqkZqZH7bGQjR67FvBPMR6Dz"
+
+[programs.devnet]
+safety_guard = "Fg6PaFpoGXkYsidMpWxTWqkZqZH7bGQjR67FvBPMR6Dz"
+
+[provider]
+cluster = "Localnet"
+wallet = ".keys/deployer.json"
+
+[scripts]
+test = "npm --prefix ../chain run verify:local"

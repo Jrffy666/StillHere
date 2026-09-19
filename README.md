@@ -1,0 +1,99 @@
+﻿# Safety Guard
+
+A community journey-guarding application for Hack the North 2026. Riders approve human guardians and arrange relays when someone needs a break. Deterministic reminders continue after missed check-ins. AI-provider integration remains deferred.
+
+The accepted [community v1 scope](docs/COMMUNITY_V1.md) adds member profiles, contextual contribution records, and free structured appreciation banners. Profiles and contribution values are visible to other authenticated community members before applying or approving; there is no visibility toggle or sitewide leaderboard. Availability and language matching remain future work in the [community direction](docs/COMMUNITY_DIRECTION.md).
+
+Companionship remains accessible without payment, staking, or a token balance. The [gratitude rules](docs/GRATITUDE_MECHANISM.md) allow optional free banners after closure without adding points or reputation. Financial tips and transferable tokens are deferred; this release does not integrate translation or change the site's owner-only access policy.
+
+The [community ledger](docs/COMMUNITY_LEDGER.md) implements the requirement for appreciation, contributions and guarding history to have Solana records. It adds a separate program, free sponsored platform attestations, ordered participation history, durable publication, independently readable receipts and administrator-signed corrections. The implementation report records deployment and validation status. See [the original design](docs/ONCHAIN_COMMUNITY.md) for the reasoning and trust boundaries.
+
+Sponsor research is in [SPONSORS.md](docs/SPONSORS.md). The current design is documented in [ARCHITECTURE_V2.md](docs/ARCHITECTURE_V2.md).
+
+## Run locally
+
+Install Node.js 22.13 or later, then run from this folder:
+
+```sh
+npm run setup
+npm run dev
+```
+
+On Windows, double-click [start.bat](start.bat), or use `npm.cmd` from PowerShell. Open **http://localhost:5173**. The frontend proxies API requests to the Worker at **http://127.0.0.1:8787**. Keep both processes running for local monitoring and transaction reconciliation.
+
+## Try a journey
+
+Use separate browser profiles for the rider and two guardians. Guests can participate without a wallet or SOL: accept the public-record notice, create a journey, share its invite, have a guardian apply, then approve them from the rider session. New real journeys automatically queue minimal history and recognition for sponsored publication on Solana. Only approved participants can see route, location, and conversation. Request a relay to recruit a replacement. Confirm arrival to end monitoring.
+
+For an **optional V2 wallet-signed commitment**:
+
+1. Each participant opens **Account & wallet**, links a Solana wallet, and saves the recovery code. Select Devnet in the wallet and obtain test SOL for transaction fees.
+2. The rider creates a journey with **Use a shared Solana guardian commitment** selected, then chooses **Create chain commitment**.
+3. A guardian applies. The rider signs a proposal; the guardian signs acceptance. Private access changes after acceptance is finalized.
+4. Guardians continue ordinary availability check-ins and sign at least one **contribution check-in** while assigned to qualify for a chain reward.
+5. For a relay, open a replacement request and repeat the rider proposal and new guardian acceptance. The former guardian loses private access.
+6. The rider confirms arrival in the app, then signs arrival and reward allocation. Each eligible guardian claims their contribution. Former guardians find receipts under **My community profile → Your chain journeys**.
+
+One V2 journey shares **25 points and 10 reputation** across up to **16 distinct eligible guardian wallets**. Returning guardians have one cumulative share. Finalized V2 claims update the older application balance exactly once. Separately, new official community journeys, including walletless journeys, share a 25/10 community contribution pool among guardians with recorded check-ins. Their public-reference ordering can allocate remainders differently from V2's wallet ordering. Profiles show finalized community records, pending recognition and legacy application records separately; V2 and community totals must not be added as additional rewards. Older journeys are not automatically imported.
+
+Help, conversation, availability check-ins, and ending monitoring require no participant wallet signature or wait for blockchain finality. The sponsor covers community publication fees and account storage costs. Pending signed transactions survive closing the browser: the Worker checks their signatures and retries the same bytes. It stores dedicated community issuer and sponsor keys as Worker secrets; participant wallet keys and administrator/deployment keys remain outside the Worker.
+
+## Implemented architecture
+
+| Area | Implementation |
+| --- | --- |
+| Accounts | Verified wallet binding, stable identities, expiring/revocable sessions, wallet rotation, single-use recovery codes |
+| Human relay | Rider approval plus guardian acceptance, private-access changes, contributions across returning guardians |
+| Community | Always-visible member profiles, pre-decision profile review, redacted contribution history, and free appreciation banners independent of points |
+| Offline agent | Durable mock runs, five validated tools, bounded retries, private action traces, and a human handoff summary; no live model calls |
+| Chain synchronization | Persistent journey mapping, durable outbox, finalized receipt verification, failure/expiry handling, idempotent credit |
+| Operations | Isolated environments, readiness checks, deployment/rollback tooling, reports/restrictions, retention/deletion, encrypted backup/restore |
+
+React/Vinext serves the interface. Cloudflare Workers and SQLite-backed Durable Objects coordinate private data. Solana stores public commitments and rewards. Names, routes, contact details, messages, location, and credentials stay off chain.
+
+The [offline agent guide](docs/AGENT_HARNESS.md) explains the no-credits development phase. In a demo journey, choose **Guardian offline**, send a route concern, and inspect **Companion activity**. The mock uses fixed rules to exercise actual application tools. Adding an OpenAI key does not enable API calls; live-model integration remains a later step.
+
+## Deployment status
+
+The separate [V2 program is deployed on Solana Devnet](https://explorer.solana.com/address/23f7UAfNbQCGdfQbJV3Tois98dETDfXnAXgjE5qTH5gb?cluster=devnet). Both [local-validator](docs/deployment/verification.v2.localnet.json) and [Devnet](docs/deployment/verification.v2.devnet.json) checks completed 19 signed transactions and 11 expected rejection checks. The [local application integration report](docs/deployment/application.v2.localnet.json) records 10 finalized transactions through the HTTP backend, private-access revocation, and a single shared 25/10 reward pool.
+
+The existing V1 program remains a legacy, separate single-guardian receipt. New linked journeys use V2. Never configure the V1 address as `SOLANA_V2_PROGRAM_ID`.
+
+The frontend is published at **[Safety Guard](https://safety-guard-htn2026.klavander56.chatgpt.site)**. The [production Worker](https://safety-guard-api-production.2012044zj.workers.dev/api/ready) is deployed and passes readiness checks, with the published site configured as its canonical signing origin. A [hosted identity verification](docs/evidence/hosted-identity-2026-09-20.json) passed 36 checks covering wallet binding/login, recovery, replay/origin rejection, session revocation, and synthetic-account deletion. It submitted no blockchain transactions and persisted no credentials.
+
+The site currently permits its owner only. **All five live HTTP integration tests through the published frontend passed**, covering application-only guardian approval, relay, former-guardian access revocation, shared rewards, and isolated demonstrations. The 11 synthetic test accounts were deleted. Homepage, admin page, health, readiness, and configuration routes returned HTTP 200; see the [hosting receipt](docs/deployment/hosting.production.json).
+
+**The complete signed workflow through the production Worker passed:** [14 checks and 10 finalized journey transactions](docs/deployment/application.v2.hosted.devnet.json) covered creation, guardian approval/acceptance, relay, contribution check-ins, completion, and both reward claims. Guardians received 12/13 points and 5/5 reputation; old private access and duplicate claims were rejected. The three synthetic accounts and private journey were deleted. This run used 0.06 test SOL plus a 5,000-lamport funding fee.
+
+Separately, unsigned transaction preparation passed all 17 checks through both the Worker and the published frontend proxy. The private RPC credential stays in a Cloudflare secret and is absent from public configuration. Browser wallet-extension interaction still needs a manual acceptance check. See [RPC_SETUP.md](docs/RPC_SETUP.md) for configuration and rotation.
+
+## Accounts and data
+
+**Account & wallet** supports signing in, recovery, wallet replacement, revoking other sessions, export, and deletion. Changing an account wallet does not transfer existing chain authority: outstanding journeys still require their original signing wallet.
+
+Closed private journeys expire after 30 days (7 days for demos). Riders may erase a closed journey earlier. Public chain records and minimal anti-replay/ownership tombstones remain. Restores preserve deletion protections and do not restart old active journeys. See [DATA_POLICY.md](docs/DATA_POLICY.md).
+
+Participants can report concerns from a journey. Operators review reports at **/admin** using the configured operator credential. Reports do not send emergency alerts. External notifications, voice, Uber telemetry, and AI APIs are not configured in this release. Location sharing is opt-in and stops when the page closes; maps are illustrative. The application does not dispatch emergency services or guarantee continuous human coverage.
+
+## Checks and guides
+
+```sh
+npm run typecheck
+npm run lint
+npm test
+npm run build
+# With local frontend and backend running:
+npm run test:integration
+```
+
+- [Current architecture](docs/ARCHITECTURE_V2.md)
+- [Frontend design system](docs/FRONTEND_DESIGN.md)
+- [Identity and recovery](docs/IDENTITY.md)
+- [Deployment, rollback and encrypted backup](docs/OPERATIONS.md)
+- [Data policy](docs/DATA_POLICY.md)
+- [Human guarding workflow](docs/HUMAN_GUARDING.md)
+- [Community v1 scope and validation](docs/COMMUNITY_V1.md)
+- [Validation evidence](docs/VALIDATION.md)
+- [Sponsor analysis](docs/SPONSORS.md)
+
+The chain integration scripts require an explicitly configured local validator or Devnet test funding. Production rejects incomplete configuration and keeps restore disabled. No real-value payment, escrow, tradable token, or autonomous AI wallet is included.

@@ -1,0 +1,54 @@
+{
+  "recordedAt": "2026-09-19T19:54:51.888Z",
+  "v2ProgramId": "23f7UAfNbQCGdfQbJV3Tois98dETDfXnAXgjE5qTH5gb",
+  "devnetVerified": true,
+  "localApplicationVerified": true,
+  "frontendPublished": true,
+  "workerPublished": true,
+  "siteProjectId": "appgprj_6aaeb438ee7c81918e772f03d67510af",
+  "expectedFrontendOrigin": "https://safety-guard-htn2026.klavander56.chatgpt.site",
+  "blocker": null,
+  "next": [
+    "Perform manual browser and wallet-extension acceptance; preserve owner-only site access.",
+    "Plan identity assurance, sponsorship quotas and monitoring before opening the prototype to a wider community."
+  ],
+  "binary": {
+    "bytes": 230128,
+    "sha256": "377b31fb9421f0890f3866774470c6fd9e33a49edcf4a6dab9f72fc932c1b3ba",
+    "matchesDownloadedDevnetProgram": true
+  },
+  "deploymentSignature": "4BPSQeaXMjSTtC7HUHYCtpHA6KqR7MMDK6YonxzJMaVahPwbfQBGYRnpAmQEPiQUtJgDGWu2rd6X4UXnisrA6CoN",
+  "tests": {
+    "worker": 166,
+    "offlineAgent": 29,
+    "chainClient": 41,
+    "proxy": 8,
+    "operations": 18,
+    "nativeRust": 24,
+    "httpThroughFrontend": 5,
+    "hostedHttpThroughFrontend": 5,
+    "hostedIdentity": 36,
+    "hostedSignedDevnetChecks": 14,
+    "hostedFinalizedJourneyTransactions": 10,
+    "community": 23,
+    "hostedCommunityAssets": 13,
+    "communitySourceAndPublisher": 29,
+    "communityChainSdk": 13,
+    "communityRust": 7,
+    "hostedLedgerAssets": 18
+  },
+  "frontendOrigin": "https://safety-guard-htn2026.klavander56.chatgpt.site",
+  "workerOrigin": "https://safety-guard-api-production.2012044zj.workers.dev",
+  "workerVersionId": "cea78c42-cd87-4703-878d-31ff1d970261",
+  "frontendDeploymentId": "appgdep_6aaee780f55081919ab9cf9a029ac02d",
+  "privateRpcConfigured": true,
+  "hostedChainPreparationVerified": true,
+  "hostedSignedApplicationVerified": true,
+  "communityProgramId": "7vuz78V9Tu53Bpt3iXHc37VSDBmRSYxcEguWewR9LXzm",
+  "communityLedger": {
+    "status": "deployed and verified",
+    "evidence": "community.ledger.validation.json",
+    "hostedChecks": 17,
+    "finalizedRecords": 20
+  }
+}

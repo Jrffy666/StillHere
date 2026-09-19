@@ -1,0 +1,41 @@
+{
+  "recordedAt": "2026-09-19T14:11:16.977Z",
+  "programId": "6QoP3pGGBpCDdpCzK8DZhx5rZa99D4RZwkbNteSwY6kK",
+  "deployer": "AHdX6zJn3xYQXCBix3TvEqXUyV9x8PdPcEstsCkyhdE8",
+  "linuxWorkspace": "/root/safety-guard",
+  "binary": {
+    "bytes": 212944,
+    "sha256": "3498385acf3b75e857220f9676e3bb374d047da01b2558ffcb585c53d5232fda",
+    "localFile": "contracts/target/deploy/safety_guard.so"
+  },
+  "toolchain": {
+    "ubuntu": "24.04.5",
+    "node": "24.14.1",
+    "hostRust": "1.94.1",
+    "anchor": "0.32.1",
+    "solana": "4.1.2",
+    "platformTools": "v1.56",
+    "architecture": "v3"
+  },
+  "localnet": {
+    "verified": true,
+    "genesisHash": "7o7dDFsXPTFxqwPWfDYbkZXK5U9mvUevZrKYxKGHumN3",
+    "report": "docs/deployment/verification.localnet.json",
+    "confirmedTransactions": 9,
+    "rejectedOperations": 6,
+    "guardianPoints": "10"
+  },
+  "devnet": {
+    "rpc": "https://api.devnet.solana.com",
+    "genesisHash": "EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG",
+    "balanceLamports": 3615447520,
+    "executableProgramFound": true,
+    "workflowVerified": true,
+    "status": "verified",
+    "report": "docs/deployment/verification.devnet.json",
+    "confirmedTransactions": 7,
+    "rejectedOperations": 6,
+    "guardianPoints": "10",
+    "note": "CLI workflow verification is separate from browser wallet interaction and website hosting."
+  }
+}

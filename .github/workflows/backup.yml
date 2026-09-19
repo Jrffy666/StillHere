@@ -1,0 +1,45 @@
+name: Encrypted maintenance backup
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Source environment with configured backup secrets
+        required: true
+        type: choice
+        options:
+          - staging
+          - production
+
+permissions:
+  contents: read
+
+concurrency:
+  group: backup-${{ inputs.environment }}
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: ${{ inputs.environment }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Export and authenticate encrypted archive
+        env:
+          SAFETY_GUARD_OPERATOR_SECRET: ${{ secrets.SAFETY_GUARD_OPERATOR_SECRET }}
+          SAFETY_GUARD_BACKUP_KEY: ${{ secrets.SAFETY_GUARD_BACKUP_KEY }}
+          SAFETY_GUARD_API_ORIGIN: ${{ vars.SAFETY_GUARD_API_ORIGIN }}
+        run: |
+          node scripts/backup.mjs export --api-origin "$SAFETY_GUARD_API_ORIGIN" --file "$RUNNER_TEMP/safety-guard.sgbackup"
+          node scripts/backup.mjs verify --file "$RUNNER_TEMP/safety-guard.sgbackup"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: safety-guard-${{ inputs.environment }}-${{ github.run_id }}
+          path: ${{ runner.temp }}/safety-guard.sgbackup
+          retention-days: 14
+          if-no-files-found: error
+

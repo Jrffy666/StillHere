@@ -1,0 +1,91 @@
+{
+  "startedAt": "2026-09-19T17:03:38.641Z",
+  "finishedAt": "2026-09-19T17:03:53.347Z",
+  "apiOrigin": "https://safety-guard-htn2026.klavander56.chatgpt.site",
+  "signingOrigin": "https://safety-guard-htn2026.klavander56.chatgpt.site",
+  "programId": "23f7UAfNbQCGdfQbJV3Tois98dETDfXnAXgjE5qTH5gb",
+  "success": true,
+  "syntheticMonitoringCancelled": true,
+  "syntheticAccountDeleted": true,
+  "blockchainTransactions": 0,
+  "credentialsPersisted": false,
+  "checks": [
+    {
+      "check": "Hosted readiness",
+      "status": 200,
+      "passed": true
+    },
+    {
+      "check": "Production ready",
+      "passed": true
+    },
+    {
+      "check": "Create synthetic account",
+      "status": 201,
+      "passed": true
+    },
+    {
+      "check": "Request wallet binding",
+      "status": 200,
+      "passed": true
+    },
+    {
+      "check": "Canonical signing origin",
+      "passed": true
+    },
+    {
+      "check": "Verify wallet binding",
+      "status": 200,
+      "passed": true
+    },
+    {
+      "check": "Create synthetic chain-enabled journey",
+      "status": 201,
+      "passed": true
+    },
+    {
+      "check": "Prepare unsigned Devnet create transaction",
+      "status": 200,
+      "passed": true
+    },
+    {
+      "check": "Transaction has no signatures",
+      "passed": true
+    },
+    {
+      "check": "Expected rider pays test-network fees",
+      "passed": true
+    },
+    {
+      "check": "Expected V2 Devnet program",
+      "passed": true
+    },
+    {
+      "check": "Create instruction and current blockhash",
+      "passed": true
+    },
+    {
+      "check": "Durable outbox contains only prepared state",
+      "passed": true
+    },
+    {
+      "check": "Discard unsigned transaction",
+      "status": 200,
+      "passed": true
+    },
+    {
+      "check": "Unsigned intent discarded",
+      "passed": true
+    },
+    {
+      "check": "Cancel synthetic monitoring",
+      "status": 200,
+      "passed": true
+    },
+    {
+      "check": "Delete synthetic account and journey",
+      "status": 200,
+      "passed": true
+    }
+  ]
+}

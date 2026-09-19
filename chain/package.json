@@ -1,0 +1,36 @@
+{
+  "name": "@safety-guard/chain",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./v2": "./src/v2.ts",
+    "./community": "./src/community.ts"
+  },
+  "scripts": {
+    "test": "tsx --test tests/*.test.ts",
+    "typecheck": "tsc --noEmit",
+    "verify:local": "tsx scripts/verify.ts --cluster localnet",
+    "verify:devnet": "tsx scripts/verify.ts --cluster devnet",
+    "setup": "tsx scripts/setup.ts",
+    "setup:v2": "tsx scripts/setup-v2.ts",
+    "verify:v2:local": "tsx scripts/verify-v2.ts",
+    "verify:v2:devnet": "tsx scripts/verify-v2.ts --cluster devnet",
+    "verify:app:v2": "tsx scripts/verify-app-v2.ts",
+    "verify:hosted:v2": "tsx scripts/verify-hosted-v2.ts",
+    "setup:community": "tsx scripts/setup-community.ts",
+    "verify:community:local": "tsx scripts/verify-community.ts",
+    "verify:community:devnet": "tsx scripts/verify-community.ts --cluster devnet",
+    "verify:community:hosted": "tsx scripts/verify-hosted-community.ts"
+  },
+  "dependencies": {
+    "@solana/web3.js": "1.98.4",
+    "buffer": "6.0.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.0",
+    "tsx": "^4.19.0",
+    "typescript": "~5.9.3"
+  }
+}

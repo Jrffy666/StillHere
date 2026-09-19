@@ -1,0 +1,26 @@
+{
+  "checkedAt": "2026-09-19T17:28:06.528Z",
+  "origin": "https://safety-guard-htn2026.klavander56.chatgpt.site",
+  "status": "passed",
+  "checks": [
+    "/: HTTP 200",
+    "published redesigned homepage",
+    "root dark theme",
+    "new social metadata",
+    "published stylesheet reference",
+    "/_next/static/css/index.Czb9r8k2.css: HTTP 200",
+    "/_next/static/css/page.CvSRdraM.css: HTTP 200",
+    "/_next/static/css/index.Czb9r8k2.css: HTTP 200",
+    "published obsidian design rules",
+    "/admin: HTTP 200",
+    "/api/ready: HTTP 200",
+    "production API remains ready",
+    "/api/config: HTTP 200",
+    "V2 Devnet configuration preserved",
+    "/images/guard-shield.png: HTTP 200",
+    "/images/guard-shield.png: exact published artwork",
+    "/og.png: HTTP 200",
+    "/og.png: exact published artwork"
+  ],
+  "browserVisualQa": false
+}

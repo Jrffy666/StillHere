@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "programId": "7vuz78V9Tu53Bpt3iXHc37VSDBmRSYxcEguWewR9LXzm",
+  "issuer": "4sF5iTCz1vqK6iAvSeuRunw2WeaXvYRAhCf5JgE6j6uc",
+  "sponsor": "EuR9ovZGmXcnuhor1PvCGo3YfwkfbVsh6xvUbqYQtHhA",
+  "provenance": "platform-attested",
+  "ruleVersion": 1,
+  "pointsPool": 25,
+  "reputationPool": 10,
+  "maxGuardians": 16,
+  "configAccountSize": 109,
+  "journeyAccountSize": 796,
+  "recordAccountSize": 173
+}

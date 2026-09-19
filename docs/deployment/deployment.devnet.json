@@ -1,0 +1,17 @@
+{
+    "schemaVersion":  1,
+    "recordedAt":  "2026-09-19T14:06:31.9197993Z",
+    "cluster":  "devnet",
+    "rpc":  "https://api.devnet.solana.com",
+    "genesisHash":  "EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG",
+    "programId":  "6QoP3pGGBpCDdpCzK8DZhx5rZa99D4RZwkbNteSwY6kK",
+    "deploymentSignature":  "5H75FaAyMLV33nRNNtgCyiP6Xg35jCz3XoSpHHtRAr349k4TJX9keEPv8KJE827n3d3LGaga57gKJ1HUZLPhV4hh",
+    "deployedSlot":  500893192,
+    "programData":  "C7bUKSLouV4VGZdrj8gich6MtoKUMj6SptASSvEWUTn3",
+    "upgradeAuthority":  "AHdX6zJn3xYQXCBix3TvEqXUyV9x8PdPcEstsCkyhdE8",
+    "owner":  "BPFLoaderUpgradeab1e11111111111111111111111",
+    "binaryBytes":  212944,
+    "evidence":  "Successful Solana CLI deployment and program show; full lifecycle verification is recorded separately.",
+    "onChainBinarySha256":  "3498385acf3b75e857220f9676e3bb374d047da01b2558ffcb585c53d5232fda",
+    "bytecodeMatchesBuild":  true
+}

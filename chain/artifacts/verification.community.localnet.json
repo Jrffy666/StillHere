@@ -1,0 +1,141 @@
+{
+  "purpose": "Signed platform-attested community ledger, independent finalized reconstruction, and administrative withdrawal verification",
+  "cluster": "localnet",
+  "genesis": "7o7dDFsXPTFxqwPWfDYbkZXK5U9mvUevZrKYxKGHumN3",
+  "programId": "7vuz78V9Tu53Bpt3iXHc37VSDBmRSYxcEguWewR9LXzm",
+  "verifiedAt": "2026-09-19T19:36:01.979Z",
+  "journeyId": "ee16825ea91c079c26e656b3e823efa0a272095b54120830d62623968f491e61",
+  "cancelledId": "2eddf812c4a64cfde4262f2bc2f8dbb917733821717e2c05a1d28c221168368e",
+  "signatures": [
+    {
+      "label": "initialize",
+      "signature": "mXbc5W2RSpxgEbBAVBCh698u9DWzU7FToYQctZuvqzwFp7RAqUQVPvYs4P6JnLnNiA1tzSr2bTE11Sb4tTNfjwh"
+    },
+    {
+      "label": "authority-revision",
+      "signature": "63eR8dbpmXvMDERKxtjDmEc8uTPEMgeyh9dsLTn7a46L3Ni3RRYcaXAiZod3twAB648U41bt1B6RX9U5amE7tH4Y"
+    },
+    {
+      "label": "created",
+      "signature": "5SEpLz3nqSLcGNcJTeL5cb8Uw6KyLKYaGTgkNCcpEFzccuaB2ToZmeVUnzKxUvLWovQ7rBC1f6MToKME1KjtsdAj"
+    },
+    {
+      "label": "assigned-A",
+      "signature": "vpLZ27fbQKpyyWBdYGBv1nkt44VeMnJ9RaWU4XTTgaJxoQkZgmwQdEqAuLRHig76ycH3XYZVabnZ3QcKwccgxCb"
+    },
+    {
+      "label": "check-A",
+      "signature": "5LUoFaq5HF2PsQkD2jeGWNnGDLLh6zmjVSgrLAiiWJmF1PSfrk7PpCVkWsrhDanuZREo9RyToH7UDbfTWV2XP6bv"
+    },
+    {
+      "label": "automatic-relay-request",
+      "signature": "5rtt4vco7ryMLgH697yK2RyoLNiMNb2uHp4SPx6gC695ZJj3HdHY1QTp6T8koUvq5p56h4n4QJUABsgyuhh8CVXY"
+    },
+    {
+      "label": "assigned-B",
+      "signature": "4nk85YfnXmQqnV5UCRiYvexqWvY3QpzTd9GpLM8hKhk9H1cWSLgXz16kXvf2HywsbtyjbHAEYxRyRnzZqfdnYhtk"
+    },
+    {
+      "label": "check-B",
+      "signature": "2hiKPtqEnaE4S9AVmy1j85SsMWjPeDn8fxrT69VJQmJFBegLTNDjPzj9JYSn9Ajt7CACi23qHkyhFuc3WR1HFpfT"
+    },
+    {
+      "label": "returning-assignment-A",
+      "signature": "wCdJYExR62JFvqPs39WCPshq1om8EsXWyvkofsWS2MJCQC9LNEWLMyADF1SrSKXFWPUg1sk4KL1m1ZUjZr5awLV"
+    },
+    {
+      "label": "check-returning-A",
+      "signature": "41riQhTfWhM1dJDScr4cDSfXWG42uAnU4exXYfzjndaApquJxzAcudG6YQaU1seXMNbb9H8o65qG8zkgZqU8UZ9m"
+    },
+    {
+      "label": "arrived",
+      "signature": "4n7pBKSdy69rL62BSu2LKGJuiPtyzXiZEgka4e4h4xWf7CMviCM8DynQWTB5rHc3waPfjAqDp1jk8RWaAR32LBpn"
+    },
+    {
+      "label": "contribution-A",
+      "signature": "4MU8qJaFXddgpXB6xxTfFhwootYr7DP1ErRwFZkfGsdjJnEfxXA1Tq6bCDCndTntNg9wKpsrvPXHhP87VUKMS84p"
+    },
+    {
+      "label": "admin-withdrawal",
+      "signature": "2SsUCC2zpgXEjz6jzjhURcFsNSzjEPZ42Ac6CU98jaJkw2ZEdhwAeYL9knDcvX5MuqF7QvT8UPGUm6zopqvQAVRo"
+    },
+    {
+      "label": "late-contribution-B-after-withdrawal",
+      "signature": "2n9hMJTcaxeKDWMs8DTY9FsBLYUUo3H1DHPcgFodRY9BL5JjuH56NNcdvRgFKJ4GZEfQ8bUcoZZtFKnv7r1dusZW"
+    },
+    {
+      "label": "late-former-guardian-thanks-after-withdrawal",
+      "signature": "4p61L9z2ecLsRPBo9VKk5QtScSgGdVtkZc3znCR3GGfEit2SAFhcQ5K2qQvcm6apKsGvhiVyKw7oLN37kqTRZcye"
+    },
+    {
+      "label": "cancelled-created",
+      "signature": "4Xi4cZ6KG6rbfiLm4QhYNvyJHfq9XDCbaeaBfu77a2U44N46iABTqMVsMfNKiF5222pggTv3QBES9EXeLBfmGX9e"
+    },
+    {
+      "label": "cancelled-assigned",
+      "signature": "Se9XyYwJ9Hn4iH1WnnwpT3F1A3p2G8yiffycD6QJs83V2U2kSjS21wqycpM5eDAYSN6Kb3F4rj7SRQQJAwKtaDJ"
+    },
+    {
+      "label": "cancelled-check_in",
+      "signature": "2qJwbKKvCuAkQhWZbutywKuUtgxrfLMRnnLxaVJJKjrfsX25PFr9Qf8EyUZnq3UYiGYfLvvpqSsBNk21vZNBxCak"
+    },
+    {
+      "label": "cancelled-closed",
+      "signature": "5ZFYhSYuSDE3yo7FzeNAG2dj1NNjcf6TEExy6xU1jrTao6DmHf41eiZPKbD4a3xnhXQjP7Rya4c2BeC4j3J9Xb5G"
+    },
+    {
+      "label": "cancelled-gratitude",
+      "signature": "37QBJxN2Gu5i9satP664gGFggvywNjVhSGNU46WFcWXCJvAkqCgUtKQGchZt5NL3n7EJ7sqA3gQ3NcavLuHD9W34"
+    }
+  ],
+  "rejectionChecks": [
+    "bootstrap-must-use-program-upgrade-authority",
+    "unauthorized-authority-rotation",
+    "stale-authority-rotation",
+    "unauthorized-issuer",
+    "unauthorized-sponsor",
+    "duplicate-created-receipt",
+    "out-of-order-sequence",
+    "checkin-wrong-actor",
+    "checkin-stale-assignment",
+    "checkin-future-observation",
+    "former-guardian-checkin",
+    "thanks-before-close",
+    "withdrawal-before-close",
+    "duplicate-contribution-A",
+    "issuer-cannot-withdraw",
+    "duplicate-thanks",
+    "duplicate-withdrawal",
+    "cancelled-no-contribution",
+    "cancelled-cannot-checkin"
+  ],
+  "finalizedRecords": 18,
+  "profileA": {
+    "points": 0,
+    "reputation": 0,
+    "completedGuards": 0,
+    "gratitude": {
+      "total": 1,
+      "companionship": 1,
+      "thoughtfulness": 0,
+      "relay": 0
+    },
+    "withdrawnJourneys": [
+      "ee16825ea91c079c26e656b3e823efa0a272095b54120830d62623968f491e61"
+    ]
+  },
+  "profileB": {
+    "points": 0,
+    "reputation": 0,
+    "completedGuards": 0,
+    "gratitude": {
+      "total": 0,
+      "companionship": 0,
+      "thoughtfulness": 0,
+      "relay": 0
+    },
+    "withdrawnJourneys": [
+      "ee16825ea91c079c26e656b3e823efa0a272095b54120830d62623968f491e61"
+    ]
+  }
+}

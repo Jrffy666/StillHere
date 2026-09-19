@@ -1,0 +1,176 @@
+{
+  "startedAt": "2026-09-19T16:45:06.272Z",
+  "finishedAt": "2026-09-19T16:45:14.390Z",
+  "apiOrigin": "https://safety-guard-api-production.2012044zj.workers.dev",
+  "signingOrigin": "https://safety-guard-htn2026.klavander56.chatgpt.site",
+  "success": true,
+  "syntheticAccountDeleted": true,
+  "blockchainTransactions": 0,
+  "credentialsPersisted": false,
+  "checks": [
+    {
+      "check": "Hosted readiness",
+      "status": 200,
+      "passed": true
+    },
+    {
+      "check": "Production readiness",
+      "passed": true
+    },
+    {
+      "check": "Create synthetic guest",
+      "status": 201,
+      "passed": true
+    },
+    {
+      "check": "bind challenge",
+      "status": 200,
+      "passed": true
+    },
+    {
+      "check": "bind canonical signing origin",
+      "passed": true
+    },
+    {
+      "check": "bind wallet and expiry",
+      "passed": true
+    },
+    {
+      "check": "Verify wallet binding",
+      "status": 200,
+      "passed": true
+    },
+    {
+      "check": "Wallet bound to original account",
+      "passed": true
+    },
+    {
+      "check": "Recovery code issued privately",
+      "passed": true
+    },
+    {
+      "check": "Reject consumed challenge replay",
+      "status": 409,
+      "passed": true
+    },
+    {
+      "check": "Reject cross-origin challenge",
+      "status": 403,
+      "passed": true
+    },
+    {
+      "check": "login challenge",
+      "status": 200,
+      "passed": true
+    },
+    {
+      "check": "login canonical signing origin",
+      "passed": true
+    },
+    {
+      "check": "login wallet and expiry",
+      "passed": true
+    },
+    {
+      "check": "Reject cross-origin signature submission",
+      "status": 403,
+      "passed": true
+    },
+    {
+      "check": "Sign in from canonical origin",
+      "status": 200,
+      "passed": true
+    },
+    {
+      "check": "Sign-in preserves account identity",
+      "passed": true
+    },
+    {
+      "check": "recover challenge",
+      "status": 200,
+      "passed": true
+    },
+    {
+      "check": "recover canonical signing origin",
+      "passed": true
+    },
+    {
+      "check": "recover wallet and expiry",
+      "passed": true
+    },
+    {
+      "check": "Recover with new wallet and recovery code",
+      "status": 200,
+      "passed": true
+    },
+    {
+      "check": "Recovery preserves identity and replaces credentials",
+      "passed": true
+    },
+    {
+      "check": "Recovery revokes previous sessions",
+      "status": 401,
+      "passed": true
+    },
+    {
+      "check": "Old wallet no longer signs in",
+      "status": 401,
+      "passed": true
+    },
+    {
+      "check": "recover challenge",
+      "status": 200,
+      "passed": true
+    },
+    {
+      "check": "recover canonical signing origin",
+      "passed": true
+    },
+    {
+      "check": "recover wallet and expiry",
+      "passed": true
+    },
+    {
+      "check": "Old recovery code is invalid",
+      "status": 401,
+      "passed": true
+    },
+    {
+      "check": "login challenge",
+      "status": 200,
+      "passed": true
+    },
+    {
+      "check": "login canonical signing origin",
+      "passed": true
+    },
+    {
+      "check": "login wallet and expiry",
+      "passed": true
+    },
+    {
+      "check": "Recovered wallet signs in",
+      "status": 200,
+      "passed": true
+    },
+    {
+      "check": "Delete synthetic account",
+      "status": 200,
+      "passed": true
+    },
+    {
+      "check": "Synthetic private account deleted",
+      "passed": true
+    },
+    {
+      "check": "Deleted session rejected",
+      "status": 401,
+      "passed": true
+    },
+    {
+      "check": "Deleted wallet login rejected",
+      "status": 401,
+      "passed": true
+    }
+  ]
+}

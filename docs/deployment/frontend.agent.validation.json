@@ -1,0 +1,19 @@
+{
+  "checkedAt": "2026-09-19T17:50:19.656Z",
+  "origin": "https://safety-guard-htn2026.klavander56.chatgpt.site",
+  "status": "passed",
+  "checks": [
+    "/: HTTP 200",
+    "existing dark journey interface preserved",
+    "/api/config: HTTP 200",
+    "offline provider and no configured model",
+    "external notifications remain disabled",
+    "/_next/static/chunks/page-kqVOnyc5.js: HTTP 200",
+    "published journey bundle matches validated build",
+    "published companion trace and summary interface",
+    "/_next/static/css/page.CvSRdraM.css: HTTP 200",
+    "/_next/static/css/index.CBYlOUUX.css: HTTP 200",
+    "published responsive companion styling"
+  ],
+  "browserVisualQa": false
+}

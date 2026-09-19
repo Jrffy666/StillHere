@@ -1,0 +1,50 @@
+{
+  "recordedDate": "2026-09-20",
+  "timezone": "Asia/Shanghai",
+  "status": "passed",
+  "mode": "offline-deterministic-mock",
+  "liveModelEnabled": false,
+  "externalNotificationsEnabled": false,
+  "syntheticFixtures": true,
+  "workerVersionId": "7fa1298c-5103-489c-8194-464667d695e8",
+  "frontendDeploymentId": "appgdep_6aaecae9e60c8191abc4b17cdf3d671e",
+  "checks": {
+    "workerRuntimeTests": 114,
+    "mockProtocolTestsIncluded": 13,
+    "durableAgentTestsIncluded": 16,
+    "proxyTests": 8,
+    "operationsTests": 16,
+    "workerTypecheck": true,
+    "frontendTypecheck": true,
+    "frontendLint": true,
+    "frontendProductionBuild": true,
+    "workerProductionPreflight": true,
+    "hostedFrontendAssetChecks": 11,
+    "hostedHttpWorkflows": 5,
+    "syntheticAccountsDeleted": 11
+  },
+  "hostedAgentAssertions": [
+    "Public configuration reports mock, configured false, and liveModel false",
+    "Guardian unavailability produces a completed run with a context read, check-in, and follow-up tool result",
+    "A newer route concern after reassurance produces a clarification without declaring danger",
+    "A stale-location fixture is recorded as stale in tool context",
+    "A failed notification fixture produces a completed status-handling run without real dispatch",
+    "Human approval, relay, access revocation, shared rewards, and demo isolation remain functional"
+  ],
+  "frontendAssetEvidence": "frontend.agent.validation.json",
+  "commands": [
+    "npm --prefix worker test",
+    "npm --prefix worker run typecheck",
+    "npm --prefix web run typecheck",
+    "npm --prefix web run lint",
+    "npm --prefix web run build",
+    "npm run test:proxy",
+    "npm run test:operations",
+    "node scripts/deploy.mjs check --env production"
+  ],
+  "hostedWorkflowSource": "tests/api.integration.test.mjs",
+  "browserVisualQa": false,
+  "liveLlmEvaluation": false,
+  "blockchainTransactionsSubmittedByThisRevision": 0,
+  "limitations": "Deterministic synthetic orchestration tests do not establish general language understanding, real Uber telemetry, emergency response, or eligibility for an LLM-based prize."
+}

@@ -1,0 +1,111 @@
+{
+  "schemaVersion": 1,
+  "purpose": "Hosted Worker / Devnet V2 verification using project test SOL only",
+  "apiOrigin": "https://safety-guard-api-production.2012044zj.workers.dev",
+  "signingOrigin": "https://safety-guard-htn2026.klavander56.chatgpt.site",
+  "cluster": "devnet",
+  "programId": "23f7UAfNbQCGdfQbJV3Tois98dETDfXnAXgjE5qTH5gb",
+  "startedAt": "2026-09-19T17:08:06.064Z",
+  "finishedAt": "2026-09-19T17:09:48.652Z",
+  "status": "passed",
+  "failure": null,
+  "checks": [
+    "hosted-production-devnet-ready",
+    "exact-devnet-genesis",
+    "v2-program-executable",
+    "participant-funding-covers-actual-rent-and-fees",
+    "three-wallet-identities-bound",
+    "funding-below-0.15-test-sol",
+    "signed-handoff-grants-private-access",
+    "former-guardian-private-access-revoked",
+    "app-arrival-does-not-double-credit",
+    "duplicate-claim-rejected",
+    "one-shared-25-point-10-reputation-pool",
+    "independent-finalized-chain-reward-check",
+    "former-guardian-retains-public-receipt-access",
+    "ten-finalized-journey-transactions"
+  ],
+  "funding": {
+    "participantCount": 3,
+    "lamportsPerParticipant": 20000000,
+    "totalTransferred": 60000000,
+    "transactionFee": 5000,
+    "maximumDebit": 150000000,
+    "rentLamports": {
+      "journey": 7823200,
+      "reputation": 985520
+    },
+    "feeReservePerParticipant": 1000000,
+    "signature": "532wxRS6R45AWE7fWyaEAj24RqzdCH8Cw8CEQPkdvv1z5i9iegpzQhzU2vaYm9AiAWWPDxAXbkiX3exPr47bewVw",
+    "status": "finalized"
+  },
+  "transactions": [
+    {
+      "operation": "create",
+      "signature": "38YyWNyyTVW8Kbo8YddcQUX7oiQs1txkiqLbfV1D75BnKqxkVZoCQ7meBy5nvCLHLhT3Zfb6cxNsBioQskq2KrCA",
+      "status": "finalized"
+    },
+    {
+      "operation": "propose-A",
+      "signature": "5RLk2FCS6cggS5vCJtErQ8DLaLy9n4KyQq7XGrekXU5ZdZ3JUaDtoyijGVjdwX3hJrQkQpwpMYJovaw7em92wRjj",
+      "status": "finalized"
+    },
+    {
+      "operation": "accept-A",
+      "signature": "54qm4gaRoWmZ55gEfB9Aw1keiXeYq4nce7wKbs4r6Gd46wERg7XEcc6nvTeZjJ9YPwMN6yUzfKSTxPL2e7uzzBMU",
+      "status": "finalized"
+    },
+    {
+      "operation": "check-in-A",
+      "signature": "4UEfgyijcJLtVhJtQr9WF2ddXkTawFSY6yE1Aqm6ceoAgByiTRS7hrwHE4gowZhmCdLw3Uekwn8qXCBzFFscUWyX",
+      "status": "finalized"
+    },
+    {
+      "operation": "propose-B",
+      "signature": "2fxvx4dLmSME31RpkiJuD4rdFpWf41B68t3DbmtQ4EFmkqJBjXWV7cQUos2HgpRWycF83u8dRLe4dGiQmFZB5sdV",
+      "status": "finalized"
+    },
+    {
+      "operation": "accept-B",
+      "signature": "125EYG438aFJEnmH87UBLyErPWJmkcGybYiqV7qux6PFV2HawiF9VpP1J8RgttETsQf1dSmEt7oQkDJKn7WwKhYE",
+      "status": "finalized"
+    },
+    {
+      "operation": "check-in-B",
+      "signature": "53r1QC1aytpaFN4BGyduzb7khE1nYFykr9sHBGNECJLLT9Wt1icSbs12xTp7QdxxjWrEf49eL3Joq1qQnhq8X5ka",
+      "status": "finalized"
+    },
+    {
+      "operation": "complete",
+      "signature": "2ubwwuTWwP9utUGaQLbjgVEvnPkq2YUErrcQJ8a8PEiLAkUGzv7VK5Tm8UtQN3usSgaDrS49mmJMdaRBzZsxJopS",
+      "status": "finalized"
+    },
+    {
+      "operation": "claim-A",
+      "signature": "3mqwcRmeQwHmeNwBognevLsCpPFaPngKRfnnqfHUabCWAXKapi542Bk6wzMtQLkPTrq3meWuJmpXNuhNGsPfLnGq",
+      "status": "finalized"
+    },
+    {
+      "operation": "claim-B",
+      "signature": "5pdqWJtRCuARZs3Dzf6wkQEkiBTf33FnfAkkJot2uJ1tHGBCkvJjwfVh8zAEinXivvxva5vgywHYvsR23Uh4U6UM",
+      "status": "finalized"
+    }
+  ],
+  "points": [
+    12,
+    13
+  ],
+  "reputation": [
+    5,
+    5
+  ],
+  "cleanup": {
+    "syntheticAccounts": 3,
+    "deletedAccounts": 3,
+    "privateJourneyRemoved": true,
+    "monitoringStopped": true,
+    "reauthenticationAttempts": 0
+  },
+  "credentialsPersisted": false,
+  "publicChainRecordsRemain": true
+}

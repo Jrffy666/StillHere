@@ -1,0 +1,56 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "safety-guard-api",
+  "main": "src/index.ts",
+  // Pinned to the newest date supported by the test runtime bundled with the current pool.
+  "compatibility_date": "2026-08-22",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": {"enabled": true, "head_sampling_rate": 0.1},
+  "durable_objects": {
+    "bindings": [
+      {"name": "TRIPS", "class_name": "TripRoom"},
+      {"name": "USERS", "class_name": "UserAccount"},
+      {"name": "LOBBY", "class_name": "TripDirectory"}
+      ,{"name": "AUTH", "class_name": "IdentityRegistry"}
+      ,{"name": "GOVERNANCE", "class_name": "GovernanceStore"}
+      ,{"name": "CHAIN", "class_name": "ChainJourney"}
+      ,{"name": "COMMUNITY", "class_name": "CommunityLedger"}
+    ]
+  },
+  "migrations": [{"tag": "v1", "new_sqlite_classes": ["TripRoom", "UserAccount", "TripDirectory"]}, {"tag": "v2", "new_sqlite_classes": ["IdentityRegistry", "GovernanceStore", "ChainJourney"]}, {"tag":"v3","new_sqlite_classes":["CommunityLedger"]}],
+  "triggers": {"crons": ["*/5 * * * *"]},
+  "vars": {
+    "APP_ENV": "development",
+    "AUTH_DOMAIN": "localhost:5173",
+    "SITE_ORIGIN": "http://localhost:5173",
+    "SOLANA_NETWORK": "devnet",
+    "COMMUNITY_ENABLED": "false",
+    "COMMUNITY_PROGRAM_ID": "",
+    "SOLANA_V2_PROGRAM_ID": "23f7UAfNbQCGdfQbJV3Tois98dETDfXnAXgjE5qTH5gb",
+    "RESTORE_ALLOWED": "false",
+    "ALLOWED_ORIGINS": "http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000,http://127.0.0.1:3000",
+    "OPENAI_MODEL": "gpt-4.1-mini",
+    "NOTIFICATIONS_ENABLED": "false",
+    "ELEVENLABS_VOICE_ID": "JBFqnCBsd6RMkjVDRZzb",
+    "SOLANA_PROGRAM_ID": "",
+    "SOLANA_RPC_URL": "https://api.devnet.solana.com"
+  },
+  "env": {
+    "staging": {
+      "name": "safety-guard-api-staging",
+      "durable_objects": {"bindings": [
+        {"name":"TRIPS","class_name":"TripRoom"},{"name":"USERS","class_name":"UserAccount"},{"name":"LOBBY","class_name":"TripDirectory"},
+        {"name":"AUTH","class_name":"IdentityRegistry"},{"name":"GOVERNANCE","class_name":"GovernanceStore"},{"name":"CHAIN","class_name":"ChainJourney"},{"name":"COMMUNITY","class_name":"CommunityLedger"}
+      ]},
+      "vars": {"APP_ENV":"staging","AUTH_DOMAIN":"safety-guard-htn2026.klavander56.chatgpt.site","SITE_ORIGIN":"https://safety-guard-htn2026.klavander56.chatgpt.site","ALLOWED_ORIGINS":"https://safety-guard-htn2026.klavander56.chatgpt.site","SOLANA_NETWORK":"devnet","COMMUNITY_ENABLED":"false","COMMUNITY_PROGRAM_ID":"","SOLANA_V2_PROGRAM_ID":"23f7UAfNbQCGdfQbJV3Tois98dETDfXnAXgjE5qTH5gb","SOLANA_PROGRAM_ID":"","SOLANA_RPC_URL":"https://api.devnet.solana.com","RESTORE_ALLOWED":"false","OPENAI_MODEL":"gpt-4.1-mini","NOTIFICATIONS_ENABLED":"false","ELEVENLABS_VOICE_ID":"JBFqnCBsd6RMkjVDRZzb"}
+    },
+    "production": {
+      "name": "safety-guard-api-production",
+      "durable_objects": {"bindings": [
+        {"name":"TRIPS","class_name":"TripRoom"},{"name":"USERS","class_name":"UserAccount"},{"name":"LOBBY","class_name":"TripDirectory"},
+        {"name":"AUTH","class_name":"IdentityRegistry"},{"name":"GOVERNANCE","class_name":"GovernanceStore"},{"name":"CHAIN","class_name":"ChainJourney"},{"name":"COMMUNITY","class_name":"CommunityLedger"}
+      ]},
+      "vars": {"APP_ENV":"production","AUTH_DOMAIN":"safety-guard-htn2026.klavander56.chatgpt.site","SITE_ORIGIN":"https://safety-guard-htn2026.klavander56.chatgpt.site","ALLOWED_ORIGINS":"https://safety-guard-htn2026.klavander56.chatgpt.site","SOLANA_NETWORK":"devnet","COMMUNITY_ENABLED":"true","COMMUNITY_PROGRAM_ID":"7vuz78V9Tu53Bpt3iXHc37VSDBmRSYxcEguWewR9LXzm","SOLANA_V2_PROGRAM_ID":"23f7UAfNbQCGdfQbJV3Tois98dETDfXnAXgjE5qTH5gb","SOLANA_PROGRAM_ID":"","SOLANA_RPC_URL":"https://api.devnet.solana.com","RESTORE_ALLOWED":"false","OPENAI_MODEL":"gpt-4.1-mini","NOTIFICATIONS_ENABLED":"false","ELEVENLABS_VOICE_ID":"JBFqnCBsd6RMkjVDRZzb"}
+    }
+  }
+}

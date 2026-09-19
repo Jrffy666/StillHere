@@ -1,0 +1,65 @@
+{
+  "verifiedAt": "2026-09-19T16:05:48.320Z",
+  "cluster": "localnet",
+  "programId": "23f7UAfNbQCGdfQbJV3Tois98dETDfXnAXgjE5qTH5gb",
+  "tripId": "4174899f-15fd-47d8-b01b-241680a2c0e6",
+  "checks": [
+    "wallet binding preserves identity",
+    "signed handoff grants private access",
+    "former guardian access revoked",
+    "app arrival does not double credit",
+    "finalized claims share one 25/10 pool",
+    "duplicate claim rejected",
+    "former guardian can access receipt"
+  ],
+  "transactions": [
+    {
+      "operation": "create",
+      "status": "finalized"
+    },
+    {
+      "operation": "propose",
+      "status": "finalized"
+    },
+    {
+      "operation": "accept",
+      "status": "finalized"
+    },
+    {
+      "operation": "check-in",
+      "status": "finalized"
+    },
+    {
+      "operation": "propose",
+      "status": "finalized"
+    },
+    {
+      "operation": "accept",
+      "status": "finalized"
+    },
+    {
+      "operation": "check-in",
+      "status": "finalized"
+    },
+    {
+      "operation": "complete",
+      "status": "finalized"
+    },
+    {
+      "operation": "claim",
+      "status": "finalized"
+    },
+    {
+      "operation": "claim",
+      "status": "finalized"
+    }
+  ],
+  "points": [
+    13,
+    12
+  ],
+  "reputation": [
+    5,
+    5
+  ]
+}

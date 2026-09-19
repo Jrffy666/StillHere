@@ -1,0 +1,16 @@
+# Optional. All features have explicit demo/rules fallbacks without these secrets.
+# Local operations only: generate a random secret of at least 32 characters.
+# OPERATOR_SECRET=
+# Public V2 configuration (no wallet private keys are stored here).
+SOLANA_V2_PROGRAM_ID=23f7UAfNbQCGdfQbJV3Tois98dETDfXnAXgjE5qTH5gb
+SOLANA_NETWORK=devnet
+# Optional server-only HTTPS Devnet RPC endpoint; store as a Worker secret when deployed.
+# SOLANA_PRIVATE_RPC_URL=https://your-devnet-rpc.example/?api-key=YOUR_KEY
+# Live models are disabled in the offline-agent release; adding a key has no effect.
+# OPENAI_API_KEY=
+# NOTIFICATION_WEBHOOK_URL=https://your-owned-notification-service.example/notify
+# NOTIFICATION_WEBHOOK_SECRET=
+# NOTIFICATION_ACK_SECRET=
+# ELEVENLABS_API_KEY=
+# Enable real notifications only after configuring and testing your own recipient service.
+# NOTIFICATIONS_ENABLED=false

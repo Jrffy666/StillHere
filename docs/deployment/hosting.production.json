@@ -1,0 +1,143 @@
+{
+  "recordedAt": "2026-09-19T19:54:51.888Z",
+  "frontend": {
+    "url": "https://safety-guard-htn2026.klavander56.chatgpt.site",
+    "projectId": "appgprj_6aaeb438ee7c81918e772f03d67510af",
+    "versionId": "appgprj_6aaeb438ee7c81918e772f03d67510af~appgver_a06a5fbfb4bc8191807bfbe118727477",
+    "versionNumber": 6,
+    "deploymentId": "appgdep_6aaee780f55081919ab9cf9a029ac02d",
+    "status": "succeeded",
+    "sourceCommit": "949b0876b578a8a63f598bf847d1d4ac0c579412",
+    "environmentRevision": 2,
+    "access": "owner-only"
+  },
+  "backend": {
+    "origin": "https://safety-guard-api-production.2012044zj.workers.dev",
+    "worker": "safety-guard-api-production",
+    "environment": "production",
+    "versionId": "cea78c42-cd87-4703-878d-31ff1d970261",
+    "readinessPassed": true,
+    "privateRpcSecretSupportDeployed": true,
+    "deploymentId": "3391bf76-75e9-46ef-b1a6-482f34c1140e",
+    "privateRpcConfigured": true,
+    "rpcProvider": "Helius",
+    "communityPublicationConfigured": true
+  },
+  "verification": {
+    "offlineAgent": {
+      "provider": "mock",
+      "liveModel": false,
+      "workerTestsPassed": 114,
+      "newAgentTestsPassed": 29,
+      "typecheck": true,
+      "lint": true,
+      "productionBuild": true,
+      "hostedAssetChecksPassed": 11,
+      "hostedHttpTestsPassed": 5,
+      "syntheticAccountsDeleted": 11,
+      "browserVisualQa": false,
+      "evidence": "agent.offline.validation.json"
+    },
+    "web3Frontend": {
+      "typecheck": true,
+      "lint": true,
+      "productionBuild": true,
+      "proxyTestsPassed": 8,
+      "hostedPublicationChecksPassed": true,
+      "browserVisualQa": false,
+      "evidence": "frontend.web3.validation.json"
+    },
+    "frontendPages": [
+      "/",
+      "/admin"
+    ],
+    "frontendApi": [
+      "/api/health",
+      "/api/ready",
+      "/api/config"
+    ],
+    "allEndpointStatuses": 200,
+    "humanGuardingHttpTests": {
+      "passed": 5,
+      "failed": 0,
+      "syntheticAccountsDeleted": 11
+    },
+    "hostedIdentityChecks": 36,
+    "hostedChainPreparationPassed": true,
+    "browserWalletAcceptance": false,
+    "hostedChainPreparationChecks": 17,
+    "publicConfigurationExcludesRpcCredential": true,
+    "hostedFrontendChainPreparationPassed": true,
+    "hostedFrontendChainPreparationChecks": 17,
+    "hostedSignedDevnet": {
+      "passed": true,
+      "checks": 14,
+      "finalizedJourneyTransactions": 10,
+      "guardianPoints": [
+        12,
+        13
+      ],
+      "guardianReputation": [
+        5,
+        5
+      ],
+      "syntheticAccountsDeleted": 3,
+      "privateJourneyRemoved": true,
+      "monitoringStopped": true,
+      "evidence": "application.v2.hosted.devnet.json"
+    },
+    "communityV1": {
+      "workerTestsPassed": 137,
+      "newCommunityTestsPassed": 23,
+      "typecheck": true,
+      "lint": true,
+      "productionBuild": true,
+      "workerProductionDryRun": true,
+      "proxyTestsPassed": 8,
+      "operationsTestsPassed": 16,
+      "hostedAssetChecksPassed": 13,
+      "hostedHttpTestsPassed": 5,
+      "syntheticAccountsDeleted": 11,
+      "browserVisualQa": false,
+      "browserInteractiveAcceptance": false,
+      "chainProgramChanged": false,
+      "blockchainTransactions": 0,
+      "liveModel": false,
+      "evidence": "community.v1.validation.json"
+    },
+    "communityLedger": {
+      "workerTestsPassed": 166,
+      "communitySourceAndPublisherTestsPassed": 29,
+      "chainClientTestsPassed": 41,
+      "communitySdkTestsPassed": 13,
+      "rustWorkspaceTestsPassed": 24,
+      "communityRustTestsPassed": 7,
+      "operationsTestsPassed": 18,
+      "proxyTestsPassed": 8,
+      "typecheck": true,
+      "lint": true,
+      "productionBuild": true,
+      "workerProductionDryRun": true,
+      "localConfirmedCommunityTransactions": 20,
+      "localRejectedScenarios": 19,
+      "hostedCommunityChecksPassed": 17,
+      "hostedFinalizedCommunityRecords": 20,
+      "hostedHttpTestsPassed": 5,
+      "hostedHttpSyntheticAccountsDeleted": 11,
+      "hostedCommunitySyntheticAccountsDeleted": 3,
+      "hostedAssetChecksPassed": 18,
+      "browserVisualQa": false,
+      "browserWalletAcceptance": false,
+      "liveModel": false,
+      "publicAccessEnabled": false,
+      "evidence": "community.ledger.validation.json"
+    }
+  },
+  "remaining": "Manual browser and wallet-extension acceptance; Devnet sponsorship/abuse operations before any wider community launch. The site remains owner-only.",
+  "community": {
+    "programId": "7vuz78V9Tu53Bpt3iXHc37VSDBmRSYxcEguWewR9LXzm",
+    "network": "devnet",
+    "evidence": "platform_attested",
+    "deploymentReceipt": "deployment.community.devnet.json"
+  }
+}

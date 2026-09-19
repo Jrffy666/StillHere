@@ -1,0 +1,21 @@
+{
+    "programId":  "7vuz78V9Tu53Bpt3iXHc37VSDBmRSYxcEguWewR9LXzm",
+    "version":  1,
+    "provenance":  "platform-attested",
+    "binaryBytes":  265448,
+    "binarySha256":  "c5dce38a41dc8cb4aba94bbdc58aec7a0f6e99240cf0287312665606ecb4c71b",
+    "build":  {
+                  "toolsVersion":  "v1.56",
+                  "architecture":  "v3",
+                  "optimization":  "z",
+                  "crate":  "community-ledger"
+              },
+    "rustWorkspaceTests":  24,
+    "communityRustTests":  7,
+    "chainSdkTests":  41,
+    "communitySdkTests":  13,
+    "localConfirmedTransactions":  20,
+    "localRejectedScenarios":  19,
+    "localFinalizedRecords":  18,
+    "generatedAt":  "2026-09-19T19:37:16.8704588Z"
+}

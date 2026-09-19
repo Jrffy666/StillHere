@@ -1,0 +1,91 @@
+{
+  "schemaVersion": 1,
+  "purpose": "Safety Guard test-network lifecycle and authorization verification; public evidence only, not a production safety certification.",
+  "cluster": "localnet",
+  "rpc": "http://127.0.0.1:8899",
+  "genesisHash": "7o7dDFsXPTFxqwPWfDYbkZXK5U9mvUevZrKYxKGHumN3",
+  "programId": "6QoP3pGGBpCDdpCzK8DZhx5rZa99D4RZwkbNteSwY6kK",
+  "startedAt": "2026-09-19T13:52:28.851Z",
+  "finishedAt": "2026-09-19T13:52:32.456Z",
+  "status": "passed",
+  "verified": true,
+  "funding": {
+    "mode": "airdrop",
+    "funder": null,
+    "lamportsPerParticipant": 1000000000
+  },
+  "participants": {
+    "rider": "3zQB6FnxZzVgmQjPpwGtnhA1DCwRrddVrG47xdTwAsTb",
+    "guardian": "HYUUPySUykKrkkX8FpNfQEhFjJCr1iWViMBxQ2uXzdUJ",
+    "attacker": "EWLgp4DGKpTW6qFohtVuptopp9VTmcqBQvvaiiZxQsid"
+  },
+  "taskAddress": "5ehP8KgjMbi7caxbHsWGqrk1wNUW2bmzi66EZiwzRiq",
+  "cancelledTaskAddress": "6aTpwLU7evF3DVxgsV4za3ADSMxQPCFq5dAhuZUS87Py",
+  "transactions": [
+    {
+      "label": "airdrop to rider",
+      "signature": "QYpaX5yFVUkAYGoiQVRXVX8ySCAjSiEooHQ1r1v2euBdfr4r8HorCCM8csGSQsW2oqGYx7yQGTL3CYHdRAFRAaB"
+    },
+    {
+      "label": "airdrop to guardian",
+      "signature": "5uMGPwdgUCWeuTRxnWvCN4Gv4XESvq4DxmyDuJUczBGRfYKwXfpWR2pXaE2M7QG22zFswDJeqqXr1k2FikXtYa73"
+    },
+    {
+      "label": "airdrop to attacker",
+      "signature": "3uLDmUwoJSTjJtuX7ykhcabVHp7x1JkfP8t4FcCih2LAVeDTQKx246QjpWNwaQkJMEWA1QwECP1Hw4yhopbQSoQ3"
+    },
+    {
+      "label": "create task",
+      "signature": "3CPZyGXJpKuZfuaqrmvCR5npcYBBcCBLdV9idDhJdDioYNrayrrGVSbr1wiVc8zF9XDkAU34Fru41mgRihGPt1NJ"
+    },
+    {
+      "label": "accept task",
+      "signature": "4F38eWa93qhbSdtD5b5PKFxxBiE91nE8niqTpnp4rHCWpqtVHNgtMY6v5BdfxmBfHne8HQWYiGYxatpiZL8Bn91d"
+    },
+    {
+      "label": "guardian check-in",
+      "signature": "5vN8mwbsRYsEVYKm7jR4bYEaFHYwvBw2ogNP7Pe1VaG4EuQaKd2mo6YZ8zuPmYi68zjf32JPQ2F2Fqp7txiqa4jK"
+    },
+    {
+      "label": "complete task",
+      "signature": "TQE16KbeXGmUvM85rgVgwJSS95ZJgk9oKvp46H7NfF6jE2hs8qiQPNVSFdAHJKg9uSA81HF3AGnjGS2sW4qb5mH"
+    },
+    {
+      "label": "create cancellation task",
+      "signature": "5G5z6AoP4TJSHGoZ1LtaAgbkG7HQzV1iwiJjRn5kfSq6xuAKwkBfVvWfwL8HLb91nyDcqCKhmTop2bJ52Sn5Wq8F"
+    },
+    {
+      "label": "cancel task",
+      "signature": "rJ5KKWDJRrnfrJiViAxjsFmDUQPqgs8FuLix9jeGfS1opsVt9FrSu9LiWU78VKVcoBAGDJyCtH1Y5DE8Py2YgGw"
+    }
+  ],
+  "rejectedOperations": [
+    {
+      "label": "wrong guardian",
+      "evidence": "Program custom error during transaction simulation; no confirmed transaction signature."
+    },
+    {
+      "label": "completion without check-in",
+      "evidence": "Program custom error during transaction simulation; no confirmed transaction signature."
+    },
+    {
+      "label": "duplicate reward",
+      "evidence": "Program custom error during transaction simulation; no confirmed transaction signature."
+    },
+    {
+      "label": "completed task cancellation",
+      "evidence": "Program custom error during transaction simulation; no confirmed transaction signature."
+    },
+    {
+      "label": "completed task recreation",
+      "evidence": "Program custom error during transaction simulation; no confirmed transaction signature."
+    },
+    {
+      "label": "cancelled task acceptance",
+      "evidence": "Program custom error during transaction simulation; no confirmed transaction signature."
+    }
+  ],
+  "guardianPoints": "10",
+  "guardianCompletedTasks": "1",
+  "receipt": "TQE16KbeXGmUvM85rgVgwJSS95ZJgk9oKvp46H7NfF6jE2hs8qiQPNVSFdAHJKg9uSA81HF3AGnjGS2sW4qb5mH"
+}
