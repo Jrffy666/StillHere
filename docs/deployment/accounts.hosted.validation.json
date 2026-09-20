@@ -1,0 +1,36 @@
+{
+  "checkedAt": "2026-09-20T09:04:12.959Z",
+  "origin": "https://safety-guard-htn2026.klavander56.chatgpt.site",
+  "checksPassed": 21,
+  "checks": [
+    "rider can register without a wallet or email",
+    "guardian can register without a wallet or email",
+    "Registered identities are distinct",
+    "Case variants cannot claim an existing username",
+    "Wrong and unknown credentials return the same generic rejection",
+    "Registered account can create a simulated journey",
+    "Sign out succeeds",
+    "Signed-out token is revoked",
+    "New login restores the same account with a fresh token",
+    "Journey history survives sign out and sign in",
+    "Other accounts do not acquire the journey history",
+    "Public member profile omits the login username",
+    "The same account supports another session",
+    "Password change returns a fresh authenticated session",
+    "Password change revokes another session",
+    "New password returns to the same account",
+    "Existing guest flow remains compatible",
+    "Existing guest can have history before upgrading",
+    "Adding a login keeps the existing guest identity",
+    "Adding a login preserves the guest journey history",
+    "All synthetic accounts and their private demo journeys were deleted"
+  ],
+  "scope": "HTTP registration, existing guest upgrade, re-login and simulated journey-history persistence through the frontend proxy. No browser interaction, ordinary community journey settlement or model inference was tested by this script.",
+  "cleanup": {
+    "syntheticAccountsCreated": 3,
+    "syntheticAccountsDeleted": 3
+  },
+  "blockchainTransactions": 0,
+  "modelCalls": 0,
+  "externalNotifications": 0
+}

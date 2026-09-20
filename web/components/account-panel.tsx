@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/dialog';
 import { api, errorMessage } from '@/lib/api';
 import { walletIdentity, type IdentityIntent } from '@/lib/wallet';
+import { AccountAccess } from '@/components/account-access';
 import type { Session, User } from '@/lib/types';
 
 function download(name: string, content: string, type = 'application/json') {
@@ -42,10 +43,15 @@ export function AccountPanel({
     [code, setCode] = useState(''),
     [issuedCode, setIssuedCode] = useState(''),
     [confirmation, setConfirmation] = useState('');
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [passwordConfirmation, setPasswordConfirmation] = useState('');
+  const [saved, setSaved] = useState('');
   async function run(work: () => Promise<void>) {
     if (busy) return;
     setBusy(true);
     setError('');
+    setSaved('');
     try {
       await work();
     } catch (e) {
@@ -73,6 +79,11 @@ export function AccountPanel({
             setIssuedCode('');
             setCode('');
             setConfirmation('');
+            setCurrentPassword('');
+            setNewPassword('');
+            setPasswordConfirmation('');
+            setSaved('');
+            setError('');
           }
         }
       }}
@@ -90,6 +101,7 @@ export function AccountPanel({
             {error}
           </p>
         )}
+        {saved && <output className="simple-notice">{saved}</output>}
         {issuedCode && (
           <div className="recovery-card" aria-live="polite">
             <strong>Save your new recovery code now</strong>
@@ -116,6 +128,7 @@ export function AccountPanel({
           <>
             <div className="account-facts">
               <strong>{user.name}</strong>
+              {user.username && <span>Username: <strong>@{user.username}</strong></span>}
               <span>
                 Account ID: <code>{user.id}</code>
               </span>
@@ -128,6 +141,34 @@ export function AccountPanel({
                   : 'No recovery code configured'}
               </span>
             </div>
+            {!user.username && <AccountAccess mode="upgrade" session={session} onSession={value => {
+              onSession(value);
+              setSaved('Login saved. Sign in with your username and password to return to this account.');
+            }} />}
+            {user.username && <details>
+              <summary>Change password</summary>
+              <p>Changing your password signs out your other sessions. Your history stays with this account.</p>
+              <form className="account-password-form" onSubmit={event => {
+                event.preventDefault();
+                void run(async () => {
+                  if (newPassword !== passwordConfirmation) throw new Error('The new passwords do not match.');
+                  const value = await api<Session>('/auth/password', session.token, { currentPassword, newPassword });
+                  setCurrentPassword(''); setNewPassword(''); setPasswordConfirmation('');
+                  onSession(value);
+                  setSaved('Password changed. Your other sessions have been signed out.');
+                });
+              }}>
+                <input type="hidden" name="username" autoComplete="username" value={user.username} />
+                <label className="field-label" htmlFor="account-current-password">Current password</label>
+                <Input id="account-current-password" name="current-password" type="password" autoComplete="current-password" value={currentPassword} maxLength={128} required disabled={busy} onChange={event => setCurrentPassword(event.target.value)} />
+                <label className="field-label" htmlFor="account-new-password">New password</label>
+                <Input id="account-new-password" name="new-password" type="password" autoComplete="new-password" value={newPassword} minLength={12} maxLength={128} required disabled={busy} onChange={event => setNewPassword(event.target.value)} />
+                <p className="field-hint">At least 12 characters.</p>
+                <label className="field-label" htmlFor="account-confirm-password">Confirm new password</label>
+                <Input id="account-confirm-password" name="confirm-password" type="password" autoComplete="new-password" value={passwordConfirmation} minLength={12} maxLength={128} required disabled={busy} onChange={event => setPasswordConfirmation(event.target.value)} />
+                <Button type="submit" disabled={busy}>Save new password</Button>
+              </form>
+            </details>}
             <p className="small-note">
               Signing an account message does not transfer funds. Journey
               transactions use Devnet SOL. Your wallet address is public; your
@@ -151,8 +192,12 @@ export function AccountPanel({
               </Button>
               <Button
                 variant="outline"
-                disabled={busy || !user.wallet}
-                onClick={() => void run(() => identity('revoke-sessions'))}
+                disabled={busy || (!user.wallet && !user.username)}
+                onClick={() => void run(async () => {
+                  if (user.wallet) await identity('revoke-sessions');
+                  else onSession(await api<Session>('/auth/revoke-sessions', session.token, {}));
+                  setSaved('Other sessions have been signed out.');
+                })}
               >
                 Revoke other sessions
               </Button>
@@ -233,8 +278,8 @@ export function AccountPanel({
         ) : (
           <>
             <p className="field-hint">
-              New here? Start with your name in My journeys, then link your
-              wallet from your account.
+              Use the wallet already linked to your account. You can also close
+              this panel and sign in with your username and password.
             </p>
             <Button
               disabled={busy}
@@ -273,7 +318,7 @@ export function AccountPanel({
         )}
         {busy && (
           <output>
-            Complete the request in your wallet, then keep this page open.
+            Completing your request. If your wallet opens, review the message there.
           </output>
         )}
       </DialogContent>

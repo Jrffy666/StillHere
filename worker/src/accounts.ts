@@ -3,6 +3,7 @@ import bs58 from 'bs58';
 import { z } from 'zod';
 import { type WorkerEnv, type User, type TripSummary, type CommunityMember, type GratitudeKind } from './types';
 import { COMMUNITY_NOTICE_VERSION, communityReference, randomCommunityReference } from './community-events';
+import { hashPassword, usernameSchema, validPasswordVerifier, verifyPassword } from './password-auth';
 
 export async function digest(value: string): Promise<string> {
   const bytes = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value));
@@ -13,7 +14,8 @@ export function safeEqual(a: string, b: string): boolean {
   return left.byteLength === right.byteLength && crypto.subtle.timingSafeEqual(left, right);
 }
 type IdentityRow = { wallet: string | null; recovery_digest: string | null; auth_version: number; status: string; legacy_revoked: number };
-export type AccountPublic = User & { wallet: string | null; recoveryConfigured: boolean; authVersion: number; status: 'active' | 'deactivated' };
+export type AccountPublic = User & { wallet: string | null; username: string | null; recoveryConfigured: boolean; authVersion: number; status: 'active' | 'deactivated' };
+type CredentialRow={username:string;verifier:string|null;operation:string;expected_version:number;expires:number};
 export interface AccountSnapshot {
   version: 1; user: User; wallet: string | null; authVersion: number;
   trips: { id: string; created: number }[];
@@ -55,6 +57,7 @@ export class UserAccount extends DurableObject<WorkerEnv> {
     ctx.storage.sql.exec('CREATE TABLE IF NOT EXISTS limits (key TEXT PRIMARY KEY, start INTEGER NOT NULL, count INTEGER NOT NULL)');
     ctx.storage.sql.exec("CREATE TABLE IF NOT EXISTS identity (id INTEGER PRIMARY KEY CHECK(id=1),wallet TEXT,recovery_digest TEXT,auth_version INTEGER NOT NULL DEFAULT 1,status TEXT NOT NULL DEFAULT 'active',legacy_revoked INTEGER NOT NULL DEFAULT 0)");
     ctx.storage.sql.exec('CREATE TABLE IF NOT EXISTS sessions (digest TEXT PRIMARY KEY,created INTEGER NOT NULL,expires INTEGER NOT NULL,auth_version INTEGER NOT NULL)');
+    ctx.storage.sql.exec('CREATE TABLE IF NOT EXISTS credentials (id INTEGER PRIMARY KEY CHECK(id=1),username TEXT NOT NULL UNIQUE,verifier TEXT,operation TEXT NOT NULL,expected_version INTEGER NOT NULL,expires INTEGER NOT NULL)');
     ctx.storage.sql.exec('CREATE TABLE IF NOT EXISTS gratitude (id TEXT PRIMARY KEY,kind TEXT NOT NULL,created INTEGER NOT NULL)');
     ctx.storage.sql.exec('CREATE TABLE IF NOT EXISTS community_identity (id INTEGER PRIMARY KEY CHECK(id=1),member_id TEXT NOT NULL,notice_version TEXT NOT NULL,accepted_at INTEGER NOT NULL)');
     ctx.storage.sql.exec('CREATE TABLE IF NOT EXISTS community_credits (trip_id TEXT PRIMARY KEY)');
@@ -69,7 +72,61 @@ export class UserAccount extends DurableObject<WorkerEnv> {
     if (!row) return null;
     const meta=this.metadata(), user=JSON.parse(row.data) as User;
     return {id:user.id,name:user.name,bio:user.bio??'',points:user.points,reputation:user.reputation,completedGuards:user.completedGuards,
-      wallet:meta.wallet,recoveryConfigured:Boolean(meta.recovery_digest),authVersion:meta.auth_version,status:meta.status==='active'?'active':'deactivated',communityNoticeVersion:this.communityIdentity()?.noticeVersion??null};
+      wallet:meta.wallet,username:this.credential()?.verifier?this.credential()!.username:null,recoveryConfigured:Boolean(meta.recovery_digest),authVersion:meta.auth_version,status:meta.status==='active'?'active':'deactivated',communityNoticeVersion:this.communityIdentity()?.noticeVersion??null};
+  }
+  private credential():CredentialRow|null {
+    return this.ctx.storage.sql.exec<CredentialRow>('SELECT username,verifier,operation,expected_version,expires FROM credentials WHERE id=1').toArray()[0]??null;
+  }
+  /** Serialize an account upgrade before claiming a globally unique username. */
+  beginPasswordRegistration(username:string,operation:string,expectedVersion:number,actorDigest:string):boolean {
+    usernameSchema.parse(username);z.uuid().parse(operation);
+    return this.ctx.storage.transactionSync(()=>{
+      const user=this.authenticate(actorDigest),credential=this.credential();
+      if(!user||user.authVersion!==expectedVersion||credential?.verifier||credential&&credential.expires>Date.now())return false;
+      this.ctx.storage.sql.exec('INSERT OR REPLACE INTO credentials VALUES(1,?,NULL,?,?,?)',username,operation,expectedVersion,Date.now()+5*60_000);
+      return true;
+    });
+  }
+  cancelPasswordRegistration(operation:string):void {
+    this.ctx.storage.sql.exec('DELETE FROM credentials WHERE operation=? AND verifier IS NULL',operation);
+  }
+  finishPasswordRegistration(input:{operation:string;actorDigest:string;verifier:string;tokenDigest:string}):AccountPublic|null {
+    if(!validPasswordVerifier(input.verifier))return null;
+    return this.ctx.storage.transactionSync(()=>{
+      const user=this.authenticate(input.actorDigest),credential=this.credential();
+      if(!user||!credential||credential.verifier||credential.operation!==input.operation||credential.expected_version!==user.authVersion||credential.expires<=Date.now())return null;
+      this.ctx.storage.sql.exec('UPDATE credentials SET verifier=?,expires=0 WHERE id=1',input.verifier);
+      return this.rotatePasswordSession(input.tokenDigest);
+    });
+  }
+  private rotatePasswordSession(tokenDigest:string):AccountPublic {
+    this.ctx.storage.sql.exec('UPDATE identity SET auth_version=auth_version+1,legacy_revoked=1 WHERE id=1');
+    this.ctx.storage.sql.exec('DELETE FROM sessions');
+    const user=this.getPublic()!;this.storeSession(tokenDigest,Date.now()+30*86400000,user.authVersion);return user;
+  }
+  /** KDF work can yield; recheck the exact credential and identity version before issuing access. */
+  async loginPassword(username:string,password:string,tokenDigest:string):Promise<AccountPublic|null> {
+    const credential=this.credential(),user=this.getPublic();
+    const eligible=Boolean(user?.status==='active'&&credential?.username===username&&credential.verifier);
+    const matches=await verifyPassword(password,eligible?credential!.verifier:null);
+    if(!matches||!user||!credential)return null;
+    return this.ctx.storage.transactionSync(()=>{
+      const current=this.getPublic(),latest=this.credential();
+      if(!current||current.status!=='active'||current.authVersion!==user.authVersion||latest?.username!==username||latest.verifier!==credential.verifier)return null;
+      this.storeSession(tokenDigest,Date.now()+30*86400000,current.authVersion);return current;
+    });
+  }
+  async changePassword(input:{actorDigest:string;expectedVersion:number;currentPassword:string;newPassword:string;tokenDigest:string}):Promise<AccountPublic|null> {
+    const user=this.authenticate(input.actorDigest),credential=this.credential();
+    if(!user||user.authVersion!==input.expectedVersion||!credential?.verifier)return null;
+    if(!await verifyPassword(input.currentPassword,credential.verifier))return null;
+    const verifier=await hashPassword(input.newPassword);
+    return this.ctx.storage.transactionSync(()=>{
+      const current=this.authenticate(input.actorDigest),latest=this.credential();
+      if(!current||current.authVersion!==input.expectedVersion||latest?.verifier!==credential.verifier)return null;
+      this.ctx.storage.sql.exec('UPDATE credentials SET verifier=? WHERE id=1',verifier);
+      return this.rotatePasswordSession(input.tokenDigest);
+    });
   }
   /** Private account-to-pseudonym mapping. Never derive this from a UUID or wallet. */
   communityIdentity():{memberId:string;noticeVersion:typeof COMMUNITY_NOTICE_VERSION;acceptedAt:number}|null {
@@ -148,7 +205,7 @@ export class UserAccount extends DurableObject<WorkerEnv> {
     const user=this.getPublic(),meta=this.metadata();
     return Boolean(user?.status==='active' && meta.recovery_digest && safeEqual(meta.recovery_digest,recoveryDigest));
   }
-  changeIdentity(input:{expectedVersion:number;actorDigest?:string;recoveryDigest?:string;wallet?:string;newRecoveryDigest?:string}): AccountPublic | null {
+  changeIdentity(input:{expectedVersion:number;actorDigest?:string;recoveryDigest?:string;wallet?:string;newRecoveryDigest?:string;clearPassword?:boolean}): AccountPublic | null {
     return this.ctx.storage.transactionSync(()=>{
       const user=this.getPublic(),meta=this.metadata();
       if (!user || user.status!=='active' || user.authVersion!==input.expectedVersion) return null;
@@ -158,6 +215,7 @@ export class UserAccount extends DurableObject<WorkerEnv> {
       if (!authorized) return null;
       this.ctx.storage.sql.exec('UPDATE identity SET wallet=?,recovery_digest=?,auth_version=auth_version+1,legacy_revoked=1 WHERE id=1',input.wallet??meta.wallet,input.newRecoveryDigest??meta.recovery_digest);
       this.ctx.storage.sql.exec('DELETE FROM sessions');
+      if(input.clearPassword)this.ctx.storage.sql.exec('DELETE FROM credentials');
       return this.getPublic();
     });
   }
@@ -188,6 +246,7 @@ export class UserAccount extends DurableObject<WorkerEnv> {
     this.metadata();
     this.ctx.storage.sql.exec("UPDATE identity SET status='deactivated',auth_version=auth_version+1,legacy_revoked=1,recovery_digest=NULL WHERE id=1");
     this.ctx.storage.sql.exec('DELETE FROM sessions');
+    this.ctx.storage.sql.exec('DELETE FROM credentials');
     this.ctx.storage.sql.exec("UPDATE account SET digest='',expires=0 WHERE id=1");
   }
   purgePrivate(): void {

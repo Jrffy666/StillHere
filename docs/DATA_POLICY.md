@@ -12,6 +12,7 @@ Minimal publication intents and public receipt indexes are retained independentl
 | --- | --- |
 | Display name, biography, contribution values and banner counts | Account data and community index; visible to all authenticated community members, with no visibility toggle |
 | Account-to-wallet mapping and account-to-community-reference mapping | Protected account storage; the member's public community reference is exposed through their community evidence, while wallet/authentication metadata is excluded from the public profile |
+| Username and password verifier | Username ownership reservation and protected account credential storage; password verification uses a salted hash, with no stored plaintext password. Usernames and authentication metadata are excluded from public community profiles; passwords and verifiers are not chain data or account-export data |
 | Session and recovery credentials | Hashes in the account object; plaintext returned only when issued |
 | Wallet authorization challenges | Short-lived challenge object, bound to account operation, origin, nonce, and expiration |
 | Route labels, shared ride link, locations, chat, check-ins, escalation contacts | Private journey object; rider and currently approved guardian |
@@ -49,7 +50,7 @@ Deletion does not remove public Solana transactions or previously downloaded cop
 
 ## Backups and restored data
 
-Backups contain private data and must remain encrypted outside the source checkout. Store the encryption key separately. Sessions and recovery credentials are excluded, and active journeys never restart monitoring automatically after restoration.
+Backups contain private data and must remain encrypted outside the source checkout. Store the encryption key separately. Current account snapshots exclude usernames, password verifiers, sessions and recovery credentials, and active journeys never restart monitoring automatically after restoration. Restoring a password-only account's business data does not restore its sign-in access. A wallet-linked account can sign in after its corresponding wallet registry is restored, then configure password access again. Ordinary sign-out and returning sign-in do not use this backup-restore path.
 
 Restoring an old backup merges current destination protections and the supplied latest source governance journal before applying resource data. The CLI also preserves the latest wallet authorization and all historical wallet ownership reservations, so a revoked wallet does not regain account access merely because older business data was selected. An old archive alone cannot know later deletions or wallet rotations in a new empty destination. Keep a current protection archive for as long as older archives are recoverable; follow the [recovery procedure](OPERATIONS.md#recovery-drill) before making restored data accessible.
 

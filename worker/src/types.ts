@@ -2,7 +2,7 @@ import type { AgentState } from './agent';
 import type { Assistance, Escalation, AiConsent } from './assistance';
 import type { PersonalAgentView } from './personal-agent';
 export interface Person { id: string; name: string; simulated?: boolean; wallet?: string | null }
-export interface User extends Person { points: number; reputation: number; completedGuards: number; recoveryConfigured?: boolean; bio?: string; communityNoticeVersion?: string | null }
+export interface User extends Person { points: number; reputation: number; completedGuards: number; recoveryConfigured?: boolean; username?: string | null; bio?: string; communityNoticeVersion?: string | null }
 export type GratitudeKind = 'companionship' | 'thoughtfulness' | 'relay';
 export interface CommunityMember {
   id: string; name: string; bio: string; points: number; reputation: number; completedGuards: number;

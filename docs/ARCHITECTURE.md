@@ -30,9 +30,9 @@ The frontend proxies requests to the separately running Worker. Local Durable Ob
 
 ## Identity and authorization
 
-A guest session is an opaque bearer credential, not a verified real-world identity. Session tokens expire after 30 days and are stored as SHA-256 digests on the backend. The frontend uses session storage; duplicate tabs may inherit the same credential. There is no production identity verification or account recovery.
+The original flow used guest sessions. The current account update adds username/password registration and sign-in, same-account upgrades for authenticated guests, and optional wallet login/recovery; see [IDENTITY.md](IDENTITY.md). Sessions remain opaque bearer credentials, not verified real-world identities. They expire after 30 days and are stored as SHA-256 digests on the backend. Passwords use a salted hash verifier in protected account storage. The frontend uses tab-specific session storage; duplicate tabs may inherit the same credential. Registered users can sign in again after session loss. There is no email password-reset provider or real-world identity verification.
 
-The rider approves who becomes the guardian. An invitation links to a request; it is not itself a grant of private access. Any authenticated guest may see a redacted available request and apply, subject to the pending-candidate limit.
+The rider approves who becomes the guardian. An invitation links to a request; it is not itself a grant of private access. An authenticated account, including a compatible guest, may see a redacted available request and apply, subject to the pending-candidate limit.
 
 Pending applicants receive only the redacted request and their own application. An approved current guardian receives the private trip. A replacement approval revokes the old guardian's future private reads and participant actions. Previously seen or copied data cannot be recalled.
 
@@ -96,7 +96,7 @@ This preserves local history without claiming that older assignments had rider a
 
 Exact route, position, contact data, conversation, and Uber links remain in the application backend. Public request summaries omit those fields. A rider-supplied Uber link is not fetched for telemetry; browser location sharing requires the rider's permission.
 
-A newly approved guardian receives private trip access. Rider approval is an explicit sharing decision, but it is not identity vetting. Retention, deletion, verified accounts, recovery, and operational abuse controls remain production work.
+A newly approved guardian receives private trip access. Rider approval is an explicit sharing decision, but it is not identity vetting. Current retention/deletion and credential-storage behavior is described in [DATA_POLICY.md](DATA_POLICY.md). Exported backup snapshots exclude username/password and session credentials, so they cannot restore password-only account access; wallet-linked access requires the corresponding wallet registry. See [IDENTITY.md](IDENTITY.md) for recovery limits. Real-world identity verification remains outside the prototype.
 
 ## Separate Solana commitment
 

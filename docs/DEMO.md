@@ -10,9 +10,9 @@ The simplified interface has three destinations: **My journeys**, **Guard networ
 
 ## Prepare access and accounts
 
-The published site is public as of September 20, 2026. Visitors do not need a site invitation or an allowed email address. Create different guest identities with **Enter StillHere**, for example `Demo Rider` and `Demo Guardian`. Separate browser profiles or different browsers are preferable to duplicated tabs. Public access permits using the application, not editing or administering the site, and does not expose private journeys to unapproved participants.
+The published site is public as of September 20, 2026. Visitors do not need a site invitation or email address. For the registration update, select **Create account** for separate rider and guardian accounts, using display names such as `Demo Rider` and `Demo Guardian`, distinct usernames, and saved passwords. Returning participants use **Sign in**. Follow [Demo accounts](DEMO_ACCOUNTS.md) for limits and recovery guidance; consult [Validation](VALIDATION.md) for the update's release evidence. Separate browser profiles or different browsers are preferable to duplicated tabs. Public access permits using the application, not editing or administering the site, and does not expose private journeys to unapproved participants.
 
-Guest credentials are held in session storage. Keep the rehearsal sessions available; without an established recovery method or linked wallet, closing a session or signing out can lose access. Wallet identity is optional for participation and separate from the wallet-signed commitment option.
+Sessions are held in tab-specific session storage. After signing out or closing a tab, use the saved username and password to reopen the same account and retained history. Existing authenticated guests can use **Account & settings → Save my account** before signing out to preserve their identity through a username/password login. A display name alone cannot recover a lost unbound guest session. Wallet identity is optional for participation and separate from the wallet-signed commitment option.
 
 Automated verification removed its synthetic accounts. It did not leave a populated demonstration profile for reuse. Prepare a dedicated rehearsal journey in advance and retain its accounts if you want existing records available during judging. Use a profile introduction that identifies the account as a controlled demonstration.
 
@@ -29,7 +29,7 @@ Automated verification removed its synthetic accounts. It did not leave a popula
 
 The wall initially previews up to three received banners. Choose **View all banners** to see the full pennants and category buttons. **Load earlier records** loads another page of public history; older banners can be beyond the first page. Cabinet progress and the confirmed-banner total cover the whole account, whereas the displayed card count covers loaded matching banners. Open **Dedication details** on a full pennant to show the public sender, recipient, and journey references. A rider's sent banners remain in history but do not appear as received honors on the rider's wall.
 
-The ended journey prioritizes the outcome and optional free thank-you. Conversation history and contribution receipts start folded. After all eligible guardians have a recorded banner, a sent summary replaces the composer; **View details** reopens it. This is application delivery, not a claim of chain confirmation. Wallet and account tools are in the header avatar menu under **Wallet & settings**.
+The ended journey prioritizes the outcome and optional free thank-you. Conversation history and contribution receipts start folded. After all eligible guardians have a recorded banner, a sent summary replaces the composer; **View details** reopens it. This is application delivery, not a claim of chain confirmation. Wallet and account tools are in the header avatar menu under **Account & settings**.
 
 Every full community profile includes this collection, including profiles opened through **View profile**. Compact candidate previews retain their existing counters. With no received banners, the wall shows an honest empty state; there are no seeded awards. A confirmed withdrawal removes recognition from the wall and cabinet totals while retaining original receipts in the community record. Appreciation after a cancelled journey may unlock **A grateful connection** without unlocking **First watch**.
 
@@ -39,9 +39,9 @@ If the counters stay zero, first check that you are viewing the guardian account
 
 ## Optional three-account relay demonstration
 
-Use separate browser profiles or private windows for a rider, guardian A, and guardian B. Duplicating a tab can copy its guest session. Use fictional route and contact details; live GPS permission is optional.
+Use separate browser profiles or private windows signed in to different accounts for a rider, guardian A, and guardian B. Duplicating a tab can copy its session. Use fictional route and contact details; live GPS permission is optional.
 
-The guest sessions demonstrate role authorization, not verified real-world identities. The hosted backend runs its own alarms. When rehearsing locally instead, keep the local Worker running; its alarms stop with that process.
+The account sessions demonstrate role authorization, not verified real-world identities. The hosted backend runs its own alarms. When rehearsing locally instead, keep the local Worker running; its alarms stop with that process.
 
 ## Suggested four-minute walkthrough
 
@@ -78,7 +78,7 @@ These are rehearsal steps, not assertions that browser interaction tests have pa
 | Approve two competing applications | Only a valid current application can become the guardian; a stale request cannot replace them |
 | Journey is cancelled | Pending applications/relay end; no completion contribution is issued, but eligible checked-in guardians can still receive a free banner |
 | Journey is completed twice | No duplicate reward allocations |
-| Guest session attempts a private read | Access is denied or a permitted redacted request is returned |
+| An unapproved account attempts a private read | Access is denied or a permitted redacted request is returned |
 
 Revocation cannot erase route details or messages that A already saw. Demonstrate that future access is blocked without claiming deletion from somebody else's browser or screenshots.
 
@@ -86,7 +86,7 @@ Revocation cannot erase route details or messages that A already saw. Demonstrat
 
 The old single-person sample journey with simulated guardian Alex remains supported by the backend, but its launcher and scenario controls are no longer part of the simplified interface. Existing sample journeys stay labeled; demo completion awards no real points. Use ordinary two-account journeys for the current demonstration.
 
-Use separate actual guest sessions for approval, relay, privacy, and shared-reward evidence. A simulated handoff is not evidence of two independent participants.
+Use separate actual account sessions for approval, relay, privacy, and shared-reward evidence. A simulated handoff is not evidence of two independent participants.
 
 ## Blockchain evidence and the separate wallet-signed path
 
@@ -96,7 +96,7 @@ The retained V2 wallet-signed commitment is an additional flow with separate rec
 
 ## Questions to be ready for
 
-**Who chooses the guardian?** The rider approves an unexpired application. Guest identity verification is outside this prototype.
+**Who chooses the guardian?** The rider approves an unexpired application. Account registration does not verify a real-world identity.
 
 **What happens while nobody has replaced an overdue guardian?** The old assignment remains visible, a relay is open, and rules-based reminders continue. No human coverage guarantee is made.
 

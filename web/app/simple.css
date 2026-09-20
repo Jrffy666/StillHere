@@ -29,6 +29,15 @@
 .simple-welcome > svg { color: var(--accent); margin-bottom: 24px; }
 .simple-welcome h1 { font-size: 36px; letter-spacing: -1.2px; }
 .simple-welcome > p { margin-top: 14px; line-height: 1.8; color: var(--muted-foreground); }
+.account-access { margin-top: 20px; }
+.account-access-switch { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; padding: 4px; border: 1px solid var(--border); border-radius: 9px; }
+.account-access-switch button { min-width: 0; }
+.account-access form .field-label, .account-password-form .field-label { margin-top: 16px; }
+.account-access .primary-action, .account-password-form > button { width: 100%; margin-top: 20px; }
+.account-access .inline-error { margin-top: 14px; }
+.account-access .field-hint { margin-top: 7px; line-height: 1.6; }
+.account-upgrade-notice { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 20px; padding: 14px 16px; border: 1px solid var(--honor-border); border-radius: 10px; background: var(--card); }
+.account-upgrade-notice p { color: var(--muted-foreground); font-size: 12px; line-height: 1.6; margin-top: 4px; }
 .simple-note { color: var(--muted-foreground); font-size: 11px; line-height: 1.8; margin-top: 12px; }
 .simple-footer { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; padding-top: 24px; margin-top: 30px; border-top: 1px solid var(--border); color: var(--muted-foreground); font-size: 10px; line-height: 1.7; }
 .simple-empty { text-align: center; padding: 55px 20px; border: 1px dashed var(--border); border-radius: 12px; display: grid; justify-items: center; }

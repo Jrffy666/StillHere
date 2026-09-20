@@ -1,3 +1,6 @@
+export class ApiError extends Error {
+  constructor(message: string, public status: number) { super(message); }
+}
 export async function api<T>(
   path: string,
   token?: string,
@@ -17,8 +20,9 @@ export async function api<T>(
     .json()
     .catch(() => ({ error: 'The service returned an unreadable response.' }));
   if (!response.ok) {
-    throw new Error(
+    throw new ApiError(
       responseError(value, `Request failed (${response.status}).`),
+      response.status,
     );
   }
   return value as T;

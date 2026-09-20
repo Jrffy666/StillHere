@@ -2,7 +2,7 @@
 
 Use this checklist to try the current product and report what feels unclear. Presentation scripts and visual redesign are deferred until after your feedback.
 
-Open [StillHere](https://safety-guard-htn2026.klavander56.chatgpt.site) in two separate browser profiles or a normal and private window. The site is public: enter a different name in each window and select **Enter StillHere** to create independent rider and guardian identities. Keep both windows open. No site invitation, participant wallet or SOL is needed for this trial. For a shorter invitation guide, see [Public trial](PUBLIC_TRIAL.md).
+Open [StillHere](https://safety-guard-htn2026.klavander56.chatgpt.site) in two separate browser profiles or a normal and private window. The site is public. With the registration update, select **Create account** in each window using distinct rider and guardian usernames, display names and passwords, or **Sign in** to reuse your registered accounts. Save the credentials privately; they reopen the same account after logout or a tab closes. Keep both windows open during the trial. Existing signed-in guests can use **Account & settings → Save my account** before leaving. No email address, site invitation, participant wallet or SOL is needed. See [Demo accounts](DEMO_ACCOUNTS.md) for account guidance, [Validation](VALIDATION.md) for release evidence, and [Public trial](PUBLIC_TRIAL.md) for a shorter invitation guide.
 
 Use an ordinary **New journey** with fictional route details and messages. The sample journey does not earn community contribution and cannot use personal-agent delegation.
 

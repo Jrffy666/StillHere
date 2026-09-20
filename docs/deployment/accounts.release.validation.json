@@ -1,0 +1,66 @@
+{
+  "releasedAt": "2026-09-20T09:04:30.283248+00:00",
+  "frontend": {
+    "version": 19,
+    "commit": "9b4301717087f6bc9d16ddc946226797f35d817b",
+    "versionId": "appgprj_6aaeb438ee7c81918e772f03d67510af~appgver_726b16f0f9ac819188ac5bfae4c6ea42",
+    "deploymentId": "appgdep_6aafa1953a80819190126e603332cd7c",
+    "status": "succeeded",
+    "url": "https://safety-guard-htn2026.klavander56.chatgpt.site"
+  },
+  "backend": {
+    "worker": "safety-guard-api-production",
+    "versionId": "b00fc534-37dd-416f-8fd9-31da163d49c4",
+    "newBindings": false,
+    "destructiveMigrations": false
+  },
+  "validation": {
+    "fullWorkerSuite": {
+      "files": 23,
+      "tests": 393,
+      "status": "passed",
+      "scope": "Registration feature before the final successful-login failure-counter reset."
+    },
+    "finalAccountSuite": {
+      "tests": 21,
+      "status": "passed",
+      "scope": "Final source including successful-login counter reset and wallet recovery/password re-registration."
+    },
+    "workerTypecheck": "passed",
+    "frontendTypecheck": "passed",
+    "frontendLint": "passed",
+    "frontendBuild": "passed",
+    "hosted": {
+      "receipt": "accounts.hosted.validation.json",
+      "checks": 21,
+      "syntheticAccountsDeleted": 3,
+      "scope": "Executed against the new production Worker through the existing public frontend proxy before frontend version 19 publication; proxy code is unchanged."
+    },
+    "publishedFrontend": {
+      "receipt": "accounts.frontend.validation.json",
+      "checks": 9,
+      "scope": "Final published HTML and exact build assets; not browser interaction testing."
+    }
+  },
+  "behavior": [
+    "Username/password registration is the default entry.",
+    "Authenticated guests can add credentials without replacing their account ID or history.",
+    "Signing out revokes the session; signing back in returns to the same retained account data.",
+    "Password change revokes previous sessions; recovery-code wallet recovery clears prior password access.",
+    "Optional wallet login and legacy guest APIs remain compatible."
+  ],
+  "limits": [
+    "No email password reset or real-world identity verification.",
+    "Tab-specific sessions require signing in again after closing a tab.",
+    "Existing retention, deletion and participant-access rules still apply.",
+    "Lost unbound guest access cannot be recovered from a display name.",
+    "Password verifiers and username registry are not included in current business-data backup snapshots.",
+    "PBKDF2-SHA-256 uses the hosted runtime's 100000-iteration ceiling; this is not a production password-storage audit."
+  ],
+  "references": [
+    "https://developers.cloudflare.com/workers/runtime-apis/web-crypto/",
+    "https://developers.cloudflare.com/durable-objects/api/sqlite-storage-api/#transactionsync"
+  ],
+  "liveAcceptanceModelCalls": 0,
+  "liveAcceptanceBlockchainTransactions": 0
+}

@@ -2,6 +2,7 @@ import { DurableObject } from 'cloudflare:workers';
 import { z } from 'zod';
 import { digest, type AccountPublic } from './accounts';
 import { boundedJson } from './integrations';
+import { hashPassword, passwordSchema, usernameSchema, verifyPassword } from './password-auth';
 import type { WorkerEnv } from './types';
 
 export type IdentityEnv = WorkerEnv & { AUTH: DurableObjectNamespace<IdentityRegistry> };
@@ -11,6 +12,7 @@ const intents=['bind','login','rotate','recover','recovery-code','revoke-session
 export type IdentityIntent=typeof intents[number];
 interface Challenge { id:string;message:string;domain:string;intent:IdentityIntent;wallet:string;accountId:string;authVersion:number;oldWallet:string|null;expiresAt:number;used:boolean }
 interface WalletClaim { kind:'wallet';accountId:string;operation:string;committed:boolean }
+interface UsernameClaim {kind:'username';accountId:string;operation:string;committed:boolean}
 const alphabet='123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
 export function encodeWallet(bytes:Uint8Array):string {
   let n=0n; for(const byte of bytes)n=n*256n+BigInt(byte);
@@ -77,11 +79,31 @@ export class IdentityRegistry extends DurableObject<IdentityEnv> {
     this.save({kind:'wallet',accountId,operation,committed:false} satisfies WalletClaim);return true;
   }
   commit(accountId:string):boolean{const value=this.load<WalletClaim>();if(!value||value.kind!=='wallet'||value.accountId!==accountId)return false;this.save({...value,committed:true});return true;}
+  usernameOwner():string|null {const value=this.load<UsernameClaim>();return value?.kind==='username'?value.accountId:null;}
+  reserveUsername(accountId:string,operation:string):boolean {
+    return this.ctx.storage.transactionSync(()=>{
+      const value=this.load<UsernameClaim>();
+      if(value&&(value.kind!=='username'||value.accountId!==accountId))return false;
+      // A committed username stays with its original account, including after recovery/deletion.
+      if(!value?.committed)this.save({kind:'username',accountId,operation,committed:false} satisfies UsernameClaim);
+      return true;
+    });
+  }
+  commitUsername(accountId:string,operation:string):boolean {
+    const value=this.load<UsernameClaim>();
+    if(!value||value.kind!=='username'||value.accountId!==accountId||!value.committed&&value.operation!==operation)return false;
+    this.save({...value,committed:true});return true;
+  }
+  releaseUsername(accountId:string,operation:string):void {
+    const value=this.load<UsernameClaim>();
+    if(value?.kind==='username'&&value.accountId===accountId&&value.operation===operation&&!value.committed)this.ctx.storage.sql.exec('DELETE FROM record');
+  }
   allow(key:string,max:number,windowMs:number):boolean{
     const now=Date.now(),row=this.ctx.storage.sql.exec<{start:number;count:number}>('SELECT start,count FROM limits WHERE key=?',key).toArray()[0];
     if(!row||now-row.start>=windowMs){this.ctx.storage.sql.exec('INSERT OR REPLACE INTO limits VALUES(?,?,1)',key,now);return true;}
     if(row.count>=max)return false;this.ctx.storage.sql.exec('UPDATE limits SET count=count+1 WHERE key=?',key);return true;
   }
+  clearPasswordLoginFailures():void {this.ctx.storage.sql.exec("DELETE FROM limits WHERE key='password-login'");}
   async alarm():Promise<void>{const record=this.load<Challenge>();if(record?.expiresAt&&record.expiresAt<=Date.now())this.ctx.storage.sql.exec('DELETE FROM record');}
   exportSnapshot():{version:1;accountId:string}|null{const value=this.load<WalletClaim>();return value?.kind==='wallet'?{version:1,accountId:value.accountId}:null;}
   restoreSnapshot(snapshot:{version:1;accountId:string}):boolean{
@@ -186,11 +208,66 @@ async function verifyChallenge(request:Request,env:IdentityEnv,input:unknown):Pr
   }
   const recoveryCode=challenge.intent!=='revoke-sessions'?`sg-recovery.${user.id}.${randomHex()}`:undefined;
   const changed=await account.changeIdentity({expectedVersion:challenge.authVersion,actorDigest,recoveryDigest,
-    ...(changesWallet?{wallet:challenge.wallet}:{}),...(recoveryCode?{newRecoveryDigest:await digest(recoveryCode)}:{})});
+    ...(changesWallet?{wallet:challenge.wallet}:{}),...(recoveryCode?{newRecoveryDigest:await digest(recoveryCode)}:{}),
+    ...((challenge.intent==='recover'||Boolean(recoveryDigest&&changesWallet))?{clearPassword:true}:{})});
   if(!changed)throw new IdentityError(409,'Identity changed or credentials expired. Start a fresh challenge.');
   if(changesWallet)await env.AUTH.getByName(`wallet:${challenge.wallet}`).commit(user.id);
   const session=await issueSession(env,changed);
-  return Response.json({...session,...(recoveryCode?{recoveryCode}:{})});
+  return Response.json({...session,...(recoveryCode?{recoveryCode}:{}),...((challenge.intent==='recover'||Boolean(recoveryDigest&&changesWallet))?{passwordCleared:true}:{})});
+}
+const loginError=()=>new IdentityError(401,'Username or password is incorrect.');
+async function registerPassword(request:Request,env:IdentityEnv,input:unknown):Promise<Response>{
+  const parsed=z.object({name:z.string().trim().min(1).max(60),username:usernameSchema,password:passwordSchema}).strict().parse(input);
+  await limited(request,env,'password-register',30);
+  const registry=env.AUTH.getByName(`username:${parsed.username}`);
+  if(!await registry.allow('password-register',5,60_000))throw new IdentityError(429,'Too many registration attempts. Try again in a minute.');
+  const existing=request.headers.has('Authorization')?await authenticate(request,env):null;
+  if(existing?.username)throw new IdentityError(409,'This account already has a username. Use change password.');
+  const owner=await registry.usernameOwner();
+  if(owner&&owner!==existing?.id)throw new IdentityError(409,'This username is unavailable.');
+  const original=existing?{user:existing,token:tokenFrom(request)}:await createGuestSession(env,parsed.name);
+  if((await env.GOVERNANCE.getByName('governance-v1').status(original.user.id)).deleted)throw new IdentityError(401,'Account access has been removed.');
+  const account=env.USERS.getByName(original.user.id),actorDigest=await digest(original.token),operation=crypto.randomUUID();
+  if(!await account.beginPasswordRegistration(parsed.username,operation,original.user.authVersion,actorDigest))throw new IdentityError(409,'Account registration is already pending or access changed. Try again.');
+  if(!await registry.reserveUsername(original.user.id,operation)){
+    await account.cancelPasswordRegistration(operation);throw new IdentityError(409,'This username is unavailable.');
+  }
+  const verifier=await hashPassword(parsed.password),token=`${original.user.id}.${randomHex()}`;
+  await env.GOVERNANCE.getByName('governance-v1').registerUser(original.user.id);
+  const user=await account.finishPasswordRegistration({operation,actorDigest,verifier,tokenDigest:await digest(token)});
+  if(!user){
+    // Release only after a definite failed commit; an uncertain RPC outcome retains the reservation.
+    await account.cancelPasswordRegistration(operation);await registry.releaseUsername(original.user.id,operation);
+    throw new IdentityError(409,'Account access changed. Start registration again.');
+  }
+  await registry.commitUsername(user.id,operation);
+  return Response.json({user,token},{status:201});
+}
+async function loginPassword(request:Request,env:IdentityEnv,input:unknown):Promise<Response>{
+  const parsed=z.object({username:usernameSchema,password:passwordSchema}).strict().parse(input);
+  await limited(request,env,'password-login',20);
+  const registry=env.AUTH.getByName(`username:${parsed.username}`);
+  if(!await registry.allow('password-login',10,15*60_000))throw new IdentityError(429,'Too many sign-in attempts. Try again later.');
+  const id=await registry.usernameOwner();
+  if(!id){await verifyPassword(parsed.password,null);throw loginError();}
+  const token=`${id}.${randomHex()}`,tokenDigest=await digest(token),account=env.USERS.getByName(id);
+  const user=await account.loginPassword(parsed.username,parsed.password,tokenDigest);
+  if(!user)throw loginError();
+  if((await env.GOVERNANCE.getByName('governance-v1').status(id)).deleted){await account.logout(tokenDigest);throw loginError();}
+  await registry.clearPasswordLoginFailures();
+  return Response.json({user,token});
+}
+async function changePassword(request:Request,env:IdentityEnv,input:unknown):Promise<Response>{
+  const parsed=z.object({currentPassword:passwordSchema,newPassword:passwordSchema}).strict().parse(input);
+  await limited(request,env,'password-change',10);
+  const user=await authenticate(request,env);
+  if(!user.username)throw new IdentityError(409,'Register a username and password first.');
+  if((await env.GOVERNANCE.getByName('governance-v1').status(user.id)).deleted)throw new IdentityError(401,'Account access has been removed.');
+  if(!await env.AUTH.getByName(`username:${user.username}`).allow('password-change',10,15*60_000))throw new IdentityError(429,'Too many password changes. Try again later.');
+  const token=`${user.id}.${randomHex()}`;
+  const changed=await env.USERS.getByName(user.id).changePassword({...parsed,actorDigest:await digest(tokenFrom(request)),expectedVersion:user.authVersion,tokenDigest:await digest(token)});
+  if(!changed)throw new IdentityError(401,'Current password is incorrect or account access changed.');
+  return Response.json({user:changed,token});
 }
 async function readBody(request:Request):Promise<unknown>{
   if(!request.headers.get('Content-Type')?.toLowerCase().includes('application/json'))throw new IdentityError(415,'Use Content-Type: application/json.');
@@ -201,6 +278,9 @@ export async function handleIdentity(request:Request,env:IdentityEnv):Promise<Re
   try{
     domainFor(request,env);
     if(request.method!=='POST')throw new IdentityError(405,'Use POST for identity operations.');
+    if(path==='/api/auth/register')return await registerPassword(request,env,await readBody(request));
+    if(path==='/api/auth/login')return await loginPassword(request,env,await readBody(request));
+    if(path==='/api/auth/password')return await changePassword(request,env,await readBody(request));
     if(path==='/api/auth/challenge')return await createChallenge(request,env,await readBody(request));
     if(path==='/api/auth/verify')return await verifyChallenge(request,env,await readBody(request));
     if(path==='/api/auth/logout'){

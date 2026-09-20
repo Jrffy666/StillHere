@@ -27,6 +27,7 @@ export interface GuardContribution {
   rewardStatus: 'pending' | 'credited' | 'ineligible' | 'demo';
 }
 export interface User {
+  username?: string | null;
   communityNoticeVersion?: string | null;
   wallet?: string | null;
   recoveryConfigured?: boolean;

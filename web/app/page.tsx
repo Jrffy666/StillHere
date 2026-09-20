@@ -1,20 +1,20 @@
 'use client';
 import { useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
-import { useSessionValue, useClientReady, useInvite } from '@/lib/session-storage';
+import { useSessionValue, useInvite } from '@/lib/session-storage';
 import { QueryClient, QueryClientProvider, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowRight, ShieldCheck, HeartHandshake, Route, Plus, RefreshCw, AlertCircle, LogOut, UserRound, ChevronDown, Settings2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Menu } from '@/components/ui/menu';
-import { Input } from '@/components/ui/input';
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select';
 import { CreateJourney } from '@/components/create-journey';
 import { TripDetail, type ActionBody } from '@/components/trip-detail';
 import { GuardianInvitation } from '@/components/human-guarding';
 import { AccountPanel } from '@/components/account-panel';
+import { AccountAccess } from '@/components/account-access';
 import { JourneyChain, submitChainOperation } from '@/components/journey-chain';
 import { MemberProfileCard } from '@/components/member-profile';
-import { api, errorMessage } from '@/lib/api';
+import { api, ApiError, errorMessage } from '@/lib/api';
 import type { Session, Trip, TripList, TripSummary, User } from '@/lib/types';
 
 interface Config { chainV2: { configured: boolean } }
@@ -53,11 +53,10 @@ function GuardApp() {
       return null;
     }
   }, [rawSession]);
-  const joined = useClientReady();
   const invite = useInvite();
   const [tab, setTab] = useState<Tab>('journeys');
-  const [name, setName] = useState(''),
-    [chosenId, setSelected] = useState(''),
+  const [accessMode, setAccessMode] = useState<'register' | 'login'>('register');
+  const [chosenId, setSelected] = useState(''),
     [createOpen, setCreateOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
   const accountTrigger = useRef<HTMLButtonElement>(null);
@@ -115,15 +114,6 @@ function GuardApp() {
     cache.setQueryData(['trip', session?.user.id, trip.id], { trip });
     void cache.invalidateQueries({ queryKey: ['trips'] });
   }
-  async function join() {
-    if (busy || !name.trim()) return;
-    setBusy(true); setError('');
-    try {
-      const identity = await api<Session>('/session', undefined, { name: name.trim() });
-      setRawSession(JSON.stringify(identity));
-    } catch (failure) { setError(errorMessage(failure)); }
-    finally { setBusy(false); }
-  }
   async function action(body: ActionBody, id = selected) {
     if (!session || busy) return;
     setBusy(true);
@@ -158,17 +148,19 @@ function GuardApp() {
   function updateSession(value: Session | null) {
     setRawSession(value ? JSON.stringify(value) : null);
     setSelected('');
+    setReceiptId('');
+    setCreateOpen(false);
+    setError('');
+    if (!value) setAccessMode('login');
     cache.clear();
   }
   async function logout() {
     if (!session || busy) return;
-    if (
-      !user?.wallet &&
-      !window.confirm(
-        'This account has no linked wallet. Signing out will lose access. Continue?',
-      )
-    )
+    if (!user?.wallet && !user?.username) {
+      setAccountOpen(true);
+      setError('Add a username and password before signing out so you can return to this account.');
       return;
+    }
     setBusy(true);
     try {
       await api('/auth/logout', session.token, {});
@@ -200,13 +192,13 @@ function GuardApp() {
             </Menu.Trigger>
             <Menu.Portal><Menu.Positioner sideOffset={8} align="end" className="account-menu-positioner">
               <Menu.Popup className="account-menu" finalFocus={accountOpen ? false : undefined}>
-                <div className="account-menu-identity"><strong>{user?.name || session.user.name}</strong><span>{user?.wallet ? 'Wallet linked' : 'Guest account'}</span></div>
-                <Menu.Item onClick={() => setAccountOpen(true)}><Settings2 size={15} aria-hidden="true" />Wallet & settings</Menu.Item>
+                <div className="account-menu-identity"><strong>{user?.name || session.user.name}</strong><span>{user?.username ? `@${user.username}` : user?.wallet ? 'Wallet linked' : 'Guest account'}</span></div>
+                <Menu.Item onClick={() => setAccountOpen(true)}><Settings2 size={15} aria-hidden="true" />Account & settings</Menu.Item>
                 <Menu.Separator className="account-menu-separator" />
                 <Menu.Item disabled={busy} onClick={() => void logout()}><LogOut size={15} aria-hidden="true" />Sign out</Menu.Item>
               </Menu.Popup>
             </Menu.Positioner></Menu.Portal>
-          </Menu.Root> : <Button ref={accountTrigger} variant="ghost" onClick={() => setAccountOpen(true)}><UserRound size={16} />Sign in with wallet</Button>}
+          </Menu.Root> : <Button ref={accountTrigger} variant="ghost" onClick={() => setAccessMode('login')}><UserRound size={16} />Sign in</Button>}
         </div>
       </header>
       <main className="simple-main" id="main-content" tabIndex={-1}>
@@ -214,7 +206,15 @@ function GuardApp() {
           <div><h1>{titles[tab]}</h1></div>
           {tab === 'journeys' && <Button onClick={() => setCreateOpen(true)}><Plus size={16} />New journey</Button>}
         </div>}
+        {session && user && !user.username && !user.wallet && <div className="account-upgrade-notice">
+          <div><strong>Keep your journey history</strong><p>Add a username and password to return to this account any time.</p></div>
+          <Button variant="outline" onClick={() => setAccountOpen(true)}>Save my account</Button>
+        </div>}
         {error && <div className="error-banner" role="alert"><AlertCircle size={17} /><span>{error}</span><button onClick={() => setError('')} aria-label="Dismiss error">×</button></div>}
+        {session && userQuery.error instanceof ApiError && userQuery.error.status === 401 && <div className="error-banner" role="alert">
+          <span>Your session has ended. Sign in again to return to your account.</span>
+          <Button variant="outline" onClick={() => { updateSession(null); setAccountOpen(false); }}>Sign in again</Button>
+        </div>}
         {(trips.isError || selectedQuery.isError) && session && <div className="error-banner" role="alert">
           <span>{errorMessage(trips.error || selectedQuery.error)} Previously displayed information may be stale.</span>
           <Button variant="outline" onClick={() => { void trips.refetch(); void selectedQuery.refetch(); }}>Retry</Button>
@@ -222,12 +222,9 @@ function GuardApp() {
         {!session ? <section className="simple-welcome">
           <ShieldCheck size={35} strokeWidth={1.5} />
           <h1>Be there for someone.</h1><p>Find someone to accompany your journey, or be there for theirs. Always free.</p>
-          <form onSubmit={event => { event.preventDefault(); void join(); }}>
-            <label className="field-label" htmlFor="welcome-name">Your name</label>
-            <Input id="welcome-name" placeholder="First name" value={name} maxLength={60} required onChange={event => setName(event.target.value)} />
-            <Button type="submit" className="primary-action" disabled={busy || !name.trim() || !joined}>{busy ? 'Joining…' : 'Enter StillHere'}<ArrowRight size={16} /></Button>
-          </form>
-          <p className="simple-note">No wallet needed. Keep this tab open to retain your guest account. Member profiles and contributions are visible to the community.</p>
+          <AccountAccess mode={accessMode} onModeChange={setAccessMode} onSession={updateSession} />
+          <Button variant="ghost" onClick={() => setAccountOpen(true)}>Use a linked wallet</Button>
+          <p className="simple-note">Your history stays with your account when you sign out. Member profiles and contributions are visible to the community.</p>
         </section> : tab === 'community' ? <section>
           {trips.isPending ? <output>Loading requests…</output> : openRequests.length ? <div className="simple-request-list">
             {openRequests.map(request => <article className="simple-request" key={request.id}>
