@@ -17,7 +17,7 @@
 .account-menu-trigger { gap: 6px; padding: 3px; }
 .account-avatar { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; color: var(--accent); background: var(--secondary); border: 1px solid var(--border); font-size: 13px; font-weight: 600; }
 .account-menu-positioner { z-index: 50; }
-.account-menu { width: min(240px, calc(100vw - 32px)); padding: 6px; border: 1px solid var(--border); border-radius: 12px; background: var(--popover); color: var(--foreground); box-shadow: 0 12px 36px #0005; outline: none; }
+.account-menu { width: min(240px, calc(100vw - 32px)); padding: 6px; border: 1px solid var(--border); border-radius: 12px; background: var(--card); color: var(--foreground); box-shadow: 0 12px 36px #0005; outline: none; }
 .account-menu-identity { display: grid; gap: 4px; padding: 12px 10px; }
 .account-menu-identity strong { font-size: 13px; font-weight: 500; overflow-wrap: anywhere; }
 .account-menu-identity span { font-size: 11px; color: var(--muted-foreground); }
