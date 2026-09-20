@@ -7,11 +7,13 @@ import { JourneyMap } from '@/components/journey-map';
 import { HumanGuarding, JourneyParticipation } from '@/components/human-guarding';
 import { JourneyPrivacy } from '@/components/journey-privacy';
 import { JourneyAssistance } from '@/components/journey-assistance';
+import { PersonalAgentHandoff } from '@/components/personal-agent-handoff';
 import { JourneyGratitudeCard } from '@/components/journey-gratitude';
 import { MemberProfileButton } from '@/components/member-profile';
 import { JourneyCommunityRecords } from '@/components/community-records';
 import { errorMessage, timeLabel } from '@/lib/api';
 import { journeyProgress } from '@/lib/journey-progress';
+import { personalAgentPresence } from '@/lib/personal-agent';
 import type { Trip, User } from '@/lib/types';
 
 export type ActionBody = { action: string; requestId?: string; text?: string; lat?: number; lng?: number; scenario?: string };
@@ -30,6 +32,7 @@ export function TripDetail({ trip, user, token, busy, act, onProfile }: {
   const messageViewport = useRef<HTMLDivElement>(null);
   const closed = trip.status === 'arrived' || trip.status === 'cancelled';
   const rider = user.id === trip.rider.id;
+  const personalCoverage = personalAgentPresence(trip.personalAgent, now).active;
   const seconds = trip.nextCheckInAt
     ? Math.max(0, Math.ceil((trip.nextCheckInAt - now) / 1000))
     : null;
@@ -122,7 +125,7 @@ export function TripDetail({ trip, user, token, busy, act, onProfile }: {
     {closed && trip.messages.length > 35 && <p className="simple-note">Showing the latest 35 messages.</p>}
     <div ref={messageViewport} className="messages" aria-live={closed ? 'off' : 'polite'} aria-relevant="additions">
       {trip.messages.length === 0 ? <p className="simple-note">{closed ? 'No messages on this journey.' : 'Say hello to your travel companion.'}</p> : trip.messages.slice(-35).map(message => <div key={message.id} className={'message ' + (message.senderId === user.id ? 'mine' : '') + (message.role === 'agent' ? ' agent-message' : '')}>
-        <div><strong>{message.senderId === user.id ? 'You' : message.role === 'agent' ? message.automatedBy==='openai'?'AI check-in':message.automatedBy==='codex_local'?'Local Codex demo':'Automated reminder' : message.senderName}</strong><time>{timeLabel(message.at)}</time></div><p>{message.text}</p>
+        <div><strong>{message.senderId === user.id ? 'You' : message.role === 'agent' ? message.automatedBy==='personal_agent'?message.senderName:message.automatedBy==='openai'?'AI check-in':message.automatedBy==='codex_local'?'Local Codex demo':'Automated reminder' : message.senderName}</strong><time>{timeLabel(message.at)}</time></div><p>{message.text}</p>
       </div>)}
     </div>
     {!closed && <form className="message-form" onSubmit={event => void send(event).catch(() => {})}>
@@ -149,8 +152,8 @@ export function TripDetail({ trip, user, token, busy, act, onProfile }: {
         {!rider && <MemberProfileButton memberId={trip.rider.id} name={trip.rider.name} token={token} viewerId={user.id} />}
       </div>
       {!closed && trip.guardian && <div className={'simple-checkin ' + (progress.firstCheckInNeeded ? 'first-checkin' : '')}>
-        <div><strong>{progress.firstCheckInNeeded ? assignedGuardian ? 'Start with your first check-in' : 'Waiting for the guardian’s first check-in' : trip.guardMode !== 'human' ? 'A human check-in is needed' : seconds === 0 ? 'Guardian check-in overdue' : 'Next guardian check-in'}
-          </strong><p>{progress.firstCheckInNeeded ? 'A guardian must check in before arrival to earn a contribution.' : trip.lastGuardianCheckInAt ? 'Last check-in: ' + timeLabel(trip.lastGuardianCheckInAt) + '. Check-ins confirm availability.' : 'No human has confirmed availability yet.'}</p>
+        <div><strong>{personalCoverage ? 'A personal agent is accompanying this journey' : progress.firstCheckInNeeded ? assignedGuardian ? 'Start with your first check-in' : 'Waiting for the guardian’s first check-in' : trip.guardMode !== 'human' ? 'A human check-in is needed' : seconds === 0 ? 'Guardian check-in overdue' : 'Next guardian check-in'}
+          </strong><p>{personalCoverage ? 'Human check-ins resume when the guardian returns. Agent service is recorded separately.' : progress.firstCheckInNeeded ? 'A guardian must check in before arrival to earn a contribution.' : trip.lastGuardianCheckInAt ? 'Last check-in: ' + timeLabel(trip.lastGuardianCheckInAt) + '. Check-ins confirm availability.' : 'No human has confirmed availability yet.'}</p>
           {seconds !== null && <span className="simple-timer"><Clock3 size={15} />{Math.floor(seconds / 60)}:{String(seconds % 60).padStart(2, '0')}</span>}</div>
         {assignedGuardian ? <Button disabled={busy} onClick={() => void act({ action: trip.guardMode === 'ai' ? 'resume' : 'check-in' }).catch(() => {})}>
           <Check size={17} />{trip.guardMode === 'ai' ? 'Resume & check in' : 'I am here · Check in'}
@@ -174,6 +177,7 @@ export function TripDetail({ trip, user, token, busy, act, onProfile }: {
     </section>
     {info && <output className="notice">{info}<button onClick={() => setInfo('')} aria-label="Dismiss notification">×</button></output>}
     {!closed && <HumanGuarding trip={trip} user={user} token={token} now={now} busy={busy} act={act} share={share} />}
+    <PersonalAgentHandoff key={`${trip.id}:${trip.personalAgent?.id ?? 'none'}`} trip={trip} token={token} viewerId={user.id} now={now} busy={busy} />
     {closed && rider && !trip.demo && <JourneyGratitudeCard trip={trip} token={token} viewerId={user.id} />}
     </div>
     {!closed && <div className="journey-conversation">{conversation}</div>}

@@ -5,10 +5,10 @@ export const COMMUNITY_NOTICE_VERSION = 'community-v1' as const;
 export const communityReference = z.string().regex(/^[a-f0-9]{64}$/).refine(value=>value!=='0'.repeat(64));
 export const communityEventSchema = z.object({
   journeyId:communityReference,sequence:z.number().int().min(0).max(0xffffffff),
-  kind:z.enum(['created','assigned','check_in','relay_requested','closed','contribution','gratitude']),
+  kind:z.enum(['created','assigned','check_in','relay_requested','closed','contribution','gratitude','agent_service']),
   actorId:z.string().regex(/^[a-f0-9]{64}$/),subjectId:communityReference,assignment:z.number().int().min(0).max(0xffffffff),
   observedAt:z.number().int().nonnegative().safe(),value:z.number().int().min(0).max(3),
-}).strict().refine(event=>event.actorId!=='0'.repeat(64)||event.kind==='relay_requested'&&event.value===1);
+}).strict().refine(event=>event.actorId!=='0'.repeat(64)||event.kind==='relay_requested'&&event.value===1||event.kind==='agent_service'&&[1,2].includes(event.value));
 export type SourceCommunityEvent=z.infer<typeof communityEventSchema>;
 export const communityStateSchema=z.object({
   journeyId:communityReference,members:z.record(z.uuid(),communityReference),
@@ -34,6 +34,18 @@ export function captureCommunityEvents(previous:SourceState|null,next:SourceStat
   };
   if(!previous?.community)push('created',rider,rider,0,0,trip.createdAt);
   const before=previous?.trip;
+  // End service against the old assignment before a replacement or closure is recorded.
+  const priorAgent=before?.personalAgent, nextAgent=trip.personalAgent;
+  if(priorAgent?.status==='active'&&(nextAgent?.id!==priorAgent.id||nextAgent.status!=='active'||trip.guardian?.id!==priorAgent.ownerId||['arrived','cancelled'].includes(trip.status))){
+    // Account erasure removes the next state's private mapping. Its prior opaque
+    // member reference remains the already published subject of the service.
+    const owner=previous?.community?.members[priorAgent.ownerId]??community.members[priorAgent.ownerId];
+    if(owner&&before?.guardian?.id===priorAgent.ownerId){
+      const resumed=nextAgent?.id===priorAgent.id&&nextAgent.endReason==='human_resumed'&&trip.guardian?.id===priorAgent.ownerId&&trip.guardMode==='human'&&!['arrived','cancelled'].includes(trip.status);
+      const unavailable=nextAgent?.id===priorAgent.id&&nextAgent.status==='unavailable';
+      push('agent_service',resumed?owner:'0'.repeat(64),owner,resumed?3:unavailable?2:1,previous?.community?.assignment??community.assignment);
+    }
+  }
   if(trip.guardian&&!trip.guardian.simulated&&trip.guardian.id!==before?.guardian?.id){
     const guardian=community.members[trip.guardian.id];
     if(!guardian)throw new Error('Official guardian has not accepted the public record notice');
@@ -42,6 +54,10 @@ export function captureCommunityEvents(previous:SourceState|null,next:SourceStat
     if(existing)existing.lastAssignment=community.assignment;
     else community.guardians.push({memberId:guardian,lastAssignment:community.assignment,checkedIn:false});
     push('assigned',rider,guardian);
+  }
+  if(nextAgent?.status==='active'&&(priorAgent?.id!==nextAgent.id||priorAgent.status!=='active')&&!['arrived','cancelled'].includes(trip.status)){
+    const owner=community.members[nextAgent.ownerId];
+    if(owner&&trip.guardian?.id===nextAgent.ownerId)push('agent_service',owner,owner,0);
   }
   // Only the currently accepted assignment can attest a newly observed check-in.
   // A late aggregate V2 snapshot must never fabricate a former assignment's chronology.

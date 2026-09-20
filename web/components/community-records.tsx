@@ -37,7 +37,8 @@ export function CommunityRecordList({ records }: { records: CommunityRecord[] })
             {record.status === 'retry' && <p>Publication will retry automatically. This record is not yet chain confirmed.</p>}
             {record.withdrawn && <p>The original receipt remains public. A later correction excludes this journey’s recognition from current totals.</p>}
             {record.withdrawal && <CommunityCorrectionNotice correction={record.withdrawal} network={record.network} />}
-            <details className="ledger-record-identifiers"><summary>Record details</summary><p>Platform-attested · Event {record.event.sequence + 1}</p><p>Journey: <code>{record.event.journeyId}</code></p><p>Recorded actor: <code>{record.event.actorId === '0'.repeat(64) ? 'Automated relay' : record.event.actorId}</code></p><p>Recorded subject: <code>{record.event.subjectId}</code></p><p>Assignment: {record.event.assignment} · Rule version: 1</p></details>
+            {record.event.kind === 'agent_service' && <p className="ledger-value">Automated service history · No human contribution points</p>}
+            <details className="ledger-record-identifiers"><summary>Record details</summary><p>Platform-attested · Event {record.event.sequence + 1}</p><p>Journey: <code>{record.event.journeyId}</code></p><p>Recorded actor: <code>{record.event.actorId === '0'.repeat(64) ? 'Platform automation' : record.event.actorId}</code></p><p>Recorded subject: <code>{record.event.subjectId}</code></p><p>Assignment: {record.event.assignment} · Rule version: {record.event.kind === 'agent_service' ? 2 : 1}</p></details>
           </li>
         );
       })}

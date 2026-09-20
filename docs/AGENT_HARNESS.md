@@ -1,22 +1,49 @@
-# Journey agent harness: offline and gated semantic paths
+# Journey agent harness: personal, offline, and gated API paths
 
-Product direction update: [Personal agent guarding](PERSONAL_AGENT_GUARDING.md) is now the primary roadmap. The harness below is reusable infrastructure; a guardian-owned agent identity, rider-approved delegation and continuous personal runner are still to be built. The hosted model API remains disabled. A separate manual local Codex flow has passed the recorded [acceptance check](deployment/codex.demo.validation.json).
+Product direction update: [Personal agent guarding](PERSONAL_AGENT_GUARDING.md) is implemented and is the primary product path. It provides a guardian-owned agent identity, exact rider approval, scoped capability tools, an owner-operated watcher, and a local STDIO MCP bridge. The backend and interface are deployed; a [hosted watcher acceptance](deployment/personal-agent.hosted.validation.json) passed 23 checks with one real Codex assessment and human handback. This establishes one bounded workflow, not broad model quality or chain finality. The hosted model API remains disabled. A separate manual local Codex flow previously passed its recorded [acceptance check](deployment/codex.demo.validation.json).
 
 Updated September 20, 2026. The real Responses adapter and semantic execution path are implemented, while `OPENAI_ENABLED` remains `"false"` in checked-in development, staging, and production configuration. No paid Responses API validation is claimed. The separate [local Codex demonstration](CODEX_DEMO.md) has completed one real subscription-authenticated assessment and hosted import. Use [DEMO.md](DEMO.md) for human guarding, [AI_DEMO.md](AI_DEMO.md) for a truthful semantic demonstration, and authenticated participant APIs for developer inspection. [VALIDATION.md](VALIDATION.md) separately records tests and deployment evidence.
 
 StillHere retains a deterministic mock provider as the default and fallback. When separately activated with a key, eligible model, current processing consent, and available budgets, the implemented real path makes one structured semantic assessment request per eligible run. Both paths use the same journey-scoped tools, durable authority checks, receipts, cancellation, and private evidence. Activation instructions and data-retention details are in [OPENAI_INTEGRATION.md](OPENAI_INTEGRATION.md); this change has not executed that activation.
 
+Those platform-run paths are distinct from the personal runtime described next. Connecting or active personal delegation suppresses competing autonomous platform assessment, while ordinary human controls and deterministic help remain available. Personal capability operations submit validated proposals directly; they do not acquire the older platform harness's five-tool authority.
+
 The mock provider selects from explicit rules and fixed messages. Its outputs and the product's agent trace must identify this mode. A successful mock workflow is evidence about application orchestration, not evidence of real-world safety, language comprehension, or qualification for an LLM-based award.
 
-## Responsibilities and authority
+## Personal delegation and execution
+
+[`worker/src/personal-agent.ts`](../worker/src/personal-agent.ts) defines the strict protocol; `TripRoom` implements its state and effects. The assigned nonsimulated guardian requests a named agent for 5–120 minutes under `personal-agent-v1`, and the rider approves that exact request. Management uses the existing participant session at `/api/trips/:tripId/delegation`. The guardian then obtains a connection file with one revocable journey capability. Only its verifier is stored. Downloading again before runtime acceptance rotates the previous token; after acceptance, changing runtimes requires a fresh approved delegation.
+
+The separate `/api/agent/trips/:tripId/delegations/:delegationId/:operation` route requires that capability. Its six operations are `status`, `accept`, `updates`, `heartbeat`, `assess`, and `release`. Account sessions cannot substitute for it, and it grants no ordinary participant API access. The [CLI and local STDIO MCP bridge](PERSONAL_AGENT_CLIENT.md) expose exactly that scope; tool arguments cannot select another journey, credential, arbitrary destination, wallet, or notification recipient. See [the HTTP contract](PERSONAL_AGENT_PROTOCOL.md) for exact bodies and response shapes.
+
+Acceptance enters `connecting`. Only the first valid assessment establishes `active` coverage; a heartbeat alone cannot do so. The server issues a minimized context with a job ID, revision, and expiry. `assess` validates sources again against current time and rechecks assignment, approval, lifecycle, revision, and current context. It atomically persists canonical questions, retained concerns, eligible recruitment, follow-up, and their receipt. Submitted text cannot invent a completed action. An identical retry returns the original receipt only while authority is valid; changed or stale replay is rejected, including after eviction and concurrent submission.
+
+| Personal-runtime limit | Bound |
+| --- | --- |
+| Delegation | 5–120 minutes, one current guardian assignment |
+| Last valid heartbeat | 45 seconds |
+| Initial or pending assessment | At most 90 seconds, never beyond delegation expiry |
+| Follow-up delay | 30–300 seconds |
+| Minimized context | 12 eligible messages and eight retained rider concerns |
+| Private receipt/delegation history | 40 receipts and 12 previous delegation views |
+| Watch defaults / configurable maxima | 12 turns and 20 minutes / 60 turns and 120 minutes |
+| Watch model subprocess | 60 seconds |
+
+New rider input replaces stale jobs without extending the original pending-response deadline. Heartbeats update connectivity, never that deadline or human contribution. Human resume/check-in, replacement, closure, explicit help, assistance being turned off, revocation, expiry, deletion, or unavailability ends access. Personal-agent consent is independent of the hosted API's v2 choice; use the delegation revoke action to withdraw it. The frontend checks expiry/connectivity/response timestamps locally to avoid showing old active coverage while awaiting refresh.
+
+The watcher polls every five seconds and sends ten-second heartbeats during inference. It invokes the owner's supported Codex CLI in an isolated assessment process without giving the model its capability. The runtime discards stale results and does not rerun inference after uncertain submission; it may retry the same proposal at most twice. Turn/time bounds are not a token or monetary guarantee. The owner must keep the environment awake and connected. The STDIO MCP bridge invokes no model and starts no watch loop by itself; remote hosted-client support is not implied.
+
+Only current rider and owning-guardian messages authorized by the two personal-agent approvals enter the job. Former guardians, applicants, system/agent text, dedicated account and journey fields, contacts, wallet data, shared links, and exact coordinates are excluded. Text redaction is heuristic. Source IDs and times are retained for checks; the exact context and receipts remain private. Backup export omits private capabilities and pending jobs; restoration ends the old delegation rather than resurrecting it. Automated-service ledger events are separate minimal provenance and earn no human contribution points.
+
+## Platform harness responsibilities and authority
 
 The journey's `TripRoom` Durable Object remains the owner of private journey state and scheduled monitoring. The harness operates within that journey. It does not receive a general-purpose application session or permission to invoke arbitrary participant actions.
 
 The rider updates choices through authenticated `POST /api/trips/:id/assistance`. Boolean fields are strict; strings, numbers, or unknown properties cannot silently grant consent. Defaults remain `automatedCheckIns: true`, `timeoutContact: false`, and `liveAiConsent: false`, with the legacy notice version `openai-assistance-v1`. That v1 preference cannot authorize live processing. The current notice is `openai-assistance-v2`; each current participant can update only their own processing choice through `POST /api/trips/:id/ai-consent` with `{ "consent": true, "noticeVersion": "openai-assistance-v2" }`, or `consent: false` to revoke.
 
-The rider's current v2 consent gates a model request. The provider snapshot includes only the current consenting rider's and current consenting guardian's messages; former guardians, candidates, nonconsenting authors, and agent/system messages are excluded. Guardian consent does not enable the rider's request or change the rider's reminder policy. Community publication and trusted-contact notification consent remain separate choices. Turning automated check-ins off cancels pending agent work; ordinary human controls and deterministic explicit help remain available. Revocation cannot recall data already transmitted to the provider.
+The rider's current v2 consent gates a platform Responses request. Its provider snapshot includes only the current consenting rider's and current consenting guardian's messages; former guardians, candidates, nonconsenting authors, and agent/system messages are excluded. Guardian consent does not enable the rider's request or change the rider's reminder policy. Community publication, personal delegation, and trusted-contact notification consent remain separate choices. Turning automated check-ins off cancels pending agent work; ordinary human controls and deterministic explicit help remain available. Revocation cannot recall data already transmitted to a provider.
 
-The five tool names define a narrow application boundary:
+The five platform tool names define a narrow application boundary. They are internal execution tools, not the personal capability's six public operations:
 
 | Tool | Intended responsibility | Authority it does not grant |
 | --- | --- | --- |
@@ -44,7 +71,7 @@ An eight-second deadline actively aborts the provider signal. Caller cancellatio
 
 The legacy disabled OpenAI factory still rejects with `LIVE_PROVIDER_DISABLED` before reading a key or making a request. It is not the real adapter, and the generic offline boundary still refuses providers marked live. The implemented paid assessment path below is separate. A key or `liveAiConsent: true` alone cannot enable it; it additionally requires server activation, an allowlisted model, the current v2 choice, eligible lifecycle state, and budgets.
 
-## One-call semantic assessment path
+## Optional one-call Responses assessment
 
 [`worker/src/openai-provider.ts`](../worker/src/openai-provider.ts) implements the real foreground Responses request. It forces the strict function `propose_journey_assistance`, disables parallel calls, sets `store: false`, and accepts only a complete, source-valid structured assessment with valid provider metadata and usage. The allowlist contains `gpt-4.1-mini` and `gpt-4.1-mini-2025-04-14`; the unpinned alias is the current default. The adapter is implemented, but server configuration leaves it disabled.
 
@@ -54,7 +81,7 @@ Only supplied rider/guardian message references and retained rider concern refer
 
 The server then uses [`worker/src/ai-runtime.ts`](../worker/src/ai-runtime.ts) to select from the existing scoped tools. It writes fixed, targeted question wording with a quoted source excerpt, may open eligible recruitment, and schedules the bounded follow-up. Current notification authority is independent of semantic output. The model is not called again with tool results, does not choose arbitrary effectful tools, and does not run a free-form chat or a multi-agent loop. An active explicit-help request bypasses this interpretation path and keeps the canonical safety workflow.
 
-## Durable execution
+## Platform-run durable execution
 
 [`worker/src/trips.ts`](../worker/src/trips.ts) persists the harness with the journey in the existing SQLite state row. A run records its trigger, revision, status, attempts, retry deadline, lease, tool calls, receipts, completion, and cumulative use. Real-path records additionally preserve the assessment attempt/reservation, safe failure code, validated semantic assessment and source snapshot, model/prompt identifiers, available request/response IDs, and reported usage. Participant responses expose these as private agent records. Offline runs identify `provider: "mock"`; an accepted real assessment is identified as `openai`, while fallback remains explicit.
 
@@ -144,6 +171,8 @@ To demonstrate actual human access transfer, use an ordinary application journey
 
 ## Fixture tests
 
+The dedicated personal-agent integration suite exercises real application routes with synthetic rider/guardian accounts. Its 30 cases cover strict approval, token scope and rotation, readiness, minimized eligible authors, source/time freshness, newer input, concurrent and repeated submissions, actual canonical actions, unchanged human awards, human return, revocation, expiry, disconnect and response deadlines, restore, and directory privacy. Model calls and real chain transactions are excluded. Separate client tests cover the watcher and MCP; interface tests cover truthful coverage and connection-file handling.
+
 The fixtures use synthetic messages, timestamps, coordinates, identities, and provider results. Some runtime tests edit persisted deadlines or insert a pending step to reconstruct an interruption without waiting several minutes. These are deterministic orchestration tests, not an LLM benchmark or evidence that the application has monitored actual Uber rides.
 
 | Scenario | Expected application behavior | Test coverage |
@@ -167,6 +196,9 @@ Run the focused tests from the project root:
 
 ```sh
 npm --prefix worker test -- test/agent.test.ts test/agent-provider.test.ts test/agent-semantic.test.ts test/agent-authority.test.ts test/agent-harness.test.ts test/openai-provider.test.ts test/openai-harness.test.ts test/ai-budget.test.ts test/integrations.test.ts
+npm --prefix worker test -- test/personal-agent-integration.test.ts
+npm run test:personal-agent
+npm run test:personal-agent-ui
 npm --prefix worker run typecheck
 ```
 
@@ -178,7 +210,9 @@ npm --prefix worker test
 
 Refer to [VALIDATION.md](VALIDATION.md) for recorded execution results. The commands above are reproducible checks, not a claim that a newer local change or a hosted deployment has already passed.
 
-## Disabled live integration and remaining validation
+## Disabled API integration and remaining validation
+
+The primary personal runtime has a [recorded hosted acceptance run](deployment/personal-agent.hosted.validation.json): 23 checks, two synthetic accounts, one real Codex assessment in 8.683 seconds, and a two-turn/two-minute watcher limit. The server recorded a cited concern, a posted canonical question, and scheduled follow-up. Human return revoked the old capability; arrival and a free banner followed without agent-earned human check-ins. Zero hosted Responses calls or external notifications occurred. The receipt does not establish interactive browser acceptance, broad model quality, sustained availability, or finalized chain publication. The owner's model account and retention settings remain separate from the optional platform API configuration below.
 
 See [AI_DESIGN.md](AI_DESIGN.md) for product scope and authority, [OPENAI_INTEGRATION.md](OPENAI_INTEGRATION.md) for the implemented adapter and activation runbook, and [AI_DEMO.md](AI_DEMO.md) for evaluation cases and presentation. Implementation is complete for the bounded one-assessment path; actual account compatibility, model quality, latency, usage, and end-to-end paid behavior still require authorized live evaluation. The generic boundary's disabled factory remains a legacy stub, distinct from the real adapter.
 

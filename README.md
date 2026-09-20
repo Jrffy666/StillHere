@@ -2,11 +2,15 @@
 
 **Be there for someone.** StillHere means a volunteer stays with you, and their personal agent can help carry that care forward during an approved break. See the [product story and handoff design](docs/STILLHERE.md). This is the final hackathon project name; existing infrastructure names and protocol identifiers remain compatible.
 
-A community journey-guarding application for Hack the North 2026. Riders approve human guardians and arrange relays when someone needs a break. Optional deterministic reminders continue after missed check-ins. The new [personal-agent direction](docs/PERSONAL_AGENT_GUARDING.md) lets volunteers bring their own agents through explicit, limited delegations. That delegation workflow is planned, not yet implemented. The existing OpenAI API adapter remains disabled and is outside the primary development path.
+A community journey-guarding application for Hack the North 2026. Riders approve human guardians and arrange relays when someone needs a break. Optional deterministic reminders continue after missed check-ins. The implemented [personal-agent workflow](docs/PERSONAL_AGENT_GUARDING.md) lets an assigned volunteer request a named agent for a limited period, obtain rider approval, and connect their own runtime through six scoped tools. Coverage becomes active only after a valid assessment. The existing OpenAI API adapter remains disabled and is outside the primary development path.
+
+The personal-agent backend and interface are deployed; the owner-operated CLI watcher and local MCP bridge are implemented. A [hosted acceptance run](docs/deployment/personal-agent.hosted.validation.json) passed 23 checks with one real Codex assessment, canonical posted assistance, human return, scoped-token revocation, arrival, and a free banner. Agent activity added no human check-ins. This bounded run does not establish broad model quality, interactive browser acceptance, or finalized chain publication. See the [client guide](docs/PERSONAL_AGENT_CLIENT.md) and [HTTP protocol](docs/PERSONAL_AGENT_PROTOCOL.md).
+
+The new zero-award agent-service contract extension is built and tested, but its Devnet upgrade is waiting for test-SOL funding. Those service receipts and later records in the same journey remain pending/retry until the upgrade. See the [release boundary](docs/deployment/personal-agent.release.validation.json); do not present those pending records as confirmed chain evidence.
 
 For a private rehearsal without API credits, [Local Codex demo](docs/CODEX_DEMO.md) exports a five-minute, rider-only snapshot for an operator-reviewed Codex CLI run using the operator's own ChatGPT login. The rider reviews and imports its structured result; the server rechecks sources, current authority and single-use status before executing allowed tools. This manual workflow is separate from the Responses API and does not provide continuous AI monitoring. Imported execution metadata is supplied by the operator, not independently verified by the server.
 
-The [assistance harness](docs/AGENT_HARNESS.md) adds rider-controlled reminders, separate timeout-contact authorization, private unresolved concerns, and evidence-based handoffs. The [OpenAI integration](docs/OPENAI_INTEGRATION.md) accepts bounded semantic findings, source references, a targeted question category, and a proposed human relay. Current consent, source validation, durable spending reservations, cancellation, and server permissions govern execution. Live requests remain disabled. Open a journey's **Automated assistance** disclosure to review preferences and resolve concerns; see [AI_DEMO.md](docs/AI_DEMO.md) for a truthful evaluation and presentation plan.
+The [assistance harness](docs/AGENT_HARNESS.md) provides rider-controlled reminders, separate timeout-contact authorization, private unresolved concerns, and evidence-based handoffs. Personal agents submit bounded findings, source references, a question category, and a proposed human relay. The server validates current authority and evidence, renders the question, and records its actual actions. The personal-agent tools expose no contact-notification or wallet operations. The optional [OpenAI integration](docs/OPENAI_INTEGRATION.md) has separate consent and spending controls; its live requests remain disabled. Open a journey's **Automated assistance** disclosure to review preferences and resolve concerns.
 
 The accepted [community v1 scope](docs/COMMUNITY_V1.md) adds member profiles, contextual contribution records, and free structured appreciation banners. Profiles and contribution values are visible to other authenticated community members before applying or approving; there is no visibility toggle or sitewide leaderboard. Availability and language matching remain future work in the [community direction](docs/COMMUNITY_DIRECTION.md).
 
@@ -31,6 +35,8 @@ On Windows, double-click [start.bat](start.bat), or use `npm.cmd` from PowerShel
 
 Use separate browser profiles for the rider and two guardians. Guests can participate without a wallet or SOL: accept the public-record notice, create a journey, share its invite, have a guardian apply, then approve them from the rider session. New real journeys automatically queue minimal history and recognition for sponsored publication on Solana. Only approved participants can see route, location, and conversation. Request a relay to recruit a replacement. Confirm arrival to end monitoring.
 
+For personal-agent assistance, use an ordinary journey with synthetic content during rehearsal. The assigned guardian requests 5–120 minutes of assistance, the rider approves the named delegation, and the guardian downloads its connection file. The [local watcher](docs/PERSONAL_AGENT_CLIENT.md) or a compatible agent using the MCP bridge then accepts and submits an assessment. A connection alone does not activate coverage. A 45-second connectivity limit and a 90-second pending-response deadline expose loss of availability. The owner must keep the runtime awake and connected; agent heartbeats and actions do not earn human contribution points.
+
 For an **optional V2 wallet-signed commitment**:
 
 1. Each participant opens **Account & wallet**, links a Solana wallet, and saves the recovery code. Select Devnet in the wallet and obtain test SOL for transaction fees.
@@ -51,15 +57,18 @@ Help, conversation, availability check-ins, and ending monitoring require no par
 | Accounts | Verified wallet binding, stable identities, expiring/revocable sessions, wallet rotation, single-use recovery codes |
 | Human relay | Rider approval plus guardian acceptance, private-access changes, contributions across returning guardians |
 | Community | Always-visible member profiles, pre-decision profile review, redacted contribution history, a received-appreciation wall, and a contribution honor cabinet |
-| Journey assistant | Durable runs, five validated tools, consent-scoped OpenAI semantic assessment, source references, bounded spending, private receipts, and an offline fallback; live activation pending |
+| Personal agents | Guardian request, rider approval, expiring journey capability, six CLI/MCP operations, owner-run watcher, validated assessments, attributed messages, and revocable coverage |
+| Journey assistant | Five validated platform tools, offline reminders, source-based handoffs, and a separately gated OpenAI adapter with spending reservations; live API activation pending |
 | Chain synchronization | Persistent journey mapping, durable outbox, finalized receipt verification, failure/expiry handling, idempotent credit |
 | Operations | Isolated environments, readiness checks, deployment/rollback tooling, reports/restrictions, retention/deletion, encrypted backup/restore |
 
 React/Vinext serves the interface. Cloudflare Workers and SQLite-backed Durable Objects coordinate private data. Solana stores public commitments and rewards. Names, routes, contact details, messages, location, and credentials stay off chain.
 
-The [agent guide](docs/AGENT_HARNESS.md) distinguishes the offline rule planner from the real API adapter. Mocked-provider tests exercise the integration without credits; they do not measure real-model quality. Adding a key alone does not enable requests: server activation and current participant consent are also required. The simplified journey interface keeps settings and source evidence folded away from core human controls.
+The [agent guide](docs/AGENT_HARNESS.md) distinguishes the owner's personal runtime, offline rule planner, manual Codex rehearsal, and optional API adapter. Fixture and mocked-provider tests exercise authorization and execution without model calls; they do not measure real-model quality. Adding an OpenAI key alone does not enable platform API requests. The journey interface keeps private evidence and settings beside the core human controls.
 
 ## Deployment status
+
+The personal-agent release includes production Worker version `d05822bb-5a48-44ca-9bda-fd18db4a4c7d` and frontend version 16. Its [hosted validation](docs/deployment/personal-agent.hosted.validation.json) records one real model turn in 8.683 seconds under a two-turn/two-minute watcher limit, with zero hosted OpenAI API calls and zero external notifications. Community events were journaled; independent decoding and finality of the new automated-service records remain pending in that receipt.
 
 The separate [V2 program is deployed on Solana Devnet](https://explorer.solana.com/address/23f7UAfNbQCGdfQbJV3Tois98dETDfXnAXgjE5qTH5gb?cluster=devnet). Both [local-validator](docs/deployment/verification.v2.localnet.json) and [Devnet](docs/deployment/verification.v2.devnet.json) checks completed 19 signed transactions and 11 expected rejection checks. The [local application integration report](docs/deployment/application.v2.localnet.json) records 10 finalized transactions through the HTTP backend, private-access revocation, and a single shared 25/10 reward pool.
 
@@ -89,6 +98,8 @@ Participants can report concerns from a journey. Operators review reports at **/
 npm run typecheck
 npm run lint
 npm test
+npm run test:personal-agent
+npm run test:personal-agent-ui
 npm run build
 # With local frontend and backend running:
 npm run test:integration
@@ -100,6 +111,9 @@ npm run test:integration
 - [Deployment, rollback and encrypted backup](docs/OPERATIONS.md)
 - [Data policy](docs/DATA_POLICY.md)
 - [Human guarding workflow](docs/HUMAN_GUARDING.md)
+- [Personal-agent guarding and operational limits](docs/PERSONAL_AGENT_GUARDING.md)
+- [Personal-agent CLI and MCP client](docs/PERSONAL_AGENT_CLIENT.md)
+- [Personal-agent HTTP protocol](docs/PERSONAL_AGENT_PROTOCOL.md)
 - [Community v1 scope and validation](docs/COMMUNITY_V1.md)
 - [Validation evidence](docs/VALIDATION.md)
 - [Sponsor analysis](docs/SPONSORS.md)

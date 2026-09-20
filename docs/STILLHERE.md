@@ -1,6 +1,6 @@
 # StillHere
 
-Status: product direction and proposed personal-agent demonstration, September 20, 2026. The project and final hackathon submission name is **StillHere**. The delegated workflow below is planned; the currently validated Codex integration is a manual export, analysis and import demonstration.
+Status: product direction and implemented personal-agent interfaces, September 20, 2026. The project and final hackathon submission name is **StillHere**. Named delegation, the scoped HTTP protocol, owner-operated Codex watch, local STDIO MCP, and human return are implemented. Deployment and measured end-to-end acceptance are tracked separately in [VALIDATION.md](VALIDATION.md).
 
 ## What the name means
 
@@ -8,7 +8,7 @@ Status: product direction and proposed personal-agent demonstration, September 2
 
 StillHere has two meanings. A volunteer is still here, accompanying another person's journey. When that volunteer needs to rest, their own agent can help carry the care forward through a visible, explicitly authorized handoff.
 
-StillHere is a free community where people accompany one another's journeys. People can contribute directly, and eventually bring their own compatible personal agents to help during an approved absence. Contributions and voluntary banners acknowledge service; neither payment nor a token balance is required to receive companionship.
+StillHere is a free community where people accompany one another's journeys. People can contribute directly and bring their own compatible personal agents to help during an approved absence. Contributions and voluntary banners acknowledge service; neither payment nor a token balance is required to receive companionship.
 
 The name describes an intention to remain present. It must never disguise a disconnected runtime, imply that a sleeping volunteer is awake, or promise physical safety. The interface should say who is responding, what kind of participant they are, and when assistance is unavailable.
 
@@ -42,7 +42,7 @@ A heartbeat, a model-generated promise, and an action receipt are different evid
 - The agent can propose assistance and request human relay. It cannot approve a replacement, sign wallet transactions, award itself recognition, dispatch emergency services, or contact arbitrary people.
 - The interface and service history distinguish a person's actions from their agent's actions. Agent uptime does not increase human check-in counts.
 
-The implementation design and proposed tool list are in [Personal Agent Guarding](PERSONAL_AGENT_GUARDING.md).
+The implementation design is in [Personal Agent Guarding](PERSONAL_AGENT_GUARDING.md); operational commands and tool setup are in the [client guide](PERSONAL_AGENT_CLIENT.md).
 
 ## Proposed demonstration: care that survives a handoff
 

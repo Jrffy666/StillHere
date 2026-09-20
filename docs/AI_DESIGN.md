@@ -1,6 +1,6 @@
 # StillHere AI scope and authority
 
-Current direction: [StillHere](STILLHERE.md) prioritizes [volunteer-owned personal agents](PERSONAL_AGENT_GUARDING.md), with platform tools and explicit delegation. The API adapter below is a disabled optional legacy path. [The sponsor review](SPONSORS.md) distinguishes Rox fit from the unconfirmed eligibility of a Codex-only runtime for OpenAI's API prize. One real manual Codex assessment and hosted import have passed; automatic personal-agent delegation remains planned.
+Current direction: [StillHere](STILLHERE.md) prioritizes [volunteer-owned personal agents](PERSONAL_AGENT_GUARDING.md). Guardian request, rider approval, scoped capability tools, the local watcher, and a STDIO MCP bridge are implemented. The backend and interface are deployed, and a [hosted acceptance run](deployment/personal-agent.hosted.validation.json) passed 23 checks with one real Codex assessment and human handback. This is bounded workflow evidence, not a model-quality benchmark or proof of chain finality. The API adapter below is a disabled optional path. [The sponsor review](SPONSORS.md) distinguishes Rox fit from the unconfirmed eligibility of a Codex-only runtime for OpenAI's API prize.
 
 Updated September 20, 2026. The real OpenAI Responses adapter and controlled semantic execution path are implemented. **Live Responses processing remains disabled:** development, staging, and production configuration all set `OPENAI_ENABLED: "false"`. No paid Responses API validation or broad model-quality result is claimed. A key or consent alone does not activate the path. See [OPENAI_INTEGRATION.md](OPENAI_INTEGRATION.md) for exact limits and the future activation runbook, [AGENT_HARNESS.md](AGENT_HARNESS.md) for both execution paths, and [VALIDATION.md](VALIDATION.md) for test and deployment evidence.
 
@@ -8,25 +8,37 @@ Updated September 20, 2026. The real OpenAI Responses adapter and controlled sem
 
 AI should help people keep a journey accompanied: clarify uncertain messages, preserve relevant context, request human coverage, and prepare a useful handoff. The community remains centered on voluntary human participation. AI does not earn recognition or certify character.
 
-The [official HTN prize description](https://hackthenorth2026.devpost.com/#prizes) makes Rox a plausible target for the proposed personal-agent workflow. OpenAI's separate API requirement is not established by using a subscription-authenticated Codex runtime. The manual Codex demonstration establishes one real assessment, not continuous delegation or broad robustness. See [SPONSORS.md](SPONSORS.md) for the rechecked requirements and evidence gaps.
+The [official HTN prize description](https://hackthenorth2026.devpost.com/#prizes) makes Rox a plausible target for the personal-agent workflow. OpenAI's separate API requirement is not established by using a subscription-authenticated Codex runtime. The manual Codex demonstration establishes one real assessment, not continuous delegation or broad robustness. See [SPONSORS.md](SPONSORS.md) for the rechecked requirements and evidence gaps.
 
 Rox's engineering guidance favors restricted data interfaces and repeatable snapshots. We can apply this to one journey's evidence and replay tests; a knowledge graph is unnecessary for the initial scope. See [Rox's controlled data interface](https://www.rox.com/articles/why-revenue-agents-are-uniquely-hard-to-build). Its [agent architecture article](https://www.rox.com/articles/how-we-build-agents-at-rox) also emphasizes correct data scope, typed actions, and simpler orchestration. These are engineering references, not additional competition rules.
 
-## Implemented foundation and disabled live path
+## Implemented personal-agent path
+
+The platform exposes six journey-scoped operations: `status`, `accept`, `updates`, `heartbeat`, `assess`, and `release`. An assigned guardian requests a named agent for 5–120 minutes; the rider approves that exact delegation under `personal-agent-v1`. Only then can the guardian download an expiring capability for their runtime. The Worker stores its verifier; neither the model nor a public projection receives it. An ordinary account session cannot substitute for this capability, and the capability cannot call ordinary participant APIs.
+
+`accept` enters `connecting`; the first valid source-cited assessment establishes `active` coverage. Heartbeats prove connectivity only. A 45-second connectivity limit and an initial/pending response deadline of at most 90 seconds independently expose stalled execution. New input replaces stale work without extending its original response deadline. Human return, replacement, closure, explicit help, assistance being turned off, revocation, expiry, or unavailability stops the delegation. Identical accepted-job retries return the existing receipt only while current authority remains valid; changed or stale replay is rejected.
+
+The owner-operated watcher supplies bounded repeated assessments as new jobs arrive. Defaults are 12 turns or 20 minutes; the server delegation can end earlier. Its isolated model subprocess has a 60-second deadline. These limits are not a token or credit guarantee. The separate STDIO MCP bridge exposes the same tools to an existing compatible agent but starts no model or background listener itself. See [the client guide](PERSONAL_AGENT_CLIENT.md) and [HTTP contract](PERSONAL_AGENT_PROTOCOL.md). Remote hosted-agent integration and universal model quality are not implied.
+
+Each job contains at most 12 eligible messages from the current rider and owning guardian plus eight retained rider concerns. Both participants' personal-agent approvals authorize this processing; the optional API's v2 consent is a separate choice. Withdrawal uses delegation revocation. Source-valid proposals select categories and references, not free-form claims. The server renders attributed questions and records actual concern, question, recruitment, and follow-up effects. These tools expose no contact notifications, wallet operations, guardian approval, or recognition awards.
+
+## Platform foundation and disabled Responses path
 
 The implementation has five validated tools, durable runs, action receipts, context and revision checks, bounded retries, and participant-only traces. `worker/src/agent.ts` defines the execution protocol and evidence; `worker/src/agent-provider.ts` bounds offline decisions; `worker/src/trips.ts` owns execution and authority. `worker/src/openai-provider.ts` implements the real Responses request, `worker/src/agent-semantic.ts` validates its source-cited proposal, and `worker/src/ai-runtime.ts` converts an accepted assessment into the existing tool plan. The older assessment entry point remains rules-only. Current fixture and mocked-HTTP tests establish application behavior, not LLM comprehension or live-model quality.
 
 The shared controls separate the following responsibilities:
 
 - Explicit help runs deterministically. Inferred chat concern cannot authorize a contact notification; timeout contact needs a separate rider opt-in and valid notification consent.
-- Rider assistance choices separate automated check-ins, timeout contact, and live-AI processing. Live processing requires the current v2 notice; each current guardian separately controls processing of their own messages. Omitting structured identity fields does not remove personal information typed into chat.
-- Offline decisions and real assessment requests have active abort signals, eight-second deadlines, renewed 15-second persisted leases, and revision checks. The real path additionally reserves journey and global budgets before dispatch and records provider-reported token usage separately.
+- Rider assistance choices separate automated check-ins, timeout contact, personal-agent delegation, and optional API processing. API processing requires the current v2 notice; personal delegation requires the separate v1 request and approval. Omitting structured identity fields does not remove personal information typed into chat.
+- Platform offline decisions and Responses requests have active abort signals, eight-second deadlines, renewed 15-second persisted leases, and revision checks. The Responses path additionally reserves journey and global budgets before dispatch and records provider-reported token usage separately. Personal-runtime limits are independent of those platform budgets.
 - A successful context read precedes effects. The model may select a semantic topic, source references, and question category; participant-facing questions and handoffs use canonical server text and quotations. Only server receipts establish completed actions.
 - Up to eight unresolved concerns retain source identifiers and observed/received timestamps beyond the recent-message window. Only an explicit rider resolution clears a retained concern.
 
-`createMockProvider()` remains the offline decision source and fallback. The generic offline boundary still refuses providers marked live, and its legacy `createDisabledOpenAIProvider()` stub still rejects immediately. The real adapter is a separate, gated path, not that stub: one strict Responses assessment per eligible run, followed by server execution. `OPENAI_ENABLED` exists and is false in every checked-in environment. There is no continuous model conversation or multi-agent orchestration.
+`createMockProvider()` remains the offline decision source and fallback. The generic offline boundary still refuses providers marked live, and its legacy `createDisabledOpenAIProvider()` stub still rejects immediately. The real adapter is a separate, gated path: one strict Responses assessment per eligible platform run, followed by server execution. `OPENAI_ENABLED` is false in every checked-in environment. The personal watcher handles multiple independent, bounded jobs; neither path implements free-form model conversation or multi-agent orchestration.
 
 ## Rider assistance choices
+
+Personal-agent consent uses the separate `/api/trips/:id/delegation` request, approval, and revoke actions. The API choices below neither grant nor withdraw that delegation. Disabling `automatedCheckIns` stops both forms of automated assistance.
 
 The rider updates choices through authenticated `POST /api/trips/:id/assistance`. Boolean fields are strict; strings such as `"false"` do not count as consent. The defaults are:
 
@@ -58,12 +70,15 @@ Human guarding and normal help controls must remain usable when live AI is decli
 
 ## Evidence and execution design
 
-Both execution paths use the same server-owned effects. The OpenAI branch is implemented but disabled:
+Interpretation paths share source validation and server-owned effects. Personal delegation is implemented; the optional Responses branch remains disabled:
 
 ```mermaid
 flowchart LR
   E[Journey events] --> C[Scoped evidence snapshot]
   C --> O[Offline mock decision]
+  C --> D[Approved personal delegation job]
+  D --> A[Owner-operated agent assessment]
+  A --> V
   C --> G[Activation, current consent and budget gates]
   G --> M[One Responses semantic assessment]
   M --> V[Validate categories and source references]
@@ -75,11 +90,11 @@ flowchart LR
   S[Explicit help control] --> H[Deterministic help workflow]
 ```
 
-Cloudflare remains the owner of permissions, timers, consent, run state, and effects. The model receives no session bearer token, administrator key, issuer key, sponsor key, database connection, or general HTTP/shell capability. Journey identity is injected by the executor rather than chosen in tool arguments. Existing tools remain the starting point: `get_journey_context`, `send_check_in`, `schedule_follow_up`, `request_human_relay`, and a separately gated `notify_trusted_contact`.
+Cloudflare remains the owner of permissions, timers, consent, run state, and effects. The model receives no session bearer token, administrator key, issuer key, sponsor key, database connection, or general HTTP/shell capability. Journey identity is injected by the executor rather than chosen in tool arguments. The personal runtime holds its configured capability outside the model prompt. The older platform harness retains `get_journey_context`, `send_check_in`, `schedule_follow_up`, `request_human_relay`, and separately gated `notify_trusted_contact`; the personal capability exposes only its six protocol operations and cannot invoke that notification tool.
 
 An evidence item should identify its source, actor role, event ID, observed and received times, and freshness. Server state establishes assignment, consent, and delivery status. A participant message remains that participant's claim. All journey messages, including system-looking text inside chat, are data rather than developer instructions. Unknown timestamps and unavailable location remain explicit unknowns.
 
-The implemented adapter forces one strict Responses function, `propose_journey_assistance`. It returns at most four findings, one question selection, a recruitment proposal, and a follow-up delay between 30 and 300 seconds. At most eight distinct supplied sources can be referenced. A new concern requires recent rider evidence; an older retained concern may remain unresolved. Conflicts need two distinct message sources. Unknown, future, ambiguous, and ineligible-author references are rejected. The model receives no field for granting contact authority or writing arbitrary action claims. See [OpenAI function calling](https://developers.openai.com/api/docs/guides/function-calling).
+The shared assessment protocol permits at most four findings, one question selection, a recruitment proposal, and a follow-up delay between 30 and 300 seconds. At most eight distinct supplied sources can be referenced. A new concern requires recent rider evidence; an older retained concern may remain unresolved. Conflicts need two distinct message sources. Unknown, future, ambiguous, and ineligible-author references are rejected. The model receives no field for granting contact authority or writing arbitrary action claims. The optional API adapter forces this proposal through the strict Responses function `propose_journey_assistance`; personal runtimes submit the same semantic object through `assess`. See [OpenAI function calling](https://developers.openai.com/api/docs/guides/function-calling).
 
 The server validates the assessment and executes a bounded local plan; it does not return tool receipts in another paid model turn. The exact question wording and handoff prose remain server-generated from validated categories and quoted sources. Schema and source conformance do not establish whether the interpretation is correct. That requires the held-out evaluation described in [AI_DEMO.md](AI_DEMO.md).
 
@@ -101,9 +116,11 @@ External contact requires the configured trusted recipient, a permitted escalati
 
 AI cannot confirm arrival, close a journey on someone's behalf, cancel an explicit help request, appoint a guardian, grant private access, impersonate a rider, or sign a chain transaction. It cannot award contributions, issue appreciation, withdraw recognition, rank character, or claim to be emergency dispatch. It cannot penalize a guardian because it inferred inattention. Recovery from urgent state follows an explicit product policy, not an arbitrary reassuring model response.
 
-Community publication remains separate. Existing authorized server events may record that an automated relay was requested, with system provenance. Model opinions, concerns, conversations, and precise location never become public recognition evidence. All AI interpretation and handoff data remain private to authorized current participants and follow the existing deletion policy.
+Community publication remains separate. Implemented versioned `agent_service` events record active, ended, unavailable, and human-return transitions with minimal references and system/owner provenance. They award no human contribution points; publication and chain finality need their own deployment evidence. Authorized server events may also record automated recruitment. Model opinions, concerns, conversations, and precise location never become public recognition evidence. AI interpretation and handoff data remain private to authorized current participants and follow the existing deletion policy.
 
 ## Data and resilience
+
+Personal-runtime jobs use the same bounded context minimizer, with their own participant approvals. Their capability stays outside prompts and public views. Effects and receipts are committed atomically against the issued job/revision. Backup restoration discards private capabilities and pending jobs, closes old journeys, and ends delegation views. Personal runtimes use their own account and retention configuration; the Responses-specific `store: false`, leases, and budget controls below do not describe that account's processing.
 
 The real provider, if explicitly enabled, receives at most 12 eligible participant messages and eight retained rider concerns in a minimized snapshot. Dedicated account and journey identifiers, contact addresses, wallet information, shared Uber URLs, exact coordinates, and notification details are omitted. Evidence identifiers remain for reference validation. Free-text redaction is heuristic and cannot guarantee anonymity or removal of all personal information. A consenting author can still quote another person. The offline path transmits nothing to OpenAI.
 
@@ -119,6 +136,8 @@ Budget exhaustion, malformed output, refusal, timeout, or provider failure leave
 
 ## Evaluation and demonstration
 
+For the primary personal-agent path, the 30-test backend suite and separate client/interface tests exercise authorization, deadlines, freshness, privacy, replay, and receipts without real inference. Separately, the [hosted watcher run](deployment/personal-agent.hosted.validation.json) passed 23 checks with two synthetic accounts, one real model invocation, and a two-turn/two-minute limit. The 8.683-second assessment selected a cited route concern; the server posted a canonical question and scheduled follow-up. Human return revoked the capability, then arrival and a free banner completed the flow. Agent execution left human check-in counts unchanged. Hosted Responses API calls and external notifications were zero. Broader scenarios, failure rates, interactive browser acceptance, and independently finalized chain records remain unmeasured by that run.
+
 Freeze journey snapshots and, after explicit activation, evaluate the implemented adapter against the rule baseline. Begin with a labeled scenario set and hold back variants from prompt tuning. Include negations, typos, conflicting accounts, late and duplicate events, stale location, removed participants, consent revocation, malicious instructions, unavailable providers, and handoff during an outstanding model request. Measure source-grounded interpretation, useful question selection, valid tool execution, duplicate effects, false success claims, latency, and token usage. Current contract tests and mocked Responses fixtures do not establish these model-quality results. See [AI_DEMO.md](AI_DEMO.md) for the demonstration and measurement plan.
 
 Critical release checks include zero unauthorized cross-journey access, no model access to signing keys or direct transaction execution, no model-awarded or model-withdrawn recognition, and no bypass of contact authorization in the evaluated cases. Authorized system events may still be published by the existing issuer/sponsor workflow. Passing a finite test set is not a real-world safety certification. Explicit help must work with the model disconnected.
@@ -129,7 +148,7 @@ A second demonstration introduces a provider timeout or failed notification and 
 
 For the OpenAI development story, preserve one concrete Codex example: the separate withdrawal receipt that avoids consuming ordinary event sequence numbers, its regression tests, and verified deployment evidence. Also preserve actual model and tool traces after live integration; development assistance alone is not evidence of application API execution.
 
-## Activation and validation still required
+## Optional API activation and validation still required
 
 1. Preserve and validate both offline and mocked-HTTP coverage of authority, context-first execution, strict semantic references, cancellation, accounting, recovery, and privacy.
 2. Freeze held-out scenarios, verify the provider project's data/retention configuration, and obtain fresh v2 consent from included participants.
@@ -137,4 +156,4 @@ For the OpenAI development story, preserve one concrete Codex example: the separ
 4. Run bounded real-model evaluations and a complete application workflow. Record actual IDs, reported usage, latency, outcomes, and failures; keep mock and live evidence separately labeled.
 5. Consider voice, additional retrieval, or external delivery only after the core handoff workflow and authority checks are demonstrated.
 
-No new blockchain program is required for this scope. The implemented model path uses existing application permissions and receives no authority over community recognition. Private concerns, conversations, and handoffs never become chain evidence.
+Personal assessment uses existing application permissions and receives no authority over community recognition. The community program implementation adds versioned automated-service events; deployment and independent chain verification remain separate from a successful local or hosted assessment. Private concerns, conversations, and handoffs never become chain evidence.

@@ -29,7 +29,7 @@ function configuration(){
   accounts.set(deriveCommunityConfigAddress(programId).toBase58(),{data:bytes.toString('base64'),owner:programId.toBase58()});
 }
 function recordBytes(input:CommunityEventInput,points=0,reputation=0,withdrawal?:CommunityCorrectionView):string{
-  const bytes=Buffer.alloc(173),view=new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength);bytes.set([211,49,8,242,56,112,96,207]);bytes[8]=1;bytes[9]=1;bytes[10]=1;
+  const bytes=Buffer.alloc(173),view=new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength);bytes.set([211,49,8,242,56,112,96,207]);bytes[8]=1;bytes[9]=1;bytes[10]=!withdrawal&&input.kind==='agent_service'?2:1;
   bytes.set(Buffer.from(input.journeyId,'hex'),11);view.setUint32(43,withdrawal?.sequence??input.sequence,true);bytes[47]=withdrawal?8:COMMUNITY_KINDS.indexOf(input.kind)+1;
   bytes.set(Buffer.from(input.actorId,'hex'),48);bytes.set(Buffer.from(input.subjectId,'hex'),80);view.setUint32(112,input.assignment,true);view.setBigInt64(116,BigInt(withdrawal?.observedAt??input.observedAt),true);bytes[124]=withdrawal?.reason??input.value;
   bytes.set((withdrawal?admin:issuer).publicKey.toBytes(),125);view.setBigInt64(157,1_780_000_100n,true);view.setUint16(165,points,true);view.setUint16(167,reputation,true);view.setUint32(169,withdrawal?.targetSequence??0,true);return bytes.toString('base64');
@@ -88,6 +88,59 @@ beforeEach(async()=>{
 afterEach(()=>{vi.unstubAllGlobals();vi.restoreAllMocks();});
 
 describe('Durable community ledger',()=>{
+  it('keeps agent-service observations in history without granting human check-ins, points or gratitude eligibility',async()=>{
+    const batch=[event(0,'created'),event(1,'assigned',rider,guardian,1),event(2,'agent_service',guardian,guardian,1,0),event(3,'agent_service','0'.repeat(64),guardian,1,2),event(4,'closed',rider,rider,1,1)];
+    expect((await journal().append(batch)).ok).toBe(true);await evictDurableObject(journal());
+    expect((await journal().append(batch)).ok).toBe(true);
+    const view=await profile();expect(view.pending).toMatchObject({points:0,reputation:0,contributions:0,banners:0});
+    expect(view.records.filter(item=>item.event.kind==='agent_service')).toHaveLength(2);
+    expect((await records()).every(item=>item.points===0&&item.reputation===0)).toBe(true);
+    expect((await journal().append([event(5,'contribution',guardian,guardian,1)])).ok).toBe(false);
+    expect((await journal().append([event(5,'gratitude',rider,guardian,1,1)])).ok).toBe(false);
+  });
+
+  it('rejects wrong service actors, subjects, assignment, closed journeys and private payload additions',async()=>{
+    expect((await journal().append([event(0,'created'),event(1,'assigned',rider,guardian,1)])).ok).toBe(true);
+    for(const item of [event(2,'agent_service',rider,guardian,1,0),event(2,'agent_service','0'.repeat(64),guardian,1,0),event(2,'agent_service',guardian,second,1,0),event(2,'agent_service',guardian,guardian,2,0),event(2,'agent_service',guardian,guardian,1,1),event(2,'agent_service','0'.repeat(64),guardian,1,3)])expect((await journal().append([item])).ok).toBe(false);
+    expect((await journal().append([{...event(2,'agent_service',guardian,guardian,1,0),agentName:'private identity'} as CommunityEventInput])).ok).toBe(false);
+    expect((await journal().append([event(2,'closed',rider,rider,1,2)])).ok).toBe(true);
+    expect((await journal().append([event(3,'agent_service',guardian,guardian,1,0)])).ok).toBe(false);
+    expect(await records()).toHaveLength(3);
+  });
+
+  it('verifies rule-two zero-award service receipts alongside unchanged rule-one human contribution receipts',async()=>{
+    const batch=[event(0,'created'),event(1,'assigned',rider,guardian,1),event(2,'agent_service',guardian,guardian,1,0),event(3,'agent_service',guardian,guardian,1,3),event(4,'check_in',guardian,guardian,1),event(5,'closed',rider,rider,1,1),event(6,'contribution',guardian,guardian,1)];
+    await configure();expect((await journal().append(batch)).ok).toBe(true);
+    for(const item of batch)receipt(item,item.kind==='contribution'?25:0,item.kind==='contribution'?10:0);
+    await finishPublication();
+    const history=await records();expect(history.every(item=>item.status==='finalized')).toBe(true);
+    expect(history.filter(item=>item.event.kind==='agent_service').every(item=>item.points===0&&item.reputation===0)).toBe(true);
+    expect((await profile()).finalized).toMatchObject({points:25,reputation:10,contributions:1,banners:0});expect(sends).toHaveLength(0);
+  });
+
+  it('refuses a forged agent-service chain receipt that grants points',async()=>{
+    const batch=[event(0,'created'),event(1,'assigned',rider,guardian,1),event(2,'agent_service',guardian,guardian,1,0)];
+    await configure();expect((await journal().append(batch)).ok).toBe(true);for(const item of batch)receipt(item,item.kind==='agent_service'?25:0);
+    for(let pass=0;pass<4;pass++){await due();await runDurableObjectAlarm(journal());}
+    const service=(await records()).find(item=>item.event.kind==='agent_service')!;
+    expect(service.status).toBe('retry');expect(service.points).toBe(0);expect(service.reputation).toBe(0);
+    expect((await profile()).finalized.points).toBe(0);
+  });
+
+  it('keeps unsupported service publication in retry and recovers the same source record after program support is available',async()=>{
+    const batch=[event(0,'created'),event(1,'assigned',rider,guardian,1),event(2,'agent_service',guardian,guardian,1,0)];
+    await configure();expect((await journal().append(batch)).ok).toBe(true);receipt(batch[0]);receipt(batch[1]);
+    onSend=()=>{throw new Error('Synthetic deployed program does not yet support service kind 9');};
+    for(let pass=0;pass<4;pass++){await due();await runDurableObjectAlarm(journal());}
+    const before=(await records()).find(item=>item.event.kind==='agent_service')!;
+    expect(before.status).toBe('retry');expect(before.finalizedAt).toBeNull();expect(before.points).toBe(0);
+    expect((await profile()).records.find(item=>item.id===before.id)?.status).toBe('retry');
+    onSend=()=>{};receipt(batch[2]);await finishPublication();
+    const after=(await records()).find(item=>item.event.kind==='agent_service')!;
+    expect(after).toMatchObject({id:before.id,status:'finalized',points:0,reputation:0,event:batch[2]});
+    expect((await records()).filter(item=>item.event.kind==='agent_service')).toHaveLength(1);
+  });
+
   it('retains all three record families pending without pretending the unconfigured chain is finalized',async()=>{
     const batch=[...completed(),event(5,'gratitude',rider,guardian,1,1)];expect((await journal().append(batch)).ok).toBe(true);
     await runDurableObjectAlarm(journal());const view=await profile();

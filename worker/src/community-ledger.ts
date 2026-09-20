@@ -47,6 +47,10 @@ function applyEvent(state:JournalState|null,event:CommunityEventInput):{state:Jo
     state.guardians.find(item=>item.id===event.subjectId)!.checks++;
   } else if(event.kind==='relay_requested'){
     if(state.outcome||!state.guardian||event.subjectId!==state.guardian||event.assignment!==state.assignment||!((event.actorId===state.rider||event.actorId===state.guardian)&&event.value===0||event.actorId===zero&&event.value===1))throw new Error('Invalid relay request.');
+  } else if(event.kind==='agent_service'){
+    const owner=[0,3].includes(event.value)&&event.actorId===state.guardian;
+    const automatic=[1,2].includes(event.value)&&event.actorId===zero;
+    if(state.outcome||!state.guardian||event.subjectId!==state.guardian||event.assignment!==state.assignment||!owner&&!automatic)throw new Error('Invalid personal-agent service record.');
   } else if(event.kind==='closed'){
     if(state.outcome||event.actorId!==state.rider||event.subjectId!==state.rider||event.assignment!==state.assignment||![1,2,3].includes(event.value))throw new Error('Invalid journey closure.');
     state.outcome=event.value;

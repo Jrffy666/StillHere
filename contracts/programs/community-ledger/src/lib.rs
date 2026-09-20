@@ -14,6 +14,8 @@ pub const CLOSED: u8 = 5;
 pub const CONTRIBUTION: u8 = 6;
 pub const GRATITUDE: u8 = 7;
 pub const WITHDRAWN: u8 = 8;
+// Additive history records use rule version 2; existing layouts and reward rules stay at 1.
+pub const AGENT_SERVICE: u8 = 9;
 
 #[program]
 pub mod community_ledger {
@@ -114,7 +116,7 @@ pub struct CommunityRecord {
 }
 impl CommunityRecord {
     pub fn set(&mut self, e: EventInput, issuer: Pubkey, recorded_at: i64, points: u16, reputation: u16, target_sequence: u32) {
-        *self = Self { version: 1, provenance: PLATFORM_ATTESTED, rule_version: RULE_VERSION, journey_id: e.journey_id, sequence: e.sequence, kind: e.kind, actor_id: e.actor_id, subject_id: e.subject_id, assignment: e.assignment, observed_at: e.observed_at, value: e.value, issuer, recorded_at, points, reputation, target_sequence };
+        *self = Self { version: 1, provenance: PLATFORM_ATTESTED, rule_version: if e.kind == AGENT_SERVICE { 2 } else { RULE_VERSION }, journey_id: e.journey_id, sequence: e.sequence, kind: e.kind, actor_id: e.actor_id, subject_id: e.subject_id, assignment: e.assignment, observed_at: e.observed_at, value: e.value, issuer, recorded_at, points, reputation, target_sequence };
     }
 }
 #[derive(AnchorSerialize, AnchorDeserialize, Copy, Clone, Default, InitSpace)]
@@ -129,7 +131,7 @@ pub struct CommunityJourney {
 impl CommunityJourney {
     fn index(&self, id: [u8; 32]) -> Option<usize> { self.contributions[..self.guardian_count as usize].iter().position(|c| c.member_id == id) }
     pub fn apply(&mut self, e: &EventInput, now: i64) -> Result<(u16, u16)> {
-        require!(e.journey_id != [0; 32] && (e.actor_id != [0; 32] || (e.kind == RELAY_REQUESTED && e.value == 1)) && e.subject_id != [0; 32], LedgerError::InvalidIdentity);
+        require!(e.journey_id != [0; 32] && (e.actor_id != [0; 32] || (e.kind == RELAY_REQUESTED && e.value == 1) || (e.kind == AGENT_SERVICE && [1,2].contains(&e.value))) && e.subject_id != [0; 32], LedgerError::InvalidIdentity);
         validate_time(e.observed_at, self.last_observed_at, now)?;
         let next = e.sequence.checked_add(1).ok_or(LedgerError::Overflow)?;
         if e.kind == CREATED {
@@ -137,9 +139,9 @@ impl CommunityJourney {
             self.version = 1; self.journey_id = e.journey_id; self.rider_id = e.actor_id;
         } else {
             require!(self.version == 1 && self.journey_id == e.journey_id && self.next_sequence == e.sequence, LedgerError::OutOfOrder);
-            require!((ASSIGNED..=GRATITUDE).contains(&e.kind), LedgerError::InvalidEvent);
+            require!((ASSIGNED..=GRATITUDE).contains(&e.kind) || e.kind == AGENT_SERVICE, LedgerError::InvalidEvent);
             if ![ASSIGNED, CONTRIBUTION, GRATITUDE].contains(&e.kind) { require!(e.assignment == self.assignment, LedgerError::StaleAssignment); }
-            if ![CLOSED, GRATITUDE, RELAY_REQUESTED].contains(&e.kind) { require!(e.value == 0, LedgerError::InvalidEvent); }
+            if ![CLOSED, GRATITUDE, RELAY_REQUESTED, AGENT_SERVICE].contains(&e.kind) { require!(e.value == 0, LedgerError::InvalidEvent); }
             match e.kind {
                 ASSIGNED => {
                     require!(self.outcome == 0 && e.actor_id == self.rider_id, LedgerError::Unauthorized);
@@ -163,6 +165,12 @@ impl CommunityJourney {
                     let human = e.value == 0 && (e.actor_id == self.rider_id || e.actor_id == self.current_guardian_id);
                     let automatic = e.value == 1 && e.actor_id == [0;32];
                     require!(self.outcome == 0 && self.assignment > 0 && e.subject_id == self.current_guardian_id && (human || automatic), LedgerError::Unauthorized);
+                },
+                AGENT_SERVICE => {
+                    let owner = [0,3].contains(&e.value) && e.actor_id == self.current_guardian_id;
+                    let automatic = [1,2].contains(&e.value) && e.actor_id == [0;32];
+                    require!(self.outcome == 0 && self.assignment > 0 && e.subject_id == self.current_guardian_id && (owner || automatic), LedgerError::Unauthorized);
+                    // This attests platform-observed service, never a human check-in or reward.
                 },
                 CLOSED => {
                     require!(self.outcome == 0 && e.actor_id == self.rider_id && e.subject_id == self.rider_id && (1..=3).contains(&e.value), LedgerError::InvalidEvent);
@@ -249,10 +257,36 @@ mod tests {
         let a=Pubkey::new_unique(); let b=Pubkey::new_unique(); let c=Pubkey::new_unique(); validate_keys(a,b,c).unwrap();
         assert!(validate_keys(a,a,c).is_err()); assert!(validate_keys(a,b,b).is_err()); assert!(validate_keys(Pubkey::default(),b,c).is_err());
     }
+    #[test] fn agent_service_never_becomes_human_credit() {
+        let mut j=created(); apply(&mut j,ASSIGNED,1,2,0).unwrap();
+        for (actor,value) in [(2,0),(0,1),(0,2),(2,3)] {
+            assert_eq!(apply(&mut j,AGENT_SERVICE,actor,2,value).unwrap(),(0,0));
+        }
+        assert_eq!(j.contributions[0].check_ins,0);
+        apply(&mut j,CLOSED,1,1,1).unwrap();
+        assert!(apply(&mut j,CONTRIBUTION,2,2,0).is_err());
+        assert!(apply(&mut j,GRATITUDE,1,2,1).is_err());
+        assert!(apply(&mut j,AGENT_SERVICE,2,2,0).is_err());
+    }
+    #[test] fn agent_service_binds_assignment_actor_and_state() {
+        let mut j=created(); assert!(apply(&mut j,AGENT_SERVICE,2,2,0).is_err());
+        apply(&mut j,ASSIGNED,1,2,0).unwrap();
+        for (actor,subject,value) in [(1,2,0),(0,2,0),(2,3,0),(2,2,1),(0,2,3),(2,2,4)] {
+            assert!(apply(&mut j,AGENT_SERVICE,actor,subject,value).is_err());
+        }
+        let mut e=event(&j,AGENT_SERVICE,2,2,0); e.assignment=0; assert!(j.apply(&e,1000).is_err());
+        apply(&mut j,ASSIGNED,1,3,0).unwrap(); assert!(apply(&mut j,AGENT_SERVICE,2,2,0).is_err());
+        apply(&mut j,AGENT_SERVICE,3,3,0).unwrap(); apply(&mut j,AGENT_SERVICE,3,3,3).unwrap();
+        apply(&mut j,CHECK_IN,3,3,0).unwrap(); apply(&mut j,CLOSED,1,1,1).unwrap();
+        assert_eq!(apply(&mut j,CONTRIBUTION,3,3,0).unwrap(),(25,10));
+    }
     #[test] fn public_wire_layout_is_stable() {
         assert_eq!(CommunityConfig::INIT_SPACE+8,109); assert_eq!(CommunityRecord::INIT_SPACE+8,173); assert_eq!(CommunityJourney::INIT_SPACE+8,796);
         let mut record=CommunityRecord { version:0,provenance:0,rule_version:0,journey_id:[0;32],sequence:0,kind:0,actor_id:[0;32],subject_id:[0;32],assignment:0,observed_at:0,value:0,issuer:Pubkey::default(),recorded_at:0,points:0,reputation:0,target_sequence:0 };
         record.set(event(&CommunityJourney::default(),CREATED,1,1,0),Pubkey::new_unique(),200,0,0,0);
         let mut bytes=Vec::new(); record.try_serialize(&mut bytes).unwrap(); assert_eq!(bytes.len(),173); assert_eq!(&bytes[11..43],&[42;32]); assert_eq!(bytes[47],CREATED); assert_eq!(&bytes[80..112],&[1;32]);
+        assert_eq!(record.rule_version,1);
+        record.set(event(&CommunityJourney::default(),AGENT_SERVICE,2,2,0),Pubkey::new_unique(),200,0,0,0);
+        assert_eq!(record.rule_version,2); let mut service=Vec::new(); record.try_serialize(&mut service).unwrap(); assert_eq!(service.len(),173); assert_eq!(service[47],9);
     }
 }

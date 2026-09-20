@@ -79,7 +79,17 @@ export interface TripSummary {
   requestExpiresAt: number | null;
   application: { id: string; expiresAt: number } | null;
 }
+export interface PersonalAgentView {
+  id: string; ownerId: string; ownerName: string; agentName: string;
+  status: 'requested' | 'approved' | 'connecting' | 'active' | 'revoked' | 'expired' | 'unavailable' | 'ended';
+  createdAt: number; expiresAt: number; riderApprovedAt: number | null; connectedAt: number | null;
+  lastSeenAt: number | null; lastProcessedAt: number | null; nextResponseDueAt: number | null;
+  lastActionAt: number | null; endedAt: number | null; endReason: string | null; connectionIssued: boolean;
+  receipts: {id: string; jobId: string; at: number; summary: string; actions: {name: string; outcome: string; detail: string}[]}[];
+}
 export interface Trip {
+  personalAgent?: PersonalAgentView | null;
+  personalAgentHistory?: PersonalAgentView[];
   codexDemo?: {id:string;status:'pending'|'consumed'|'cancelled';expiresAt:number}|null;
   assistance?: {automatedCheckIns:boolean;timeoutContact:boolean;liveAiConsent:boolean;noticeVersion:'openai-assistance-v1'|'openai-assistance-v2';updatedAt:number};
   aiConsent?:Record<string,{accepted:boolean;noticeVersion:'openai-assistance-v2';updatedAt:number}>;
@@ -133,7 +143,7 @@ export interface Trip {
   risk: 'normal' | 'attention' | 'urgent';
   ai: { mode: 'rules' | 'openai' | 'codex_local'; lastAssessment: string };
   messages: {
-    automatedBy?:'rules'|'openai'|'codex_local';
+    automatedBy?:'rules'|'openai'|'codex_local'|'personal_agent';
     id: string;
     at: number;
     senderId: string;

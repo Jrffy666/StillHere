@@ -5,10 +5,10 @@ export type { CommunityEventInput } from '../../chain/src/community';
 export const communityRef = z.string().regex(/^[0-9a-f]{64}$/).refine(value => !/^0+$/.test(value));
 export const communityEventSchema = z.object({
   journeyId: communityRef, sequence: z.number().int().min(0).max(0xffffffff),
-  kind: z.enum(['created','assigned','check_in','relay_requested','closed','contribution','gratitude']),
+  kind: z.enum(['created','assigned','check_in','relay_requested','closed','contribution','gratitude','agent_service']),
   actorId: z.string().regex(/^[0-9a-f]{64}$/), subjectId: communityRef, assignment: z.number().int().min(0).max(0xffffffff),
   observedAt: z.number().int().min(1).max(Number.MAX_SAFE_INTEGER), value: z.number().int().min(0).max(3),
-}).strict().refine(event=>event.actorId!=='0'.repeat(64)||(event.kind==='relay_requested'&&event.value===1), 'Only a declared automated relay can omit a human actor.');
+}).strict().refine(event=>event.actorId!=='0'.repeat(64)||(event.kind==='relay_requested'&&event.value===1)||(event.kind==='agent_service'&&[1,2].includes(event.value)), 'Only declared automated relay or agent-end events can omit a human actor.');
 export type CommunityStatus = 'pending' | 'submitted' | 'finalized' | 'retry';
 export interface CommunityRecordView {
   id: string; event: CommunityEventInput; points: number; reputation: number;

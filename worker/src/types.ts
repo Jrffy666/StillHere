@@ -1,5 +1,6 @@
 import type { AgentState } from './agent';
 import type { Assistance, Escalation, AiConsent } from './assistance';
+import type { PersonalAgentView } from './personal-agent';
 export interface Person { id: string; name: string; simulated?: boolean; wallet?: string | null }
 export interface User extends Person { points: number; reputation: number; completedGuards: number; recoveryConfigured?: boolean; bio?: string; communityNoticeVersion?: string | null }
 export type GratitudeKind = 'companionship' | 'thoughtfulness' | 'relay';
@@ -14,7 +15,7 @@ export interface GratitudeView {
 }
 export interface Place { label: string; lat: number; lng: number }
 export interface TripMessage {
-  automatedBy?: 'rules' | 'openai' | 'codex_local';
+  automatedBy?: 'rules' | 'openai' | 'codex_local' | 'personal_agent';
   id: string; at: number; senderId: string; senderName: string;
   role: 'rider' | 'guardian' | 'agent' | 'system'; text: string;
 }
@@ -34,6 +35,8 @@ export interface GuardianContribution {
   points: number; reputation: number; rewardStatus: 'pending' | 'credited' | 'ineligible' | 'demo';
 }
 export interface Trip {
+  personalAgent?: PersonalAgentView;
+  personalAgentHistory?: PersonalAgentView[];
   codexDemo?: {id:string;status:'pending'|'consumed'|'cancelled';expiresAt:number};
   aiConsent?:Record<string,AiConsent>;
   liveAiAvailable?:boolean;

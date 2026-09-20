@@ -1,7 +1,7 @@
 export interface CommunityEvent {
   journeyId: string;
   sequence: number;
-  kind: 'created' | 'assigned' | 'check_in' | 'relay_requested' | 'closed' | 'contribution' | 'gratitude';
+  kind: 'created' | 'assigned' | 'check_in' | 'relay_requested' | 'closed' | 'contribution' | 'gratitude' | 'agent_service';
   actorId: string;
   subjectId: string;
   assignment: number;
@@ -73,6 +73,7 @@ export function communityRecordLabel(record: CommunityRecord): string {
     case 'created': return 'Journey opened';
     case 'assigned': return `Guarding assignment ${record.event.assignment} began`;
     case 'check_in': return 'Guardian checked in';
+    case 'agent_service': return ['Personal agent began accompanying', 'Personal agent service ended', 'Personal agent became unavailable', 'Human guardian returned after agent service'][record.event.value] ?? 'Personal agent service';
     case 'relay_requested': return 'A human relay was requested';
     case 'closed': return record.event.value === 1 ? 'Rider reported arrival' : record.event.value === 2 ? 'Journey cancelled' : 'Monitoring expired';
     case 'contribution': return 'Guarding contribution';

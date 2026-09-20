@@ -25,6 +25,7 @@ import { MemberProfileCard, MemberProfileButton, useMemberProfile } from '@/comp
 import { CommunityNotice, useCommunityNotice } from '@/components/community-notice';
 import { useCommunityRecords } from '@/components/community-records';
 import { canCompactRelay } from '@/lib/journey-layout';
+import { personalAgentPresence } from '@/lib/personal-agent';
 
 function remaining(at: number, now: number) {
   const seconds = Math.max(0, Math.ceil((at - now) / 1000));
@@ -216,6 +217,7 @@ export function HumanGuarding({
                 {trip.guardMode === 'human'
                   ? `${trip.guardian?.name || 'Your guardian'} remains assigned and should keep checking in until a replacement is approved.`
                   : trip.assistance?.automatedCheckIns===false ? 'No human has confirmed coverage. Automated reminders are off; you can still find a replacement or request help.'
+                  : personalAgentPresence(trip.personalAgent, now).active ? 'The personal agent is accompanying this journey while you find a human replacement.'
                   : 'No human has confirmed coverage. Scheduled reminders continue while you find a replacement.'}
               </p>
             </div>

@@ -1,0 +1,28 @@
+{
+  "network": "devnet",
+  "programId": "7vuz78V9Tu53Bpt3iXHc37VSDBmRSYxcEguWewR9LXzm",
+  "admin": "AHdX6zJn3xYQXCBix3TvEqXUyV9x8PdPcEstsCkyhdE8",
+  "issuer": "4sF5iTCz1vqK6iAvSeuRunw2WeaXvYRAhCf5JgE6j6uc",
+  "sponsor": "EuR9ovZGmXcnuhor1PvCGo3YfwkfbVsh6xvUbqYQtHhA",
+  "binaryBytes": 265448,
+  "binarySha256": "c5dce38a41dc8cb4aba94bbdc58aec7a0f6e99240cf0287312665606ecb4c71b",
+  "initializeSignature": "5PXdVq4uh3dgMGTM6fiJHxV89QReK5bnGDyunVguHwNj8HmDWCZDwJCWxzYD9g3Sw83r37Fo9FZJjMiz4V337DoN",
+  "fundingSignature": "5Py74ytoMQvXVRE41u5bC46UNE9Tt8o9mK1uHDbhXucWHZJ9CMpg5NDfz9mp9sjCA8iLJgXZZbNMi5Q5V5WriqfT",
+  "verifiedAt": "2026-09-19T19:50:05.203Z",
+  "programData": "C2hgYk6Gt24xLBQmTN2WdhRxd7CZWikNbxUZzUP84f5S",
+  "slot": 501018552,
+  "executable": true,
+  "bytecodeMatches": true,
+  "sponsorBalanceLamports": 250000000,
+  "deployerBalanceLamports": 700413560,
+  "deploymentSignature": "2foKmHPYexQrgQgskwyWo7tDAnWmrX83y5zqyqagmpVPbUBCLq1dLiVcqBfMkghRWnyF5s7ymGorYVwaz2mAYLfV",
+  "deploymentSignatureVerifiedAt": "2026-09-19T19:52:26.964Z",
+  "deploymentSignatureVerification": {
+    "commitment": "finalized",
+    "loaderInstruction": "DeployWithMaxDataLen",
+    "slot": 501018552,
+    "maxDataLen": 265448,
+    "buffer": "CwbB827Azqre6mwikcY9EbmN6J5PQSmHXaLNVCFzgcm4",
+    "authority": "AHdX6zJn3xYQXCBix3TvEqXUyV9x8PdPcEstsCkyhdE8"
+  }
+}

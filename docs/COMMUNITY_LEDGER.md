@@ -22,14 +22,14 @@ The original V2 wallet-signed commitment program is preserved. Its wallet-order 
 
 The first community rule distributes one 25-point and 10-reputation pool equally among distinct guardians with an observed check-in when the rider reports arrival. Integer remainders go to eligible members in ascending public-reference order. Additional check-ins, repeated assignments and banners do not increase the pool. Cancelled and expired journeys retain participation history without completion allocations.
 
-The ordered event families are `created`, `assigned`, `check_in`, `relay_requested`, `closed`, `contribution`, and `gratitude`. The minimal payload is:
+The ordered event families are `created`, `assigned`, `check_in`, `relay_requested`, `closed`, `contribution`, `gratitude`, and `agent_service`. The minimal payload is:
 
 ```typescript
 {
   journeyId: string;   // random 32-byte public reference, lowercase hex
   sequence: number;    // zero-based event order within this journey
   kind: string;
-  actorId: string;     // pseudonymous member; zero only for declared automated relay
+  actorId: string;     // pseudonymous member; zero for declared platform automation
   subjectId: string;
   assignment: number; // distinct period of responsibility, independent of guardian identity
   observedAt: number; // Unix seconds, distinct from receipt recordedAt
@@ -38,6 +38,10 @@ The ordered event families are `created`, `assigned`, `check_in`, `relay_request
 ```
 
 Assignments A-to-B-to-A retain three periods of responsibility. A requested relay is separate from an accepted assignment. A check-in attests an observed application action, not continuous attention. Closure categories distinguish rider-reported arrival, cancellation and expiry. At most sixteen distinct guardians participate in one journey.
+
+The additive `agent_service` event uses wire kind 9 and rule version 2 with the unchanged 173-byte receipt layout. Values are 0 (first validated agent response establishes service), 1 (service ended), 2 (service unavailable), and 3 (human returned). These observations bind to the current guardian and assignment. Automatic end/unavailable records have a zero actor; start/return records refer to the owning guardian. They always carry zero points and reputation and cannot satisfy human check-in or banner eligibility. Source capture places service termination before reassignment or closure. Repeated heartbeats create no public events. Private execution receipts, source citations, agent names, messages, locations and capabilities are excluded from chain payloads.
+
+An upgraded program is required to publish kind 9. During an upgrade delay the durable publisher retains such records as pending/retry and later records in that journey wait in order; the UI must not show them as chain confirmed. Existing reward rule 1 and prior account layouts remain compatible. Deployment and independent chain verification are recorded in the release evidence.
 
 An eligible rider can send at most one fixed-category banner per journey and guardian, including a former guardian or a guardian on a cancelled journey. Categories are companionship, thoughtfulness and relay. Banners never add contribution points. Neither contributions nor banners are transferable tokens or NFTs.
 

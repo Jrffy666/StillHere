@@ -1,120 +1,94 @@
 # StillHere: personal agents in a voluntary guarding community
 
-Status: proposed architecture, September 20, 2026. This document records the new product direction. Guardian delegation, connected agent identities, continuous personal-agent execution, and delegation ledger events are not implemented yet.
+Status: implemented, September 20, 2026. The backend delegation protocol and journey interface are deployed; the owner-operated Codex watcher and local STDIO MCP bridge are implemented. The [hosted acceptance receipt](deployment/personal-agent.hosted.validation.json) records 23 passed checks with one real Codex assessment and human-to-agent-to-human handback. Separate automated-service ledger events are implemented and journaled, but their chain publication/finality still requires independent verification. Broader validation is tracked in [VALIDATION.md](VALIDATION.md).
 
-## Product decision
+## Product and delivered interfaces
 
-StillHere should let volunteers bring their own agents into the community. A volunteer can tell their agent, "I need to sleep for a while. Please continue accompanying this rider." The agent uses narrowly authorized StillHere tools, while the platform manages permissions, continuity, human handoffs, and truthful records.
+StillHere lets an assigned volunteer bring their own agent into an approved journey. The volunteer requests a named agent for a limited period; the rider permits participation and processing; the owner's runtime submits bounded assistance proposals. The platform owns permissions, source validation, human handoffs, truthful coverage state, and execution receipts. The rider can distinguish a person from that person's agent and from a runtime that has stopped responding.
 
-The name has two meanings: the volunteer is still here with the rider, and their personal agent can help continue that companionship when the volunteer rests. It expresses care and continuity, not a guarantee of uninterrupted monitoring or physical safety. The rider must be able to tell who is present, whether that participant is automated, and when nobody is responding. See [the product brief](STILLHERE.md) for the narrative and proposed demonstration.
+The primary deliverable is the authorized tool interface and its runtime. A demonstration is a separate acceptance exercise. See the [HTTP contract](PERSONAL_AGENT_PROTOCOL.md), [CLI and MCP guide](PERSONAL_AGENT_CLIENT.md), and packaged [guarding skill](../integrations/stillhere-guard/SKILL.md). The skill explains usage; it cannot grant access. The local STDIO bridge can connect an already running compatible agent. It does not imply remote ChatGPT Work support or start continuous execution by itself.
 
-A platform-funded model API is not a prerequisite or the main development path. The existing disabled Responses adapter is retained as an optional legacy integration. The product should work with a compatible personal agent client, beginning with Codex CLI. Support for another Codex surface must be verified against that client's actual tool and background-execution capabilities.
+A platform-funded model API is not required. Each owner operates their own compatible runtime and account; StillHere does not receive the owner's Codex login or expose that login as a shared inference service. The existing Responses adapter remains an optional disabled path. Connecting a personal agent does not establish that a person is awake or that the rider is safe.
 
-The owner's agent is still an automated participant. Its activity must be visible as such; connecting an agent does not establish that a person is awake or that the rider is safe.
+## Implemented handoff
 
-## Intended experience
+1. A rider approves a human guardian through the ordinary journey workflow.
+2. That currently assigned, nonsimulated guardian requests a named agent for 5–120 minutes and accepts the `personal-agent-v1` processing notice.
+3. The rider approves that exact delegation with the same notice. Refusal leaves it inactive. Natural-language intent alone grants nothing.
+4. The guardian downloads a journey-scoped connection file. Reissuing it before runtime acceptance rotates the earlier capability. After acceptance, changing runtimes requires revocation and a new approved delegation.
+5. The runtime accepts and enters `connecting`. Only its first valid assessment establishes `active` coverage. The interface shows whose agent it is, its response/connectivity times, and permission expiry.
+6. The server validates each proposal, publishes attributed canonical questions, retains eligible unresolved concerns, and may open human recruitment. The rider still approves any replacement guardian.
 
-1. A human volunteer receives the rider's approval and begins an ordinary guarding assignment.
-2. The volunteer asks their connected agent to cover a specific journey for a bounded period.
-3. The platform checks the volunteer's current assignment and the rider's permission for that agent's participation and data processing. Natural-language intent alone is not a credential or a grant.
-4. The agent obtains a limited delegation and confirms readiness. The interface shows whose agent is providing automated coverage, when it last responded, and when permission expires.
-5. The agent reads authorized updates, asks useful questions, preserves unresolved concerns, and can request a human replacement. The rider still approves the replacement guardian.
-6. Human return, replacement, arrival, cancellation, consent withdrawal, expiry, or loss of agent availability ends the delegation and invalidates outstanding proposals.
+Either the rider or owning guardian can revoke the delegation. Human resume/check-in, replacement, arrival, cancellation, explicit help, assistance being turned off, expiry, deletion, or runtime unavailability invalidates its capability and outstanding work. The hosted API's older `ai-consent` choice is separate; withdrawing personal-agent permission uses the delegation's revoke action. A new guardian assignment requires fresh delegation and approval.
 
-If the volunteer leaves before an agent or another person is ready, display the coverage gap and retain existing deterministic reminders. A voluntary participant is not forced to stay; the software must accurately report the resulting availability.
+If a runtime disconnects or a guardian leaves before replacement coverage is ready, the interface must expose the gap. The application retains ordinary human controls and deterministic monitoring; it does not invent a human check-in or claim someone has accepted recruitment.
 
-## Architecture
+## Scoped tools and server authority
 
-```mermaid
-flowchart LR
-  H[Volunteer authorizes bounded delegation] --> D[StillHere delegation service]
-  R[Rider permits agent participation and data use] --> D
-  C[Personal Codex or compatible agent] --> T[StillHere MCP or CLI tools]
-  T --> D
-  D --> E[Journey permissions and execution harness]
-  E --> U[Attributed messages and human relay]
-  E --> L[Minimal public participation receipts]
-  W[Owner-controlled event listener and runner] --> C
-  D --> W
-```
+Participant management uses `POST /api/trips/:tripId/delegation` and an ordinary authenticated account session. The separate capability endpoint is `POST /api/agent/trips/:tripId/delegations/:delegationId/:operation`. Account sessions cannot substitute for its capability, and the capability grants no ordinary participant API access.
 
-The platform exposes application capabilities. It does not expose a personal Codex session as a public inference service, receive a volunteer's ChatGPT authentication material, or charge one shared model account for arbitrary community input. Each agent owner operates their own compatible runtime and account.
+| Operation | Allowed behavior |
+| --- | --- |
+| `status` | Read the configured delegation's nonsecret status |
+| `accept` | Confirm runtime connection and receive the initial job |
+| `updates` | Retrieve the current minimized job, or null when none is due |
+| `heartbeat` | Renew connectivity without proving model progress |
+| `assess` | Submit one strict, source-cited assessment for a server-issued job |
+| `release` | End this delegation with a bounded reason |
 
-MCP provides a standard tool interface; it does not by itself keep a model running, listen forever, or guarantee that a sleeping computer can respond. Continuous participation needs a running listener with event cursors, deadlines, retries, and reconnection handling. The first implementation should use a private operator-controlled local runner. Hosted personal runtimes can be evaluated later without sharing subscription credentials through the platform.
+The MCP equivalents are `stillhere_status`, `stillhere_accept`, `stillhere_updates`, `stillhere_heartbeat`, `stillhere_assess`, and `stillhere_release`. Their configured connection chooses the journey; model arguments cannot select another journey, token, arbitrary URL, recipient, or account.
 
-Codex CLI supports local STDIO and remote Streamable HTTP MCP servers with supported authentication methods. Hosted ChatGPT Work uses remote MCP through installed plugins, rather than reading local Codex configuration. This makes a platform tool adapter a supported integration direction; actual client pairing still needs implementation and validation. See the [official MCP documentation](https://learn.chatgpt.com/docs/extend/mcp).
+An assessment has at most four categorized findings, a bounded question selection, a Boolean human-relay proposal, and a follow-up delay of 30–300 seconds. It contains no free-form participant message or claim of completed action. Source references must come from the supplied context. New concern findings require recent rider evidence or a retained rider concern; conflicts require distinct message sources. The server checks source age again at execution, renders the question, applies permitted effects, and records a receipt.
 
-Codex CLI goals and hosted Work support long-running tasks, so a dedicated local runner is an initial engineering choice, not a claim that these clients cannot continue work. Runtime availability and task pauses must still be observable. Local scheduled execution requires an available machine and application; hosted schedules depend on workspace features. Support for a custom StillHere event trigger is not established by those capabilities. See [long-running work](https://learn.chatgpt.com/docs/long-running-work) and [scheduled tasks](https://learn.chatgpt.com/docs/automations).
+Every submission rechecks assignment, consent, lifecycle, delegation expiry, revision, current context, and source freshness. An identical retry for a completed job returns its original receipt only while authority remains valid. A changed or stale replay is rejected; concurrent duplicates cannot repeat effects. A receipt establishes what StillHere executed, not independent proof that a particular model performed inference or that a rider read the message.
 
-## Identity and authorization
+Personal-agent tools cannot notify contacts, approve guardians, change human contribution counters, manage accounts, award recognition, sign wallets, transfer funds, confirm arrival, or dispatch emergency services. Explicit help remains a direct platform workflow. Trusted-contact authorization is separate and is not granted by semantic concern.
 
-Keep these identities distinct: rider, assigned human guardian, connected personal agent, and temporary delegation. A delegation belongs to one current guardian assignment and one journey; it is not a substitute for the owner's general application session.
+## Operational limits and availability
 
-Use a supported authorization flow to pair the agent with its owner, then issue a short-lived, revocable capability for specific tools. Store only a verifier for a bearer capability, redact it from logs, and keep it out of model prompts, source control, exported context and public receipts. Do not copy the owner's browser session or a Codex login into Worker secrets.
+| Limit | Implemented behavior |
+| --- | --- |
+| Delegation | 5–120 minutes, bound to one current guardian assignment |
+| Connectivity | Unavailable after 45 seconds without a valid heartbeat |
+| Initial or pending response | At most 90 seconds, never beyond delegation expiry |
+| Follow-up | A new job after the accepted 30–300 second delay |
+| Context | At most 12 eligible messages and eight retained rider concerns |
+| Private history | At most 40 receipts per delegation and 12 previous delegation views |
+| Watch defaults | 12 model turns or 20 minutes; delegation expiry can stop it sooner |
+| Watch configurable ceilings | 60 turns and 120 minutes |
+| Model subprocess | At most 60 seconds; stale work is aborted/discarded |
+| Watch connectivity | Poll every five seconds; heartbeat every ten seconds during inference |
 
-The rider must know which agent is participating and consent before private rider messages are processed by that external runtime. The guardian cannot grant processing consent for the rider. Include only explicitly eligible authors and relevant data; former guardians and applicants do not gain access through an old delegation. Free text still needs review and minimization.
+A heartbeat does not make `connecting` active and cannot extend a pending response deadline. New rider input invalidates the previous job, but replacement work retains the original response deadline. This prevents a busy conversation or healthy polling loop from hiding a stalled model. The frontend also computes expired coverage from its timestamps while waiting for a refreshed server response.
 
-Every action must recheck current assignment, rider consent, delegation expiry, journey revision, allowed tool, source freshness, and request idempotency. Revocation must reject both future requests and old in-flight proposals. Tool descriptions and agent instructions supplement these server checks; they cannot replace them.
+The owner must keep their machine, network, and model allowance available. The client installs no daemon and changes no power settings. MCP connectivity alone is not an event listener. The supplied watch loop provides bounded event processing, not an unlimited promise of attendance. Its turn/time limits are not token, money, or credit guarantees; a CLI turn can involve provider retries.
 
-## Initial tool surface
+The watcher uses the verified Codex CLI version described in the [client guide](PERSONAL_AGENT_CLIENT.md), with an isolated assessment subprocess and tested tool restrictions. It never automatically reruns inference after an ambiguous submission. It may retry the identical proposal at most twice, then exposes failure. Console watch events contain state labels and turn counts; single-operation JSON output may contain private authorized context and must not enter shared logs.
 
-Names below describe proposed capabilities, not existing public endpoints.
+## Privacy, consent, and recovery
 
-| Capability | Allowed behavior | Required boundary |
-| --- | --- | --- |
-| List my assignments | Find the owner's current assignments using minimal summaries | No community-wide private journey access |
-| Request delegation | Propose one journey and a bounded duration | Current guardian authority and rider permission; no silent activation |
-| Accept delegation | Confirm that the connected agent is ready | Bind the agent identity and current assignment; expiring lease |
-| Read journey updates | Read authorized context and events since a cursor | Minimal context, eligible authors, no unrelated accounts or credentials |
-| Propose assistance | Submit cited findings and a bounded question/follow-up proposal | Reuse the strict semantic protocol and current-state validation |
-| Request human relay | Open a replacement request where allowed | No assignment approval, private access grant, or claim that someone accepted |
-| Report availability | Record runtime heartbeat and processing progress | Does not count as a human check-in or proof of attention |
-| Release delegation | End the owner's agent participation | Stop pending work and update visible coverage immediately |
+Guardian request and rider approval each require literal `consent: true` and the exact personal-agent notice. The runtime receives only the current rider's and current owning guardian's eligible messages plus retained rider concerns. Former guardians, applicants, agent/system messages, dedicated account/journey identifiers, contact fields, wallet details, shared Uber links, and exact coordinates are excluded from model context. Source identifiers and timestamps remain for validation. Free-text minimization is heuristic and does not guarantee anonymity; an author can type another person's details.
 
-Initially retain canonical server wording and the existing source-cited assessment schema. Free-form companionship can be considered separately; it should not silently bypass the established execution boundary.
+The connection file contains one revocable journey capability, not a browser session or a model credential. Keep it outside the repository, prompts, screenshots, and shared logs. The Worker stores only its verifier. The model assessment receives minimized context, never the connection file. The owner's `--allow-processing` flag acknowledges external processing but cannot replace missing participant consent.
 
-Agents receive no wallet-signing, transfer, award, account-administration, emergency-dispatch, or arbitrary outbound-message tools. Explicit rider help remains a direct platform action. Trusted-contact notifications remain subject to the existing separate consent and deterministic policies.
+At most eight unresolved rider concerns remain in working context beyond the recent-message window. Reassurance and handoff do not resolve them; only an explicit rider resolution does. Additional concerns remain in message history with a capacity event rather than evicting earlier unresolved evidence. Categories and source checks constrain output; they do not prove that the interpretation is correct.
 
-## Continuity and failure behavior
-
-Record runtime connectivity, last processed event, last successful model response, and actual tool receipts separately. A heartbeat from a polling process does not prove that its model is functioning. A model response does not prove that a rider read the message.
-
-Use a bounded delegation lease and a response deadline for pending events. Deduplicate retries using server-issued event and action identifiers. Do not keep renewing claimed coverage when an event remains unprocessed. On runtime loss, expired permission, unavailable model allowance, or an overdue required response, disclose that agent assistance is unavailable, retain deterministic reminders, and make human recruitment available under existing rules.
-
-Do not promise continuous personal-agent coverage solely because an MCP connection was configured or an agent replied "I will watch the journey." The listener and recovery path need end-to-end validation with the client actually used for the demo.
+Participant responses contain private execution evidence. Directory and applicant projections omit it. Replacing a guardian revokes private access. Deletion clears affected retained data. Backup export omits the private capability and pending-job state; restore closes old journeys and ends previous delegations instead of restarting their runtimes or making an exported capability usable.
 
 ## Community recognition and chain records
 
-Agent support can be a meaningful community contribution, but it must be distinguishable from a person's direct participation. Display "Alex's agent provided automated support" instead of incrementing Alex's human check-in counter. A running heartbeat must never mint contribution points.
+Automated support is attributed to the named owner's agent. Heartbeats, agent questions, and model responses never increment human check-in counters or earn human contribution points. Existing human contribution and voluntary free-banner rules remain separate.
 
-Preserve the existing human contribution and free-banner rules during the first implementation. Record automated service activity separately. Whether verified agent service should later have its own recognition measure is a product decision; it is not implemented or silently included in today's human scores. Rider gratitude remains voluntary and never purchases coverage.
+The community ledger implementation adds versioned `agent_service` events for active service, ended service, unavailable service, and human return. They carry minimal references, timing, and recorded outcomes through the existing attestation workflow. Publication and finality are separate from local execution, and deployment requires its own evidence. Private messages, sources, model opinions, locations, contacts, prompts, and credentials stay off chain. An attestation describes what the platform recorded; it is not proof of a person's character or a passenger's safety.
 
-Proposed public receipt events include delegation activated, agent participation ended, agent availability lost, and human coverage resumed. Publish minimal references, actor type, times and confirmed outcomes through the existing attestation workflow. Never put messages, locations, contact details, authentication material, private prompts, or model reasoning on chain. A platform attestation establishes what the platform recorded, not independent proof of an agent's character or a passenger's safety.
+## Validation and demonstration
 
-## Development order and acceptance
+The personal-agent backend security suite uses real application routes and synthetic guest identities, with model/network calls and real chain transactions excluded. It covers exact approval, scoped tokens, readiness, source minimization and freshness, replay/concurrent retry, canonical action receipts, response deadlines, revocation, restore, and public projections. Separate client and interface tests cover the runner, MCP boundary, and truthful state labels. These fixture tests establish protocol behavior, not general model quality.
 
-1. Implement delegation identity, rider consent, expiring capability, assignment binding, revocation, and truthful coverage state.
-2. Expose the existing guarded application tools through a thin MCP/CLI adapter. Pair a personal agent without exporting general application or model credentials.
-3. Add an owner-controlled listener/runner with bounded model invocation, event acknowledgement, heartbeat, model-failure detection, and reconnect behavior.
-4. Add the human-to-agent-to-human interface, private execution evidence, and clearly separated automated service history.
-5. Extend the community ledger with versioned delegation events only after the event semantics and privacy projection are settled. Do not repurpose old human check-in events.
+The [hosted watcher acceptance](deployment/personal-agent.hosted.validation.json) separately passed 23 checks using two synthetic accounts on an ordinary journey. Under a two-turn/two-minute limit, one real Codex invocation completed in 8.683 seconds, reporting 12,331 input tokens and 147 output tokens. The server retained a cited concern, posted its canonical route question, and scheduled follow-up. Human return revoked the scoped token; arrival and a free banner completed the flow. Human check-ins stayed at one during agent execution and rose to two only on explicit human return. The receipt records zero hosted Responses API calls and zero external notifications. This one scenario is not a model benchmark or interactive browser acceptance, and its chain records were still pending independent verification.
 
-Acceptance must cover two real application identities, rider refusal, owner authorization, agent readiness, a new rider message, a permitted response, human relay, human return, revoked/stale/replayed requests, runner disconnection, exhausted agent allowance, and unchanged human reward counters. Contract changes need compatibility and Devnet tests separately from application tests.
+Demonstrate useful judgment with synthetic content in an ordinary application journey: an old reassurance, a newer uncertain concern, conflicting accounts, and an instruction embedded in untrusted text. Show the current sources, model-selected question category, actual server receipt, human recruitment, approved human return, and rejection of a late proposal. Record real success/failure counts and timings; distinguish fixture output from actual model execution.
 
-### Demonstrating useful judgment
+The earlier [manual Codex export/import rehearsal](CODEX_DEMO.md) completed one real assessment and hosted import, recorded in [its evidence](deployment/codex.demo.validation.json). That rider-operated one-shot workflow remains distinct from the newer hosted watcher acceptance above. Additional scenarios, failure rates, sustained availability, and independently finalized chain records still need measured evidence.
 
-Use the synthetic human-to-agent-to-human scenario in the [StillHere product brief](STILLHERE.md). The agent should encounter conflicting messages, a stale observation, an unresolved concern, and an instruction embedded in untrusted journey content. Useful behavior means preserving uncertainty, citing eligible current sources, choosing a permitted follow-up or relay request, and adapting after fresh evidence. Merely sending a periodic greeting does not demonstrate the intended agent capability.
-
-Capture the authorized input, proposed action, server decision, resulting state and handoff receipt privately. A stale proposal should be rejected even if its wording sounds helpful. The demonstration must show this rejection and recovery rather than presenting every model proposal as an executed action.
-
-This is an acceptance design, not a report that the connected delegation flow already exists. Keep prototype recordings and implemented behavior labeled separately.
-
-## Current implementation that can be reused
-
-The existing system provides private participant access, human approval/relay, durable tools and receipts, semantic source validation, unresolved concerns, bounded follow-up, deterministic help, and community attestations.
-
-The [local Codex export/import demonstration](CODEX_DEMO.md) completed one real Codex analysis through the hosted application's harness. It validates the analysis and execution protocol. It is rider-operated, one-shot and manual; it does not yet implement a guardian's delegated personal agent or continuous event handling. See [the measured release evidence](deployment/codex.demo.validation.json).
-
-The primary next work is therefore delegation and agent-facing tools, rather than activating the legacy model API adapter.
-
-The StillHere product rename does not change existing deployment names, repository paths, package identifiers, contract addresses, or historical receipt contents. Infrastructure migration is a separate compatibility task.
+The StillHere rename preserves existing deployment names, repository paths, package identifiers, contract addresses, and historical receipts. Infrastructure migration is a separate compatibility task.

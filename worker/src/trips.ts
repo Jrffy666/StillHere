@@ -1,6 +1,6 @@
 import { DurableObject } from 'cloudflare:workers';
 import { z } from 'zod';
-import { directoryName } from './accounts';
+import { digest, safeEqual, directoryName } from './accounts';
 import { allocateContributions } from './guarding';
 import { ruleAssessment, sendNotification } from './integrations';
 import { hasAgentConcern, buildAgentHandoff, renderAgentSummary, renderAgentCheckIn, redactAgentText, parseAgentToolCall, type AgentContext, type AgentRun, type AgentToolCall, type AgentToolResult, type AgentTrigger } from './agent';
@@ -9,7 +9,8 @@ import { assistanceInputSchema, defaultAssistance, assistanceEnabled, notificati
 import { canUseLiveAi, canUseCodexDemo, canUseSemanticRun, openAiAvailable, liveAiContext, nextSemanticDecision, MAX_JOURNEY_AI_REQUESTS, MAX_JOURNEY_AI_RESERVED_TOKENS, AI_REQUEST_COOLDOWN_MS } from './ai-runtime';
 import { exportInputSchema, resultInputSchema, codexDemoContext, validateCodexDemoResult, CODEX_DEMO_TTL_MS, type CodexDemoJob, type CodexDemoExportFile } from './codex-demo';
 import { prepareOpenAIRequest, runOpenAIAssessmentWithDeadline, OpenAIProviderError } from './openai-provider';
-import { validateSemanticAssessment, renderSemanticQuestion, type SemanticAssessment } from './agent-semantic';
+import { validateSemanticAssessment, renderSemanticQuestion, renderSemanticHandoff, type SemanticAssessment } from './agent-semantic';
+import { delegationInputSchema, personalAgentEmptyInputSchema, personalAgentAssessmentInputSchema, personalAgentReleaseInputSchema, personalAgentConnectionSchema, personalAgentContext, personalAgentContextChanged, personalAgentLive, personalAgentConnected, PERSONAL_AGENT_NOTICE_VERSION, PERSONAL_AGENT_CONNECTIVITY_MS, PERSONAL_AGENT_RESPONSE_MS, PERSONAL_AGENT_MAX_RECEIPTS, PERSONAL_AGENT_TOKEN_PATTERN, type PersonalAgentState, type PersonalAgentConnection, type PersonalAgentResponse, type PersonalAgentReceipt, type PersonalAgentOperation } from './personal-agent';
 import type { ChainMember, ChainSnapshot } from './chain-types';
 import { tripSnapshotSchema } from './snapshots';
 import { captureCommunityEvents, randomCommunityReference, type SourceCommunityState, type SourceCommunityEvent } from './community-events';
@@ -17,6 +18,7 @@ import type { CommunityRecordView, CommunityCorrectionView } from './community-t
 import { fail, isClosed, isParticipant, ok, summary, type CreateTrip, type Notification, type Outcome, type Person, type Trip, type TripAction, type TripSummary, type WorkerEnv, type GratitudeKind, type GratitudeView } from './types';
 
 interface StoredTrip {
+  personalAgent?: PersonalAgentState;
   codexDemoJob?: CodexDemoJob;
   paidAiBudget?: {requests:number;reservedTokens:number;inputTokens:number;outputTokens:number;totalTokens:number;lastRequestAt:number};
   providerBudget?: {decisions:number;inputChars:number;runs:Record<string,{decisions:number;inputChars:number}>};
@@ -59,6 +61,7 @@ export class TripRoom extends DurableObject<WorkerEnv> {
     state.trip.assistance ??= defaultAssistance();
     state.trip.liveAiAvailable=openAiAvailable(this.env);
     this.syncCodexDemo(state);
+    if(state.personalAgent)state.trip.personalAgent=structuredClone(state.personalAgent.view);
     if (state.trip.relay) {
       const person = state.trip.relay.requestedBy;
       state.trip.relay.requestedBy = {id:person.id,name:person.name,...(person.wallet?{wallet:person.wallet}:{}),...(person.simulated?{simulated:true}:{})};
@@ -83,12 +86,14 @@ export class TripRoom extends DurableObject<WorkerEnv> {
     state.trip.updatedAt = Date.now();
     state.trip.events = state.trip.events.slice(-200);
     state.trip.messages = state.trip.messages.slice(-150);
+    this.reconcilePersonalAgent(state);
+    if(state.personalAgent)state.trip.personalAgent=structuredClone(state.personalAgent.view);
     this.syncCodexDemo(state);
     if (state.trip.agent) {
       const harness = state.trip.agent;
       if (isClosed(state.trip) || state.trip.guardMode !== 'ai' || !assistanceEnabled(state.trip)) harness.followUpAt = null;
       for (const run of harness.runs.filter(pendingRun)) {
-        if (isClosed(state.trip) || state.trip.guardMode !== 'ai' || !assistanceEnabled(state.trip) || run.revision !== state.assessmentVersion
+        if (personalAgentConnected(state.personalAgent) || isClosed(state.trip) || state.trip.guardMode !== 'ai' || !assistanceEnabled(state.trip) || run.revision !== state.assessmentVersion
           || run.provider==='codex_local'&&!canUseSemanticRun(this.env,state.trip,run)) {
           run.status = 'cancelled'; run.leaseUntil = 0; run.updatedAt = Date.now();
           run.error = 'The journey ended, human monitoring resumed, or newer participant input superseded this run.';
@@ -150,6 +155,15 @@ export class TripRoom extends DurableObject<WorkerEnv> {
     if(source.retryAt!==null)times.push(source.retryAt);
     if (trip.privacyExpiresAt) times.push(trip.privacyExpiresAt);
     if (!isClosed(trip)) {
+      const delegated=state.personalAgent;
+      if(personalAgentLive(delegated)) {
+        times.push(delegated!.view.expiresAt);
+        if(personalAgentConnected(delegated)) {
+          if(delegated!.view.lastSeenAt!==null)times.push(delegated!.view.lastSeenAt+PERSONAL_AGENT_CONNECTIVITY_MS);
+          if(delegated!.responseDeadline!==null)times.push(delegated!.responseDeadline);
+          if(!delegated!.pending&&delegated!.nextJobAt!==null)times.push(delegated!.nextJobAt);
+        }
+      }
       // Unclaimed trips expire; active trips are bounded to six hours.
       times.push(trip.status === 'open' ? trip.createdAt + 86400000 : (state.monitoringStartedAt ?? trip.createdAt) + 6 * 3600000);
       if (trip.nextCheckInAt !== null) times.push(trip.nextCheckInAt);
@@ -210,6 +224,7 @@ export class TripRoom extends DurableObject<WorkerEnv> {
       && (item.kind === 'initial' ? trip.status === 'open' : Boolean(trip.relay)));
     if (trip.guardianRequests.length !== previous) changed = true;
     if (changed) { state.indexVersion += 1; state.assessmentVersion += 1; }
+    changed=this.reconcilePersonalAgent(state)||changed;
     return changed;
   }
   private visible(userId: string): Outcome<Trip | TripSummary> {
@@ -335,6 +350,11 @@ export class TripRoom extends DurableObject<WorkerEnv> {
     this.event(state.trip,'notification',forceFailure?'Notification failed':'Escalation queued',forceFailure?'Demo scenario: contact someone you trust directly.':'Delivery and acknowledgement will be tracked separately.');
   }
   private takeover(state: StoredTrip, reason: string, requestedBy: Person = agent): void {
+    if(personalAgentConnected(state.personalAgent)) {
+      state.trip.guardMode='ai';state.trip.nextCheckInAt=null;state.aiNextCheckInAt=null;
+      this.event(state.trip,'human-away','Human guardian unavailable','The personal runtime retains only its existing rider-approved delegation and response deadlines.');
+      return;
+    }
     state.trip.guardMode = 'ai'; state.trip.nextCheckInAt = null;
     state.aiNextCheckInAt = assistanceEnabled(state.trip) ? Date.now() + Math.max(60,state.trip.checkInIntervalSeconds) * 1000 : null;
     state.aiMissedCheckIns = 0;
@@ -353,12 +373,200 @@ export class TripRoom extends DurableObject<WorkerEnv> {
   }
 
   private queueAgent(state: StoredTrip, kind: AgentTrigger['kind'], eventId = crypto.randomUUID(), messageId?: string): void {
-    if (isClosed(state.trip) || state.trip.guardMode !== 'ai' || !assistanceEnabled(state.trip)) return;
+    if (personalAgentConnected(state.personalAgent) || isClosed(state.trip) || state.trip.guardMode !== 'ai' || !assistanceEnabled(state.trip)) return;
     const harness = state.trip.agent ??= {provider:'mock',liveModel:false,runs:[],followUpAt:null,handoffSummary:null};
     if (harness.runs.some(run => run.trigger.id === eventId)) return;
     const now = Date.now();
     harness.runs.push({id:crypto.randomUUID(),trigger:{id:eventId,kind,at:now,...(messageId?{messageId}:{})},provider:'mock',
       status:'queued',createdAt:now,updatedAt:now,revision:state.assessmentVersion,steps:[],attempts:0,nextAttemptAt:now,leaseUntil:0});
+  }
+
+  private endPersonalAgent(state:StoredTrip,status:'revoked'|'expired'|'unavailable'|'ended',reason:string,humanReturned=false):void {
+    const delegation=state.personalAgent;if(!delegation||!personalAgentLive(delegation))return;
+    const hadCoverage=delegation.view.status==='active',now=Date.now();
+    Object.assign(delegation.view,{status,endReason:reason,endedAt:now,nextResponseDueAt:null,connectionIssued:false});
+    delegation.tokenDigest=null;delegation.pending=null;delegation.authorityContext=null;delegation.responseDeadline=null;delegation.nextJobAt=null;delegation.completed=[];
+    state.assessmentVersion++;
+    this.event(state.trip,'personal-agent-ended','Personal agent coverage ended',`${delegation.view.ownerName}'s ${delegation.view.agentName}: ${reason.replaceAll('_',' ')}. Automated service is recorded separately from human participation.`);
+    if(!isClosed(state.trip)&&!humanReturned&&(hadCoverage||state.trip.guardMode==='ai')) {
+      state.trip.guardMode='ai';state.trip.nextCheckInAt=null;
+      state.aiNextCheckInAt=assistanceEnabled(state.trip)?now+Math.max(60,state.trip.checkInIntervalSeconds)*1000:null;
+      if(state.trip.risk==='normal')state.trip.risk='attention';
+      this.openRelay(state,agent);
+      this.message(state.trip,agent,'system','The personal agent is no longer providing coverage. A human replacement can be requested; scheduled checks do not establish that someone is present.');
+    }
+  }
+
+  /** Synchronous state reconciliation: no authorization can survive a clock or assignment change. */
+  private reconcilePersonalAgent(state:StoredTrip):boolean {
+    const delegation=state.personalAgent;if(!delegation||!personalAgentLive(delegation))return false;
+    const before=JSON.stringify(delegation),trip=state.trip,now=Date.now();
+    if(isClosed(trip))this.endPersonalAgent(state,'ended',trip.status);
+    else if(trip.guardian?.id!==delegation.view.ownerId||trip.guardian.simulated
+      ||(state.community?.assignment??0)!==delegation.assignmentSequence)this.endPersonalAgent(state,'revoked','guardian_replaced',trip.guardMode==='human');
+    else if(!assistanceEnabled(trip))this.endPersonalAgent(state,'revoked','assistance_disabled');
+    else if(trip.escalation?.cause==='explicit_help')this.endPersonalAgent(state,'revoked','explicit_help');
+    else if(delegation.view.expiresAt<=now)this.endPersonalAgent(state,'expired','authorization_expired');
+    else if(personalAgentConnected(delegation)) {
+      if(delegation.view.lastSeenAt!==null&&delegation.view.lastSeenAt+PERSONAL_AGENT_CONNECTIVITY_MS<=now)this.endPersonalAgent(state,'unavailable','runtime_disconnected');
+      else if(delegation.responseDeadline!==null&&delegation.responseDeadline<=now)this.endPersonalAgent(state,'unavailable','response_deadline_missed');
+      else {
+        const context=personalAgentContext(trip,delegation.view.ownerId,this.agentContext(state));
+        if(delegation.pending&&(delegation.pending.revision!==state.assessmentVersion||!delegation.authorityContext||personalAgentContextChanged(delegation.authorityContext,context))) {
+          delegation.pending=null;delegation.authorityContext=null;delegation.nextJobAt=now;
+          // New input can replace the snapshot, but cannot extend the existing response deadline.
+        }
+        const latest=delegation.completed.at(-1);
+        if(!delegation.pending&&latest&&(latest.revision!==state.assessmentVersion||personalAgentContextChanged(latest.authorityContext,context)))delegation.nextJobAt=now;
+        if(!delegation.pending&&delegation.nextJobAt!==null&&delegation.nextJobAt<=now) {
+          delegation.responseDeadline??=Math.min(delegation.view.expiresAt,now+PERSONAL_AGENT_RESPONSE_MS);
+          delegation.pending={id:crypto.randomUUID(),revision:state.assessmentVersion,createdAt:now,expiresAt:delegation.responseDeadline,context};
+          delegation.authorityContext=context;delegation.nextJobAt=null;
+          delegation.view.nextResponseDueAt=delegation.responseDeadline;
+        }
+      }
+    }
+    return before!==JSON.stringify(delegation);
+  }
+
+  async setDelegation(userId:string,input:unknown,origin:string):Promise<Outcome<{trip:Trip;connection?:PersonalAgentConnection}>> {
+    const parsed=delegationInputSchema.safeParse(input);if(!parsed.success)return fail(400,'Invalid personal agent delegation.');
+    let state=this.load();if(!state)return fail(404,'Journey not found.');
+    if(!isParticipant(state.trip,userId))return fail(403,'Only current journey participants can manage delegation.');
+    if(this.expire(state))this.save(state);
+    const request=parsed.data,trip=state.trip,guardian=trip.guardian;
+    if(request.action==='revoke') {
+      if(!state.personalAgent||state.personalAgent.view.id!==request.delegationId)return fail(409,'This delegation is no longer current.');
+      if(userId!==trip.rider.id&&userId!==state.personalAgent.view.ownerId)return fail(403,'Only the rider or owning guardian can revoke this delegation.');
+      this.endPersonalAgent(state,'revoked','participant_revoked');this.save(state);
+    } else {
+      if(trip.demo||trip.status!=='active'||!guardian||guardian.simulated||!assistanceEnabled(trip)||trip.escalation?.cause==='explicit_help')return fail(409,'An active journey, a real guardian and enabled assistance are required, with no explicit help request.');
+      if(request.action==='request') {
+        if(userId!==guardian.id)return fail(403,'Only the assigned guardian can delegate to their personal agent.');
+        if(personalAgentLive(state.personalAgent))return fail(409,'End the current delegation before requesting a new one.');
+        const previous=state.personalAgent?.view??state.trip.personalAgent;
+        if(previous)state.trip.personalAgentHistory=[...(state.trip.personalAgentHistory??[]),structuredClone(previous)].slice(-12);
+        const now=Date.now(),id=crypto.randomUUID();
+        state.personalAgent={view:{id,ownerId:guardian.id,ownerName:guardian.name,agentName:request.agentName,status:'requested',createdAt:now,expiresAt:Math.min(now+request.minutes*60000,(state.monitoringStartedAt??trip.createdAt)+6*3600000),riderApprovedAt:null,connectedAt:null,lastSeenAt:null,lastProcessedAt:null,nextResponseDueAt:null,lastActionAt:null,endedAt:null,endReason:null,connectionIssued:false,receipts:[]},tokenDigest:null,noticeVersion:PERSONAL_AGENT_NOTICE_VERSION,guardianApprovedAt:now,assignmentStartedAt:trip.contributions.find(item=>item.guardian.id===guardian.id)?.startedAt??now,assignmentSequence:state.community?.assignment??0,pending:null,authorityContext:null,responseDeadline:null,nextJobAt:null,completed:[],rate:{window:now,count:0}};
+        this.event(trip,'personal-agent-requested','Personal agent handoff requested',`${guardian.name} requested permission for ${request.agentName} to continue this journey. Human coverage has not been replaced.`);
+        this.save(state);
+      } else {
+        const delegation=state.personalAgent;
+        if(!delegation||delegation.view.id!==request.delegationId||!personalAgentLive(delegation))return fail(409,'This delegation is no longer current.');
+        if(request.action==='approve') {
+          if(userId!==trip.rider.id)return fail(403,'Only the rider can approve processing by this personal agent.');
+          if(delegation.view.status!=='requested')return fail(409,'This request has already been decided.');
+          delegation.view.riderApprovedAt=Date.now();delegation.view.status='approved';
+          this.event(trip,'personal-agent-approved','Personal agent permission granted','The rider approved the named guardian runtime for this journey. Coverage starts only after a validated response.');
+          this.save(state);
+        } else {
+          if(userId!==guardian.id||userId!==delegation.view.ownerId)return fail(403,'Only the owning guardian may connect their runtime.');
+          if(!delegation.view.riderApprovedAt||delegation.view.status!=='approved')return fail(409,'Connect only after rider approval and before a runtime is accepted. Revoke to change an active runtime.');
+          const token=`shpa_${Array.from(crypto.getRandomValues(new Uint8Array(32)),byte=>byte.toString(16).padStart(2,'0')).join('')}`;
+          const tokenDigest=await digest(token);
+          state=this.load();if(!state)return fail(410,'Private journey data was erased.');
+          if(this.expire(state))this.save(state);
+          const current=state.personalAgent;
+          if(!current||current.view.id!==request.delegationId||current.view.status!=='approved'||current.view.ownerId!==userId||state.trip.guardian?.id!==userId||!current.view.riderApprovedAt)return fail(409,'Delegation authority changed while connecting.');
+          const connection=personalAgentConnectionSchema.safeParse({version:1,kind:'stillhere-agent-connection',origin,tripId:state.trip.id,delegationId:current.view.id,token,expiresAt:current.view.expiresAt});
+          if(!connection.success)return fail(400,'The runtime requires an HTTPS API origin or explicit loopback development.');
+          current.tokenDigest=tokenDigest;current.view.connectionIssued=true;this.save(state);await this.schedule();
+          state=this.load();if(!state||!isParticipant(state.trip,userId)||!state.personalAgent||state.personalAgent.view.id!==request.delegationId||!state.personalAgent.tokenDigest||!safeEqual(state.personalAgent.tokenDigest,tokenDigest))return fail(409,'The connection was superseded. Download a current connection.');
+          return ok({trip:state.trip,connection:connection.data});
+        }
+      }
+    }
+    await this.schedule();await this.syncIndexes();await this.deliverCommunity();await this.schedule();
+    const current=this.visible(userId);return current.ok&&'rider'in current.value?ok({trip:current.value}):current.ok?fail(403,'Private journey access changed.'):current;
+  }
+
+  private async authorizePersonalAgent(delegationId:string,token:string):Promise<Outcome<StoredTrip>> {
+    if(!PERSONAL_AGENT_TOKEN_PATTERN.test(token))return fail(401,'Invalid personal agent capability.');
+    const supplied=await digest(token);
+    let state=this.load();if(!state)return fail(401,'Invalid personal agent capability.');
+    if(this.expire(state))this.save(state);
+    let delegation=state.personalAgent;
+    if(!delegation||delegation.view.id!==delegationId||!delegation.tokenDigest||!safeEqual(supplied,delegation.tokenDigest)||!delegation.view.riderApprovedAt||!personalAgentLive(delegation))return fail(401,'This personal agent capability is invalid or no longer authorized.');
+    const expected=delegation.tokenDigest,ownerId=delegation.view.ownerId,riderId=state.trip.rider.id;
+    const restrictions=await Promise.all([this.env.GOVERNANCE.getByName('governance-v1').status(ownerId),this.env.GOVERNANCE.getByName('governance-v1').status(riderId)]);
+    // Hashing and governance reads yield. Reload and verify every authority after both awaits.
+    state=this.load();if(!state)return fail(401,'This personal agent capability is no longer authorized.');
+    if(this.expire(state))this.save(state);
+    delegation=state.personalAgent;
+    if(!delegation||delegation.view.id!==delegationId||!delegation.tokenDigest||!safeEqual(expected,delegation.tokenDigest)||!personalAgentLive(delegation)||state.trip.guardian?.id!==ownerId||state.trip.rider.id!==riderId)return fail(401,'This personal agent capability is no longer authorized.');
+    if(restrictions.some(item=>item.deleted||item.suspended)){this.endPersonalAgent(state,'revoked','participant_unavailable');this.save(state);return fail(403,'A participant is unavailable.');}
+    const now=Date.now();if(delegation.rate.window+60000<=now)delegation.rate={window:now,count:0};
+    if(delegation.rate.count>=180)return fail(429,'Personal agent request limit reached.');
+    delegation.rate.count++;return ok(state);
+  }
+
+  async personalAgentOperation(delegationId:string,token:string,operation:PersonalAgentOperation,input:unknown):Promise<Outcome<PersonalAgentResponse>> {
+    const schema=operation==='assess'?personalAgentAssessmentInputSchema:operation==='release'?personalAgentReleaseInputSchema:personalAgentEmptyInputSchema;
+    if(!schema.safeParse(input).success)return fail(400,'Invalid personal agent tool input.');
+    const authorized=await this.authorizePersonalAgent(delegationId,token);if(!authorized.ok)return authorized;
+    let state=authorized.value,delegation=state.personalAgent!;const now=Date.now();let receipt:PersonalAgentReceipt|undefined;
+    if(operation==='release') {
+      this.endPersonalAgent(state,'unavailable',personalAgentReleaseInputSchema.parse(input).reason);
+      this.save(state);await this.schedule();await this.syncIndexes();await this.schedule();
+      return ok({delegation:delegation.view,job:null});
+    }
+    if(operation==='accept') {
+      if(delegation.view.status==='approved') {
+        Object.assign(delegation.view,{status:'connecting',connectedAt:now,lastSeenAt:now});
+        delegation.responseDeadline=Math.min(delegation.view.expiresAt,now+PERSONAL_AGENT_RESPONSE_MS);delegation.nextJobAt=now;
+        state.assessmentVersion++;
+        state.aiNextCheckInAt=null;if(state.trip.agent)state.trip.agent.followUpAt=null;
+        if(state.codexDemoJob?.status==='pending')state.codexDemoJob.status='cancelled';
+        this.event(state.trip,'personal-agent-connecting','Personal agent connecting','The runtime connected. A valid source-cited response is required before it can claim active coverage.');
+      } else if(!personalAgentConnected(delegation))return fail(409,'This delegation cannot accept a runtime.');
+    } else if(operation==='heartbeat') {
+      if(!personalAgentConnected(delegation))return fail(409,'Accept the runtime before sending heartbeats.');
+      delegation.view.lastSeenAt=now;
+    } else if(operation==='updates'&&!personalAgentConnected(delegation))return fail(409,'Accept the runtime before retrieving work.');
+    else if(operation==='assess') {
+      if(!personalAgentConnected(delegation))return fail(409,'The personal runtime has not been accepted.');
+      const proposal=personalAgentAssessmentInputSchema.parse(input);
+      const completed=delegation.completed.find(item=>item.jobId===proposal.jobId);
+      if(completed) {
+        const current=personalAgentContext(state.trip,delegation.view.ownerId,this.agentContext(state));
+        if(JSON.stringify(completed.assessment)!==JSON.stringify(proposal.assessment)||completed.revision!==state.assessmentVersion||personalAgentContextChanged(completed.authorityContext,current))return fail(409,'This completed job no longer matches the exact current proposal.');
+        receipt=completed.receipt;
+      } else {
+        const job=delegation.pending;
+        if(!job||job.id!==proposal.jobId||job.expiresAt<=now||job.revision!==state.assessmentVersion)return fail(409,'This assessment job expired or was superseded. Read current updates.');
+        const current=personalAgentContext(state.trip,delegation.view.ownerId,this.agentContext(state));
+        if(!delegation.authorityContext||personalAgentContextChanged(delegation.authorityContext,current))return fail(409,'Journey evidence changed. Read current updates.');
+        let assessment:SemanticAssessment;
+        try {validateSemanticAssessment(proposal.assessment,job.context);assessment=validateSemanticAssessment(proposal.assessment,current);}
+        catch{return fail(400,'The assessment does not match eligible, current source evidence.');}
+        state.trip.agent??={provider:'mock',liveModel:false,runs:[],followUpAt:null,handoffSummary:null};
+        const previousConcernCount=state.trip.agent.concerns?.length??0;
+        this.retainSemanticConcerns(state,assessment,job.context);
+        receipt={id:crypto.randomUUID(),jobId:job.id,at:now,assessment,summary:renderSemanticHandoff(assessment,job.context),actions:[{name:'retain_concerns',outcome:'recorded',detail:`${(state.trip.agent.concerns?.length??0)-previousConcernCount} new rider concern source(s) retained. Reassurance does not clear concerns.`}]};
+        if(assessment.question.kind!=='none') {
+          this.message(state.trip,{id:`personal-agent:${delegation.view.id}`,name:`${delegation.view.agentName} (${delegation.view.ownerName}'s agent)`.slice(0,60)},'agent',renderSemanticQuestion(assessment,job.context));
+          state.trip.messages.at(-1)!.automatedBy='personal_agent';
+          receipt.actions.push({name:'send_check_in',outcome:'posted',detail:'Posted a canonical question in this journey. Reading or delivery to a person is not confirmed.'});
+        }
+        if(assessment.requestRelay) {
+          const alreadyOpen=Boolean(state.trip.relay);this.openRelay(state,{id:`personal-agent:${delegation.view.id}`,name:delegation.view.agentName});
+          receipt.actions.push({name:'request_human_relay',outcome:alreadyOpen?'already_open':'requested',detail:'Human recruitment is open. The rider must approve any replacement; no assignment was made.'});
+        }
+        if(delegation.view.status!=='active')this.event(state.trip,'personal-agent-active','Personal agent coverage active',`${delegation.view.ownerName}'s ${delegation.view.agentName} completed its first validated response. This is automated coverage, not a human check-in.`);
+        Object.assign(delegation.view,{status:'active',lastProcessedAt:now,lastActionAt:now,nextResponseDueAt:Math.min(delegation.view.expiresAt,now+assessment.followUpSeconds*1000+PERSONAL_AGENT_RESPONSE_MS)});
+        state.trip.guardMode='ai';state.trip.nextCheckInAt=null;state.aiNextCheckInAt=null;state.trip.agent.followUpAt=null;
+        delegation.pending=null;delegation.authorityContext=null;delegation.responseDeadline=null;
+        delegation.nextJobAt=Math.min(delegation.view.expiresAt,now+assessment.followUpSeconds*1000);
+        receipt.actions.push({name:'schedule_follow_up',outcome:'scheduled',detail:`A new assessment is due in ${assessment.followUpSeconds} seconds. Connectivity alone does not complete it.`});
+        delegation.view.receipts=[...delegation.view.receipts,receipt].slice(-PERSONAL_AGENT_MAX_RECEIPTS);
+        delegation.completed=[...delegation.completed,{jobId:job.id,assessment,revision:state.assessmentVersion,authorityContext:personalAgentContext(state.trip,delegation.view.ownerId,this.agentContext(state)),receipt}].slice(-PERSONAL_AGENT_MAX_RECEIPTS);
+      }
+    }
+    this.save(state);await this.schedule();await this.syncIndexes();await this.deliverCommunity();await this.schedule();
+    // A participant can revoke during index publication. Never return private context using stale authority.
+    const checked=await this.authorizePersonalAgent(delegationId,token);if(!checked.ok)return checked;
+    state=checked.value;delegation=state.personalAgent!;this.save(state);
+    return ok({delegation:structuredClone(delegation.view),job:operation==='status'||operation==='heartbeat'?null:delegation.pending,...(receipt?{receipt}:{} )});
   }
 
   private codexAuthorityChanged(before:AgentContext,after:AgentContext):boolean {
@@ -378,6 +586,7 @@ export class TripRoom extends DurableObject<WorkerEnv> {
     const state=this.load();if(!state)return fail(404,'Journey not found.');
     if(state.trip.rider.id!==userId)return fail(403,'Only the rider may export their own local demo context.');
     this.expire(state);
+    if(personalAgentConnected(state.personalAgent))return fail(409,'End the personal agent delegation before starting a manual demo.');
     if(!canUseCodexDemo(state.trip)){this.save(state);return fail(409,'Local demo requires an open journey with automated check-ins and no explicit help request.');}
     // Supersede all earlier proposals before providing the manually processed snapshot.
     state.assessmentVersion++;
@@ -405,6 +614,7 @@ export class TripRoom extends DurableObject<WorkerEnv> {
     const state=this.load();if(!state)return fail(404,'Journey not found.');
     if(state.trip.rider.id!==userId)return fail(403,'Only the rider may import their local demo result.');
     this.expire(state);this.syncCodexDemo(state);
+    if(personalAgentConnected(state.personalAgent))return fail(409,'End the personal agent delegation before importing a manual demo.');
     const job=state.codexDemoJob;
     if(!job||job.status!=='pending'||job.revision!==state.assessmentVersion||!canUseCodexDemo(state.trip)){
       this.save(state);return fail(409,'The local demo snapshot expired, was consumed, or was superseded. Export again.');
@@ -797,6 +1007,9 @@ export class TripRoom extends DurableObject<WorkerEnv> {
           this.event(trip,'rider-check-in','Rider checked in','The rider reported that they are okay.');
           this.message(trip,user,'rider',action.text || 'I am okay.');
         } else {
+          const returningPersonalGuardian=personalAgentConnected(state.personalAgent);
+          this.endPersonalAgent(state,'revoked','human_resumed',true);
+          if(returningPersonalGuardian){trip.guardMode='human';state.aiNextCheckInAt=null;}
           this.guardianCheckIn(state);
           trip.lastGuardianCheckInAt = Date.now();
           if (trip.guardMode === 'human') trip.nextCheckInAt = Date.now() + trip.checkInIntervalSeconds * 1000;
@@ -807,6 +1020,7 @@ export class TripRoom extends DurableObject<WorkerEnv> {
       case 'takeover': this.takeover(state,'A participant reported that human monitoring is unavailable.',user); break;
       case 'resume': {
         if (rider) return fail(403,'Only the assigned guardian can resume human monitoring.');
+        this.endPersonalAgent(state,'revoked','human_resumed',true);
         trip.guardMode = 'human'; trip.lastGuardianCheckInAt = Date.now();
         state.aiNextCheckInAt = null; state.aiMissedCheckIns = 0;
         trip.nextCheckInAt = Date.now() + trip.checkInIntervalSeconds * 1000; this.guardianCheckIn(state);
@@ -1006,7 +1220,7 @@ export class TripRoom extends DurableObject<WorkerEnv> {
         this.event(trip,'expired','Trip monitoring expired','The maximum monitoring period ended. Start a new trip if needed.');
       } else {
         if (trip.guardMode === 'human' && trip.nextCheckInAt !== null && trip.nextCheckInAt <= now) this.takeover(state,'The server detected a missed guardian check-in, even without an open browser.');
-        if (trip.guardMode === 'ai' && assistanceEnabled(trip) && state.aiNextCheckInAt !== null && state.aiNextCheckInAt <= now) {
+        if (!personalAgentConnected(state.personalAgent) && trip.guardMode === 'ai' && assistanceEnabled(trip) && state.aiNextCheckInAt !== null && state.aiNextCheckInAt <= now) {
           state.aiMissedCheckIns += 1;
           state.aiNextCheckInAt = now + Math.max(60,trip.checkInIntervalSeconds) * 1000;
           this.event(trip,'agent-check-in','Automated check-in','The server scheduled a new check-in while the human guardian is unavailable.');
@@ -1023,7 +1237,7 @@ export class TripRoom extends DurableObject<WorkerEnv> {
           state.staleAlerted = true;
           if (trip.risk === 'normal') trip.risk = 'attention';
           this.event(trip,'stale-location','Location update is overdue','No position update has arrived in two minutes. Last known location may be stale.');
-          if(assistanceEnabled(trip))this.message(trip,agent,'agent','Your location has not updated for two minutes. Are you okay? Please open the app and check in when safe.');
+          if(!personalAgentConnected(state.personalAgent)&&assistanceEnabled(trip))this.message(trip,agent,'agent','Your location has not updated for two minutes. Are you okay? Please open the app and check in when safe.');
           this.queueAgent(state,'stale-location');
         }
         if (trip.guardMode === 'ai' && trip.agent?.followUpAt && trip.agent.followUpAt <= now) {
@@ -1120,6 +1334,8 @@ export class TripRoom extends DurableObject<WorkerEnv> {
 
   exportSnapshot():StoredTrip|null {
     const state=this.load();if(!state)return null;
+    // Backup material is not a runtime credential or a transferable delegated job.
+    delete state.personalAgent;
     return {...state,...(state.community?{communityEvents:this.ctx.storage.sql.exec<{data:string}>('SELECT data FROM community_source ORDER BY sequence').toArray().map(row=>JSON.parse(row.data) as SourceCommunityEvent)}:{})};
   }
   validateSnapshot(value:unknown,expectedId:string):boolean {
@@ -1158,6 +1374,9 @@ export class TripRoom extends DurableObject<WorkerEnv> {
     state.trip.events=[];
     // Context snapshots and summaries may quote the erased participant's messages.
     state.trip.agent = {provider:'mock',liveModel:false,runs:[],followUpAt:null,handoffSummary:null};
+    this.endPersonalAgent(state,'revoked','participant_deleted');
+    delete state.personalAgent;delete state.trip.personalAgent;delete state.trip.personalAgentHistory;
+    state.trip.messages=state.trip.messages.filter(item=>item.automatedBy!=='personal_agent');
     delete state.codexDemoJob;delete state.trip.codexDemo;
     if(state.trip.aiConsent)delete state.trip.aiConsent[userId];
     state.assessmentVersion+=1;
@@ -1202,6 +1421,8 @@ export class TripRoom extends DurableObject<WorkerEnv> {
     // gratitude retains its original cancellation policy and is never backfilled.
     value.gratitude=(value.gratitude??[]).filter(item=>!deleted.has(item.guardianId)).map(item=>({...item,status:!value.community&&item.status==='pending'?'cancelled':item.status,inFlightUntil:0}));
     value.trip.agent={provider:'mock',liveModel:false,runs:[],followUpAt:null,handoffSummary:null};
+    delete value.personalAgent;
+    if(deleted.size){delete value.trip.personalAgent;delete value.trip.personalAgentHistory;value.trip.messages=value.trip.messages.filter(item=>item.automatedBy!=='personal_agent');}
     delete value.codexDemoJob;delete value.trip.codexDemo;
     value.trip.aiConsent={};if(value.trip.assistance)value.trip.assistance.liveAiConsent=false;
     if(value.community){
@@ -1213,6 +1434,9 @@ export class TripRoom extends DurableObject<WorkerEnv> {
         this.ctx.storage.sql.exec('INSERT INTO trip_state VALUES(1,?)',JSON.stringify(value));
       });
     }
+    // Seeded public state above preserves the previous active service so this
+    // forced stop appends an agent-end receipt before the closure receipt.
+    if(value.trip.personalAgent&&['requested','approved','connecting','active'].includes(value.trip.personalAgent.status))Object.assign(value.trip.personalAgent,{status:'ended',endReason:'backup_restored',endedAt:Date.now(),nextResponseDueAt:null,connectionIssued:false});
     if(!isClosed(value.trip)){value.trip.status='cancelled';value.trip.nextCheckInAt=null;value.aiNextCheckInAt=null;value.trip.relay=null;value.trip.guardianRequests=[];allocateContributions(value.trip,Date.now(),value.community?.members);}
     value.indexVersion+=1;value.indexedVersion=0;this.save(value);await this.schedule();await this.syncIndexes();await this.deliverCommunity();await this.schedule();return true;
   }

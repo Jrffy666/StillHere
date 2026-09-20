@@ -5,7 +5,8 @@ export const COMMUNITY_CONFIG_SIZE = 109;
 export const COMMUNITY_JOURNEY_SIZE = 796;
 export const COMMUNITY_RECORD_SIZE = 173;
 export const COMMUNITY_RULE_VERSION = 1;
-export const COMMUNITY_KINDS = ['created', 'assigned', 'check_in', 'relay_requested', 'closed', 'contribution', 'gratitude', 'withdrawn'] as const;
+export const COMMUNITY_AGENT_RULE_VERSION = 2;
+export const COMMUNITY_KINDS = ['created', 'assigned', 'check_in', 'relay_requested', 'closed', 'contribution', 'gratitude', 'withdrawn', 'agent_service'] as const;
 export type CommunityRecordKind = typeof COMMUNITY_KINDS[number];
 export type CommunityEventKind = Exclude<CommunityRecordKind, 'withdrawn'>;
 export const COMMUNITY_CORRECTION_REASONS = { incorrect_evidence: 1, duplicate_identity: 2, invalid_authorization: 3, administrative_correction: 4 } as const;
@@ -14,7 +15,7 @@ export interface CommunityEventInput {
   assignment: number; observedAt: number; value: number;
 }
 export interface CommunityRecord extends Omit<CommunityEventInput, 'kind'> {
-  kind: CommunityRecordKind; version: 1; provenance: 'platform-attested'; ruleVersion: 1;
+  kind: CommunityRecordKind; version: 1; provenance: 'platform-attested'; ruleVersion: 1 | 2;
   issuer: PublicKey; recordedAt: number; points: number; reputation: number; targetSequence: number;
 }
 export interface CommunityConfig { version: 1; admin: PublicKey; issuer: PublicKey; sponsor: PublicKey; revision: number }
@@ -60,9 +61,9 @@ export function buildRotateCommunityAuthoritiesInstruction(input:{programId:Publ
 export function buildCommunityEventInstruction(input:{programId:PublicKey;issuer:PublicKey;sponsor:PublicKey;event:CommunityEventInput}):TransactionInstruction {
   const {programId,issuer,sponsor,event:e}=input;
   const kind=COMMUNITY_KINDS.indexOf(e.kind)+1;
-  if(kind<1||kind>7||!Number.isInteger(e.value)||e.value<0||e.value>255) throw new Error('Invalid community event kind or value.');
+  if(kind<1||kind===8||kind>9||!Number.isInteger(e.value)||e.value<0||e.value>255||e.kind==='agent_service'&&e.value>3) throw new Error('Invalid community event kind or value.');
   if(issuer.equals(sponsor)) throw new Error('Issuer and sponsor must be separate keys.');
-  const payload=Buffer.concat([id(e.journeyId),u32(e.sequence),Buffer.from([kind]),id(e.actorId,e.kind==='relay_requested'&&e.value===1),id(e.subjectId),u32(e.assignment),i64(e.observedAt),Buffer.from([e.value])]);
+  const payload=Buffer.concat([id(e.journeyId),u32(e.sequence),Buffer.from([kind]),id(e.actorId,e.kind==='relay_requested'&&e.value===1||e.kind==='agent_service'&&[1,2].includes(e.value)),id(e.subjectId),u32(e.assignment),i64(e.observedAt),Buffer.from([e.value])]);
   return new TransactionInstruction({programId,keys:[key(deriveCommunityConfigAddress(programId)),key(issuer,true),key(sponsor,true,true),key(deriveCommunityJourneyAddress(e.journeyId,programId),false,true),key(deriveCommunityRecordAddress(e.journeyId,e.sequence,programId),false,true),key(SystemProgram.programId)],data:Buffer.concat([Buffer.from(IX.append),payload])});
 }
 export function buildWithdrawCommunityJourneyInstruction(input:{programId:PublicKey;admin:PublicKey;sponsor:PublicKey;journeyId:string;sequence:number;targetSequence:number;reason:number;observedAt:number}):TransactionInstruction {
@@ -85,8 +86,9 @@ export function decodeCommunityConfig(data:Uint8Array):CommunityConfig {
 }
 export function decodeCommunityRecord(data:Uint8Array):CommunityRecord {
   const b=checked(data,COMMUNITY_RECORD_SIZE,ACCOUNT.record);
-  if(b[9]!==1||b[10]!==1||b[47]<1||b[47]>8)throw new Error('Unsupported record provenance, rule, or kind.');
-  return {version:1,provenance:'platform-attested',ruleVersion:1,journeyId:hex(b,11,43),sequence:b.readUInt32LE(43),kind:COMMUNITY_KINDS[b[47]-1],actorId:hex(b,48,80),subjectId:hex(b,80,112),assignment:b.readUInt32LE(112),observedAt:timestamp(b,116),value:b[124],issuer:new PublicKey(b.subarray(125,157)),recordedAt:timestamp(b,157),points:b.readUInt16LE(165),reputation:b.readUInt16LE(167),targetSequence:b.readUInt32LE(169)};
+  if(b[9]!==1||b[47]<1||b[47]>9||b[10]!== (b[47]===9?2:1))throw new Error('Unsupported record provenance, rule, or kind.');
+  if(b[47]===9&&(b[124]>3||b.readUInt16LE(165)!==0||b.readUInt16LE(167)!==0))throw new Error('Agent service never awards human recognition.');
+  return {version:1,provenance:'platform-attested',ruleVersion:b[47]===9?2:1,journeyId:hex(b,11,43),sequence:b.readUInt32LE(43),kind:COMMUNITY_KINDS[b[47]-1],actorId:hex(b,48,80),subjectId:hex(b,80,112),assignment:b.readUInt32LE(112),observedAt:timestamp(b,116),value:b[124],issuer:new PublicKey(b.subarray(125,157)),recordedAt:timestamp(b,157),points:b.readUInt16LE(165),reputation:b.readUInt16LE(167),targetSequence:b.readUInt32LE(169)};
 }
 export function decodeCommunityJourney(data:Uint8Array):CommunityJourney {
   const b=checked(data,COMMUNITY_JOURNEY_SIZE,ACCOUNT.journey); const count=b[123];
@@ -114,7 +116,7 @@ export async function fetchFinalizedCommunityJourney(connection:Connection,progr
   return {journey,records,asOfSlot:response.context.slot};
 }
 export function communityRecordMatchesEvent(record:CommunityRecord,event:CommunityEventInput):boolean {
-  return record.version===1&&record.provenance==='platform-attested'&&record.ruleVersion===1&&(['journeyId','sequence','kind','actorId','subjectId','assignment','observedAt','value'] as const).every(k=>record[k]===event[k]);
+  return record.version===1&&record.provenance==='platform-attested'&&record.ruleVersion===(event.kind==='agent_service'?2:1)&&(['journeyId','sequence','kind','actorId','subjectId','assignment','observedAt','value'] as const).every(k=>record[k]===event[k]);
 }
 /** Input records must first be verified as finalized, program-owned accounts at their deterministic addresses. */
 export function reconstructCommunityProfile(memberId:string,records:readonly CommunityRecord[]):{

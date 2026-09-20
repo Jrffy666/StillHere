@@ -90,7 +90,9 @@ async function mutate(trip: Trip, change: (stored: StoredFixture) => void) {
     const stored = JSON.parse(state.storage.sql.exec<{ data: string }>('SELECT data FROM trip_state').one().data) as StoredFixture;
     change(stored);
     state.storage.sql.exec('UPDATE trip_state SET data = ?', JSON.stringify(stored));
-    await state.storage.setAlarm(Date.now() + 100);
+    // Tests invoke wake() explicitly. A near-term real alarm can consume this
+    // injected work before the request whose cancellation behavior is tested.
+    await state.storage.setAlarm(Date.now() + 60 * 60_000);
   });
 }
 async function persisted(trip: Trip): Promise<StoredFixture> {

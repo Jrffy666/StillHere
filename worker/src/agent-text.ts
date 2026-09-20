@@ -7,6 +7,7 @@ export function redactAgentText(text: string, maxLength = 600): string {
     .replace(/\b(?:https?:\/\/|www\.)[^\s<>"']+/gi, '[redacted URL]')
     .replace(/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi, '[redacted email]')
     .replace(/\bBearer\s+[^\s,;]+/gi, 'Bearer [redacted]')
+    .replace(/\bshpa_[a-f0-9]{64}\b/gi, '[redacted capability]')
     .replace(/\b(?:api[_ -]?key|access[_ -]?token|token|secret|password)\s*[:=]\s*["']?[^\s,;"']+["']?/gi, '[redacted credential]')
     .replace(/\b(?:sk-|gh[pousr]_|github_pat_)[A-Za-z0-9_-]{8,}\b/g, '[redacted credential]')
     .replace(/\b0x[A-Fa-f0-9]{32,}\b/g, '[redacted identifier]')

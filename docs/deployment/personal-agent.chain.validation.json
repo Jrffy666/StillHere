@@ -1,0 +1,115 @@
+{
+  "verifiedAt": "2026-09-20T05:01:27.521Z",
+  "origin": "https://safety-guard-api-production.2012044zj.workers.dev",
+  "network": "devnet",
+  "status": "pending",
+  "checks": [
+    "Configured community program is the expected Solana Devnet deployment",
+    "Independent RPC reports the Devnet genesis"
+  ],
+  "failure": null,
+  "pendingReason": "FINALITY_NOT_YET_VERIFIED",
+  "programId": "7vuz78V9Tu53Bpt3iXHc37VSDBmRSYxcEguWewR9LXzm",
+  "journeyId": "ec06b17322219f76d719d99ca7baa76f8175afc333dd6c18bc52e37afd971eff",
+  "asOfSlot": null,
+  "independentlyDecoded": false,
+  "chainWrites": 0,
+  "modelCalls": 0,
+  "externalNotifications": 0,
+  "source": "Finalized program-owned accounts decoded independently through the repository chain client.",
+  "serviceRecords": [],
+  "humanContribution": null,
+  "bannerCount": 0,
+  "records": [
+    {
+      "sequence": 0,
+      "kind": "created",
+      "value": 0,
+      "status": "finalized",
+      "address": "DhaLb3AHsigefm5yhasqAzUjTy7KHYB4Q6vsnTvcdHf4",
+      "signature": "53hQY62q4vfS2r9FmbH5tLz53uyuT26uBxmJK6unWBfWdWwzVd924tJWNx6gwWx7f8ynrgRcAHC3CvWWuJzUs7kC",
+      "points": 0,
+      "reputation": 0
+    },
+    {
+      "sequence": 1,
+      "kind": "assigned",
+      "value": 0,
+      "status": "finalized",
+      "address": "EKCUGnnAuCkPWq5dHfyz5eSD9am7aK7mrHF7snp7MqTD",
+      "signature": "4mKzhW1tmGD4oawfkzu2oEnuR62MYRqLCHEAsrdbRkEJRqpme2QwqHDkb16obYy27d2Xr6YbXJ2FE7STSwBNy4nT",
+      "points": 0,
+      "reputation": 0
+    },
+    {
+      "sequence": 2,
+      "kind": "check_in",
+      "value": 0,
+      "status": "finalized",
+      "address": "4bB2LJGiDWvQLRTT59Q1Zj3dH8tS7PEK2hGvBop7WrGV",
+      "signature": "3DvJ1asJ6xYdoDfZr5fFznBT4X6sUyTQW2JLbYYgPuyScCn3Qf4bi3YfucYpRbN3xcJ3sroszPQCZ2Lfw1chH4HN",
+      "points": 0,
+      "reputation": 0
+    },
+    {
+      "sequence": 3,
+      "kind": "agent_service",
+      "value": 0,
+      "status": "retry",
+      "address": "jj7zSMrP8VQQ8pWNrvFTr3UVD2anKEc9LZC1ebNAEsc",
+      "signature": "3TgiUqeX3UsVvMFys5e5aDqjQPf6EGWS8dTcTowoy5drazQedc1UxVdvF6AnRA9bStqfNo8jkA96KgPGTvz8zRR5",
+      "points": 0,
+      "reputation": 0
+    },
+    {
+      "sequence": 4,
+      "kind": "agent_service",
+      "value": 3,
+      "status": "pending",
+      "address": null,
+      "signature": null,
+      "points": 0,
+      "reputation": 0
+    },
+    {
+      "sequence": 5,
+      "kind": "check_in",
+      "value": 0,
+      "status": "pending",
+      "address": null,
+      "signature": null,
+      "points": 0,
+      "reputation": 0
+    },
+    {
+      "sequence": 6,
+      "kind": "closed",
+      "value": 1,
+      "status": "pending",
+      "address": null,
+      "signature": null,
+      "points": 0,
+      "reputation": 0
+    },
+    {
+      "sequence": 7,
+      "kind": "contribution",
+      "value": 0,
+      "status": "pending",
+      "address": null,
+      "signature": null,
+      "points": 25,
+      "reputation": 10
+    },
+    {
+      "sequence": 8,
+      "kind": "gratitude",
+      "value": 1,
+      "status": "pending",
+      "address": null,
+      "signature": null,
+      "points": 0,
+      "reputation": 0
+    }
+  ]
+}

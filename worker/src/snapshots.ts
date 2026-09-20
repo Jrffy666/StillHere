@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { agentStateSchema } from './agent';
 import { codexDemoJobSchema } from './codex-demo';
+import { personalAgentStateSchema, personalAgentViewSchema } from './personal-agent';
 import { assistanceSchema, escalationSchema, aiConsentSchema } from './assistance';
 import { communityStateSchema, communityEventSchema } from './community-events';
 const time=z.number().int().nonnegative().safe();
@@ -11,6 +12,7 @@ const place=z.object({label:z.string().max(160),lat:z.number().min(-90).max(90),
 const rewardStatus=z.enum(['pending','credited','ineligible','demo']);
 const contribution=z.object({guardian:person,checkIns:count,startedAt:time,endedAt:time.nullable(),points:count.max(25),reputation:count.max(10),rewardStatus}).strict();
 export const tripSnapshotSchema=z.object({
+  personalAgent:personalAgentStateSchema.optional(),
   codexDemoJob:codexDemoJobSchema.optional(),
   community:communityStateSchema.optional(),communityEvents:z.array(communityEventSchema).max(50000).optional(),
   gratitude:z.array(z.object({id:z.uuid(),guardianId:z.uuid(),kind:z.enum(['companionship','thoughtfulness','relay']),createdAt:time,
@@ -23,6 +25,8 @@ export const tripSnapshotSchema=z.object({
   paidAiBudget:z.object({requests:count,reservedTokens:count,inputTokens:count,outputTokens:count,totalTokens:count,lastRequestAt:time}).strict().optional(),
   notificationJobs:z.record(z.string().max(100),z.object({attempts:count,retryAt:time,inFlightUntil:time}).strict()),
   trip:z.object({
+    personalAgent:personalAgentViewSchema.optional(),
+    personalAgentHistory:z.array(personalAgentViewSchema).max(12).optional(),
     codexDemo:z.object({id:z.uuid(),status:z.enum(['pending','consumed','cancelled']),expiresAt:time}).strict().optional(),
     agent:agentStateSchema.optional(),
     assistance:assistanceSchema.optional(),escalation:escalationSchema.optional(),
@@ -34,7 +38,7 @@ export const tripSnapshotSchema=z.object({
     origin:place,destination:place,location:z.object({lat:z.number().min(-90).max(90),lng:z.number().min(-180).max(180),updatedAt:time}).strict(),
     createdAt:time,updatedAt:time,checkInIntervalSeconds:z.number().int().min(30).max(300),nextCheckInAt:time.nullable(),lastGuardianCheckInAt:time.nullable(),
     risk:z.enum(['normal','attention','urgent']),ai:z.object({mode:z.enum(['rules','openai','codex_local']),lastAssessment:z.string().max(5000)}).strict(),
-    messages:z.array(z.object({id:z.uuid(),at:time,senderId:z.string().max(100),senderName:z.string().max(60),role:z.enum(['rider','guardian','agent','system']),text:z.string().max(5000),automatedBy:z.enum(['rules','openai','codex_local']).optional()}).strict()).max(150),
+    messages:z.array(z.object({id:z.uuid(),at:time,senderId:z.string().max(100),senderName:z.string().max(60),role:z.enum(['rider','guardian','agent','system']),text:z.string().max(5000),automatedBy:z.enum(['rules','openai','codex_local','personal_agent']).optional()}).strict()).max(150),
     events:z.array(z.object({id:z.uuid(),at:time,type:z.string().max(100),title:z.string().max(200),detail:z.string().max(5000)}).strict()).max(200),
     notifications:z.array(z.object({id:z.uuid(),at:time,cause:escalationSchema.shape.cause.optional(),status:z.enum(['queued','sent','failed','acknowledged','simulated']),channel:z.enum(['webhook','demo','none']),message:z.string().max(5000),detail:z.string().max(5000)}).strict()).max(1000),
     reward:z.object({points:count.max(25),reputation:count.max(10),status:rewardStatus}).strict(),

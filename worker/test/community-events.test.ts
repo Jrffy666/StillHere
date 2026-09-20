@@ -4,6 +4,7 @@ import worker from '../src/index';
 import type { User, Trip, TripSummary, WorkerEnv } from '../src/types';
 import type { CommunityMemberLedger, CommunityRecordView } from '../src/community-types';
 import type { TripRoom } from '../src/trips';
+import type { PersonalAgentConnection, PersonalAgentResponse } from '../src/personal-agent';
 
 interface Session {user:User;token:string}
 const input={origin:{label:'Private origin marker',lat:43.4723,lng:-80.5449},destination:{label:'Private destination marker',lat:43.4643,lng:-80.5204},shareUrl:'https://trip.uber.com/private-invitation-marker',emergencyContact:{name:'Private contact marker',contact:'private-contact@example.invalid'},notificationConsent:false,checkInIntervalSeconds:60};
@@ -23,6 +24,19 @@ async function assign(trip:Trip,rider:Session,guardian:Session,requestId=trip.id
 }
 async function records(trip:Trip,viewer:Session){const response=await request(`/trips/${trip.id}/community`,viewer);expect(response.status).toBe(200);return (await response.json<{community:{enabled:boolean;journeyId:string|null;records:CommunityRecordView[];nextCursor:string|null}}>()).community;}
 async function profile(member:Session,viewer:Session){const response=await request(`/members/${member.user.id}/records`,viewer);expect(response.status).toBe(200);return response.json<{ledger:CommunityMemberLedger;legacy:{points:number;reputation:number;contributions:number;banners:number}}>();}
+async function personalRuntime(trip:Trip,rider:Session,guardian:Session){
+  const manage=(actor:Session,body:unknown)=>request(`/trips/${trip.id}/delegation`,actor,body);
+  const requested=await manage(guardian,{action:'request',agentName:'Private agent name marker',minutes:30,consent:true,noticeVersion:'personal-agent-v1'});expect(requested.status).toBe(200);
+  const delegationId=(await requested.json<{trip:Trip}>()).trip.personalAgent!.id;
+  expect((await manage(rider,{action:'approve',delegationId,consent:true,noticeVersion:'personal-agent-v1'})).status).toBe(200);
+  const connected=await manage(guardian,{action:'connect',delegationId});expect(connected.status).toBe(200);
+  const connection=(await connected.json<{connection:PersonalAgentConnection}>()).connection;
+  const tool=(operation:string,body:unknown={})=>SELF.fetch(`https://guard.test/api/agent/trips/${trip.id}/delegations/${delegationId}/${operation}`,{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${connection.token}`},body:JSON.stringify(body)});
+  const accepted=await tool('accept');expect(accepted.status).toBe(200);const job=(await accepted.json<PersonalAgentResponse>()).job!;
+  const proposal={jobId:job.id,assessment:{findings:[],question:{kind:'none',sourceIds:[]},requestRelay:false,followUpSeconds:60}};
+  const activate=async()=>{const response=await tool('assess',proposal);expect(response.status).toBe(200);return response.json<PersonalAgentResponse>();};
+  return {connection,delegationId,tool,activate};
+}
 async function failPublication(trip:Trip,lostAcknowledgement=false){
   await runInDurableObject(env.TRIPS.getByName(trip.id),async instance=>{
     const target=instance as unknown as {env:WorkerEnv},namespace=target.env.COMMUNITY;
@@ -34,6 +48,81 @@ async function failPublication(trip:Trip,lostAcknowledgement=false){
 async function makeSourceDue(trip:Trip){await runInDurableObject(env.TRIPS.getByName(trip.id),async(_instance,state)=>{state.storage.sql.exec('UPDATE community_source SET retry_at=0 WHERE delivered=0');await state.storage.setAlarm(Date.now()+100);});}
 
 describe('Mandatory community business events',()=>{
+  it('records validated personal service once, then human return before the genuine check-in, with no agent awards or private identifiers',async()=>{
+    const rider=await session('Rider'),guardian=await session('Guardian'),trip=await create(rider);await assign(trip,rider,guardian);
+    const runtime=await personalRuntime(trip,rider,guardian);
+    expect((await records(trip,rider)).records.some(item=>item.event.kind==='agent_service')).toBe(false);
+    await runtime.tool('heartbeat');await runtime.activate();await runtime.activate();await runtime.tool('heartbeat');
+    const active=await records(trip,rider),service=active.records.filter(item=>item.event.kind==='agent_service');
+    expect(service).toHaveLength(1);expect(service[0]).toMatchObject({points:0,reputation:0,event:{value:0,assignment:1}});
+    expect(service[0].event.actorId).toBe(service[0].event.subjectId);
+    expect((await profile(guardian,rider)).ledger.pending).toMatchObject({points:0,reputation:0,contributions:0,banners:0});
+    const serialized=JSON.stringify(active);
+    for(const secret of [guardian.user.id,rider.user.id,trip.id,runtime.connection.token,runtime.delegationId,'Private agent name marker',input.origin.label,input.emergencyContact.contact])expect(serialized).not.toContain(secret);
+    await act(trip,guardian,'resume');
+    const resumed=(await records(trip,rider)).records;
+    expect(resumed.slice(-2).map(item=>[item.event.kind,item.event.value])).toEqual([['agent_service',3],['check_in',0]]);
+    await act(trip,rider,'arrive');
+    expect((await profile(guardian,rider)).ledger.pending).toMatchObject({points:25,reputation:10,contributions:1,banners:0});
+  });
+
+  it('ends automated-only service before arrival and never turns it into contribution or banner eligibility',async()=>{
+    const rider=await session('Rider'),guardian=await session('Guardian'),trip=await create(rider);await assign(trip,rider,guardian);
+    const runtime=await personalRuntime(trip,rider,guardian);await runtime.activate();await act(trip,rider,'arrive');
+    const history=(await records(trip,rider)).records;
+    expect(history.map(item=>item.event.kind)).toEqual(['created','assigned','agent_service','agent_service','closed']);
+    expect(history[3].event).toMatchObject({actorId:'0'.repeat(64),assignment:1,value:1});
+    expect(history.every(item=>item.points===0&&item.reputation===0)).toBe(true);
+    expect((await request(`/trips/${trip.id}/gratitude`,rider,{guardianId:guardian.user.id,kind:'companionship'})).status).toBe(409);
+    expect((await profile(guardian,rider)).ledger.pending).toMatchObject({points:0,reputation:0,contributions:0,banners:0});
+  });
+
+  it('publishes unavailable service before automated relay and does not duplicate the stop on later reads',async()=>{
+    const rider=await session('Rider'),guardian=await session('Guardian'),trip=await create(rider);await assign(trip,rider,guardian);
+    const runtime=await personalRuntime(trip,rider,guardian);await runtime.activate();
+    expect((await runtime.tool('release',{reason:'model_unavailable'})).status).toBe(200);
+    const history=(await records(trip,rider)).records;
+    expect(history.slice(-2).map(item=>[item.event.kind,item.event.value])).toEqual([['agent_service',2],['relay_requested',1]]);
+    expect(history.at(-2)!.event.actorId).toBe('0'.repeat(64));
+    expect((await records(trip,rider)).records).toEqual(history);
+  });
+
+  it('ends service against the former assignment before recording the replacement',async()=>{
+    const rider=await session('Rider'),a=await session('Former guardian'),b=await session('New guardian'),trip=await create(rider);await assign(trip,rider,a);
+    const runtime=await personalRuntime(trip,rider,a);await runtime.activate();
+    const relay=await act(trip,rider,'request-relay');await assign(trip,rider,b,relay.relay!.id);
+    const history=(await records(trip,rider)).records;
+    expect(history.slice(-2).map(item=>[item.event.kind,item.event.assignment,item.event.value])).toEqual([['agent_service',1,1],['assigned',2,0]]);
+    const start=history.find(item=>item.event.kind==='agent_service')!;
+    expect(history.at(-2)!.event.subjectId).toBe(start.event.subjectId);
+    expect(history.at(-1)!.event.subjectId).not.toBe(start.event.subjectId);
+  });
+
+  it('retains an anonymous service-end event after deletion removes its owner mapping',async()=>{
+    const rider=await session('Rider'),guardian=await session('Guardian'),trip=await create(rider);await assign(trip,rider,guardian);
+    const runtime=await personalRuntime(trip,rider,guardian);await runtime.activate();
+    const started=(await records(trip,rider)).records.find(item=>item.event.kind==='agent_service')!;
+    expect((await request('/account/delete',guardian,{confirmation:'DELETE MY ACCOUNT'})).status).toBe(200);
+    const history=(await records(trip,rider)).records,service=history.filter(item=>item.event.kind==='agent_service');
+    expect(service.map(item=>item.event.value)).toEqual([0,1]);
+    expect(service[1].event).toMatchObject({subjectId:started.event.subjectId,actorId:'0'.repeat(64),assignment:1});
+    expect(JSON.stringify(history)).not.toContain(guardian.user.id);
+    expect((await env.TRIPS.getByName(trip.id).exportSnapshot())!.community!.members[guardian.user.id]).toBeUndefined();
+  });
+
+  it('restoring an active-service backup appends a stop before forced closure without restoring capability authority',async()=>{
+    const rider=await session('Rider'),guardian=await session('Guardian'),trip=await create(rider);await assign(trip,rider,guardian);
+    const runtime=await personalRuntime(trip,rider,guardian);await runtime.activate();
+    const room=env.TRIPS.getByName(trip.id),backup=(await room.exportSnapshot())!;
+    expect(backup.personalAgent).toBeUndefined();
+    await runInDurableObject(room,(_instance,state)=>{state.storage.sql.exec('DELETE FROM trip_state');});
+    expect(await room.restoreSnapshot(backup)).toBe(true);
+    const history=(await records(trip,rider)).records;
+    expect(history.slice(-2).map(item=>[item.event.kind,item.event.value])).toEqual([['agent_service',1],['closed',2]]);
+    expect((await runtime.tool('heartbeat')).status).toBe(401);
+    expect((await room.exportSnapshot())!.trip.personalAgent?.status).toBe('ended');
+  });
+
   it('requires explicit notice for new real journeys and volunteers, while demos remain available',async()=>{
     const rider=await session('Rider',false),guardian=await session('Guardian',false);
     expect((await request('/trips',rider,input)).status).toBe(409);

@@ -1,0 +1,178 @@
+{
+  "verifiedAt": "2026-09-20T04:58:42.185Z",
+  "origin": "https://safety-guard-api-production.2012044zj.workers.dev",
+  "status": "passed",
+  "checks": [
+    "Hosted OpenAI API and external notifications remain disabled",
+    "Community ledger is configured for Devnet",
+    "Production readiness passes",
+    "Guardian applies before rider approval",
+    "Two actual guest accounts form a non-simulated human assignment",
+    "Named agent waits for rider approval",
+    "Rider approves the exact named delegation",
+    "Capability is journey scoped and is not an account session",
+    "First real Codex proposal establishes active named agent coverage",
+    "Server records a source-cited route interpretation",
+    "Canonical check-in has an actual posted receipt",
+    "Posted message identifies the personal agent",
+    "Interpretation causes no external notification",
+    "Agent execution does not inflate human check-ins",
+    "Human return revokes agent coverage and resumes human mode",
+    "Old scoped capability is rejected after human return",
+    "Explicit human return adds the human check-in",
+    "Rider can close the complete journey after agent handback",
+    "Human completion has the fixed contribution allocation",
+    "Rider awards one free companionship banner to the human guardian",
+    "Community journal remains enabled",
+    "Journal preserves agent start and explicit human return separately",
+    "Journal contains human contribution and free banner events"
+  ],
+  "failure": null,
+  "model": {
+    "invocations": 1,
+    "completedTurns": 1,
+    "inputTokens": 12331,
+    "outputTokens": 147,
+    "cachedInputTokens": 0,
+    "durationsMs": [
+      8683
+    ]
+  },
+  "runtimeLimits": {
+    "maxTurns": 2,
+    "maxMinutes": 2
+  },
+  "actions": [
+    {
+      "name": "retain_concerns",
+      "outcome": "recorded"
+    },
+    {
+      "name": "send_check_in",
+      "outcome": "posted"
+    },
+    {
+      "name": "schedule_follow_up",
+      "outcome": "scheduled"
+    }
+  ],
+  "interpretationKinds": [
+    "concern"
+  ],
+  "question": "route_explanation",
+  "hostedOpenAiApiCalls": 0,
+  "externalNotifications": 0,
+  "browserInteractiveAcceptance": false,
+  "humanCheckInsBeforeAgent": 1,
+  "humanCheckInsAfterAgent": 1,
+  "humanCheckInsAfterReturn": 2,
+  "humanContributionPoints": 25,
+  "bannerCount": 1,
+  "community": {
+    "journeyId": "ec06b17322219f76d719d99ca7baa76f8175afc333dd6c18bc52e37afd971eff",
+    "programId": "7vuz78V9Tu53Bpt3iXHc37VSDBmRSYxcEguWewR9LXzm",
+    "records": [
+      {
+        "sequence": 0,
+        "kind": "created",
+        "value": 0,
+        "status": "submitted",
+        "address": "DhaLb3AHsigefm5yhasqAzUjTy7KHYB4Q6vsnTvcdHf4",
+        "signature": "53hQY62q4vfS2r9FmbH5tLz53uyuT26uBxmJK6unWBfWdWwzVd924tJWNx6gwWx7f8ynrgRcAHC3CvWWuJzUs7kC",
+        "points": 0,
+        "reputation": 0
+      },
+      {
+        "sequence": 1,
+        "kind": "assigned",
+        "value": 0,
+        "status": "pending",
+        "address": null,
+        "signature": null,
+        "points": 0,
+        "reputation": 0
+      },
+      {
+        "sequence": 2,
+        "kind": "check_in",
+        "value": 0,
+        "status": "pending",
+        "address": null,
+        "signature": null,
+        "points": 0,
+        "reputation": 0
+      },
+      {
+        "sequence": 3,
+        "kind": "agent_service",
+        "value": 0,
+        "status": "pending",
+        "address": null,
+        "signature": null,
+        "points": 0,
+        "reputation": 0
+      },
+      {
+        "sequence": 4,
+        "kind": "agent_service",
+        "value": 3,
+        "status": "pending",
+        "address": null,
+        "signature": null,
+        "points": 0,
+        "reputation": 0
+      },
+      {
+        "sequence": 5,
+        "kind": "check_in",
+        "value": 0,
+        "status": "pending",
+        "address": null,
+        "signature": null,
+        "points": 0,
+        "reputation": 0
+      },
+      {
+        "sequence": 6,
+        "kind": "closed",
+        "value": 1,
+        "status": "pending",
+        "address": null,
+        "signature": null,
+        "points": 0,
+        "reputation": 0
+      },
+      {
+        "sequence": 7,
+        "kind": "contribution",
+        "value": 0,
+        "status": "pending",
+        "address": null,
+        "signature": null,
+        "points": 25,
+        "reputation": 10
+      },
+      {
+        "sequence": 8,
+        "kind": "gratitude",
+        "value": 1,
+        "status": "pending",
+        "address": null,
+        "signature": null,
+        "points": 0,
+        "reputation": 0
+      }
+    ],
+    "independentlyDecoded": false
+  },
+  "syntheticAccountsCreated": 2,
+  "syntheticAccountsDeleted": 2,
+  "retainedForChainVerification": false,
+  "cleanup": {
+    "checkedAt": "2026-09-20T05:01:21.532Z",
+    "status": "passed",
+    "created": 2,
+    "deleted": 2,
+    "failure": null
+  }
+}

@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { assistanceInputSchema, aiConsentInputSchema } from './assistance';
 import { exportInputSchema, resultInputSchema } from './codex-demo';
+import { delegationInputSchema, personalAgentOperationSchema } from './personal-agent';
 import { digest, safeEqual } from './accounts';
 import { boundedJson, configuration } from './integrations';
 import { authenticate, createGuestSession, handleIdentity, IdentityError } from './identity';
@@ -89,6 +90,12 @@ async function handle(request: Request, env: WorkerEnv): Promise<Response> {
     const token = request.headers.get('Authorization')?.replace(/^Bearer /,'') ?? '';
     if (!env.NOTIFICATION_ACK_SECRET || !safeEqual(token,env.NOTIFICATION_ACK_SECRET)) throw new HttpError(401,'Provider acknowledgement authentication required.');
     return result(await env.TRIPS.getByName(ackPath[1]).acknowledge(ackPath[2]));
+  }
+  const personalAgentPath=new RegExp(`^/api/agent/trips/(${uuid})/delegations/(${uuid})/(status|accept|updates|heartbeat|assess|release)$`).exec(path);
+  if(personalAgentPath&&method==='POST') {
+    const bearer=/^Bearer (shpa_[a-f0-9]{64})$/.exec(request.headers.get('Authorization')??'');
+    if(!bearer)throw new HttpError(401,'A journey-scoped personal agent capability is required.');
+    return result(await env.TRIPS.getByName(personalAgentPath[1]).personalAgentOperation(personalAgentPath[2],bearer[1],personalAgentOperationSchema.parse(personalAgentPath[3]),await body(request)));
   }
   const user = await authenticate(request,env);
   const accountResponse=await handleAccount(request,env,user);if(accountResponse)return accountResponse;
@@ -187,6 +194,13 @@ async function handle(request: Request, env: WorkerEnv): Promise<Response> {
       if(!await env.USERS.getByName(user.id).allow('gratitude',30,60000))throw new HttpError(429,'Too many gratitude requests.');
       return result(await room.sendGratitude(user.id,input.guardianId,input.kind),'gratitude');
     }
+  }
+  const delegationPath=new RegExp(`^/api/trips/(${uuid})/delegation$`).exec(path);
+  if(delegationPath&&method==='POST') {
+    const input=delegationInputSchema.parse(await body(request));
+    if(restriction.suspended&&input.action!=='revoke')throw new HttpError(403,'This account is unavailable for delegation.');
+    if(!await env.USERS.getByName(user.id).allow('personal-agent-delegation',30,60000))throw new HttpError(429,'Too many delegation changes.');
+    return result(await env.TRIPS.getByName(delegationPath[1]).setDelegation(user.id,input,url.origin));
   }
   const codexMatch=new RegExp(`^/api/trips/(${uuid})/codex-demo/(export|import|cancel)$`).exec(path);
   if(codexMatch&&method==='POST'){
