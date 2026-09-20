@@ -2,6 +2,8 @@
 
 **Be there for someone.** StillHere means a volunteer stays with you, and their personal agent can help carry that care forward during an approved break. See the [product story and handoff design](docs/STILLHERE.md). This is the final hackathon project name; existing infrastructure names and protocol identifiers remain compatible.
 
+**[Try StillHere](https://safety-guard-htn2026.klavander56.chatgpt.site)** · [Project icon](web/public/stillhere-icon.png) · [Invite friends](docs/PUBLIC_TRIAL.md)
+
 A community journey-guarding application for Hack the North 2026. Riders approve human guardians and arrange relays when someone needs a break. Optional deterministic reminders continue after missed check-ins. The implemented [personal-agent workflow](docs/PERSONAL_AGENT_GUARDING.md) lets an assigned volunteer request a named agent for a limited period, obtain rider approval, and connect their own runtime through six scoped tools. Coverage becomes active only after a valid assessment. The existing OpenAI API adapter remains disabled and is outside the primary development path.
 
 The personal-agent backend and interface are deployed; the owner-operated CLI watcher and local MCP bridge are implemented. A [hosted acceptance run](docs/deployment/personal-agent.hosted.validation.json) passed 23 checks with one real Codex assessment. A separate [published-browser run](docs/deployment/personal-agent.browser.validation.json) passed 12 checks through the actual interface: two participants, named-agent consent, a real Codex response, human return, capability revocation, arrival, and a free banner. Agent activity added no human check-ins. These bounded runs do not establish broad model quality or unattended overnight availability. Start with the [personal trial checklist](docs/PERSONAL_TRIAL.md); implementation details are in the [client guide](docs/PERSONAL_AGENT_CLIENT.md) and [HTTP protocol](docs/PERSONAL_AGENT_PROTOCOL.md).
@@ -14,7 +16,7 @@ The [assistance harness](docs/AGENT_HARNESS.md) provides rider-controlled remind
 
 The accepted [community v1 scope](docs/COMMUNITY_V1.md) adds member profiles, contextual contribution records, and free structured appreciation banners. Profiles and contribution values are visible to other authenticated community members before applying or approving; there is no visibility toggle or sitewide leaderboard. Availability and language matching remain future work in the [community direction](docs/COMMUNITY_DIRECTION.md).
 
-Companionship remains accessible without payment, staking, or a token balance. The [gratitude rules](docs/GRATITUDE_MECHANISM.md) allow optional free banners after closure without adding points or reputation. Financial tips and transferable tokens are deferred; translation is not integrated. Site access is limited to the owner and the owner-requested demo viewer.
+Companionship remains accessible without payment, staking, or a token balance. The [gratitude rules](docs/GRATITUDE_MECHANISM.md) allow optional free banners after closure without adding points or reputation. Financial tips and transferable tokens are deferred; translation is not integrated. The site is publicly accessible: enter a name and select **Enter StillHere** to create a guest identity. No site invitation, email allowlist, or wallet is required.
 
 The [community ledger](docs/COMMUNITY_LEDGER.md) implements the requirement for appreciation, contributions and guarding history to have Solana records. It adds a separate program, free sponsored platform attestations, ordered participation history, durable publication, independently readable receipts and administrator-signed corrections. The implementation report records deployment and validation status. See [the original design](docs/ONCHAIN_COMMUNITY.md) for the reasoning and trust boundaries.
 
@@ -22,9 +24,11 @@ Sponsor research is in [SPONSORS.md](docs/SPONSORS.md). The current design is do
 
 ## Run locally
 
-Install Node.js 22.13 or later, then run from this folder:
+Install Node.js 22.13 or later, then clone the project and start it:
 
 ```sh
+git clone https://github.com/Jrffy666/StillHere.git
+cd StillHere
 npm run setup
 npm run dev
 ```
@@ -68,6 +72,8 @@ The [agent guide](docs/AGENT_HARNESS.md) distinguishes the owner's personal runt
 
 ## Deployment status
 
+The current frontend is version **17**, with the [StillHere project icon](docs/brand/README.md) and public visitor access. [Publication checks](docs/deployment/public-launch.validation.json) verify the deployed icon bytes, metadata and backend readiness. The Worker and chain program remain at the verified personal-agent release below.
+
 The personal-agent release includes production Worker version `d05822bb-5a48-44ca-9bda-fd18db4a4c7d` and frontend version 16. Its [hosted validation](docs/deployment/personal-agent.hosted.validation.json) records one real model turn in 8.683 seconds under a two-turn/two-minute watcher limit, with zero hosted OpenAI API calls and zero external notifications. After the community-program upgrade, all nine records from that journey were independently decoded and matched to finalized append transactions. The sponsor reserve was restored to 0.25 Devnet SOL at upgrade. No frontend or Worker redeployment was needed for this compatible contract extension.
 
 The separate [V2 program is deployed on Solana Devnet](https://explorer.solana.com/address/23f7UAfNbQCGdfQbJV3Tois98dETDfXnAXgjE5qTH5gb?cluster=devnet). Both [local-validator](docs/deployment/verification.v2.localnet.json) and [Devnet](docs/deployment/verification.v2.devnet.json) checks completed 19 signed transactions and 11 expected rejection checks. The [local application integration report](docs/deployment/application.v2.localnet.json) records 10 finalized transactions through the HTTP backend, private-access revocation, and a single shared 25/10 reward pool.
@@ -76,7 +82,7 @@ The existing V1 program remains a legacy, separate single-guardian receipt. New 
 
 The frontend is published at **[StillHere](https://safety-guard-htn2026.klavander56.chatgpt.site)**. The [production Worker](https://safety-guard-api-production.2012044zj.workers.dev/api/ready) is deployed and passes readiness checks, with the published site configured as its canonical signing origin. A [hosted identity verification](docs/evidence/hosted-identity-2026-09-20.json) passed 36 checks covering wallet binding/login, recovery, replay/origin rejection, session revocation, and synthetic-account deletion. It submitted no blockchain transactions and persisted no credentials.
 
-The site permits its owner and one owner-requested demo viewer. The [simplified frontend](docs/FRONTEND_SIMPLIFICATION.md) puts active journey controls beside conversation, folds ended-journey history, and combines account actions in an avatar menu. The [appreciation wall and honor cabinet](docs/COMMUNITY_HONORS.md) remain public to members, with compact previews and complete receipt access. Thirteen journey-interface tests, 14 honor-projection tests, frontend type checking, lint, and build pass. See [DEMO.md](docs/DEMO.md) to demonstrate recognition using separate rider and guardian identities.
+Public access was enabled on September 20, 2026. [Anonymous HTTP acceptance](docs/deployment/public-access.validation.json) verifies the homepage, two independent guest registrations through the frontend proxy, authenticated account access, and cleanup without a privileged site credential. This changes who can enter the site; private journeys still require approved participation. The [simplified frontend](docs/FRONTEND_SIMPLIFICATION.md) puts active journey controls beside conversation, folds ended-journey history, and combines account actions in an avatar menu. The [appreciation wall and honor cabinet](docs/COMMUNITY_HONORS.md) remain public to members, with compact previews and complete receipt access. See [DEMO.md](docs/DEMO.md) to demonstrate recognition using separate rider and guardian identities.
 
 **All five live HTTP integration tests through the earlier published ledger release passed**, covering application-only guardian approval, relay, former-guardian access revocation, shared rewards, and isolated demonstrations. The 11 synthetic test accounts were deleted. Homepage, admin page, health, readiness, and configuration routes returned HTTP 200 in that run; see the [hosting receipt](docs/deployment/hosting.production.json).
 

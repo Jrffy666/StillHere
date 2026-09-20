@@ -18,6 +18,10 @@ export const metadata: Metadata = {
   description:
     'Free community companionship for your journey, with human guardians, thoughtful handoffs, and verifiable contributions.',
   robots: { index: false, follow: false },
+  icons: {
+    icon: [{ url: '/stillhere-icon.png', type: 'image/png', sizes: '1254x1254' }],
+    apple: '/stillhere-icon.png',
+  },
   metadataBase: new URL(
     process.env.SITE_ORIGIN ||
       'https://safety-guard-htn2026.klavander56.chatgpt.site',

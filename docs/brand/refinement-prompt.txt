@@ -1,0 +1,9 @@
+Use case: precise-object-edit
+Asset type: final square StillHere app icon.
+Edit target: supplied original icon.
+Primary request: Professionally finish this exact icon: retain its two companion shapes, lime upper figure and lavender lower figure, protective interlocking S-shaped arrangement, and gently rounded silhouette. Clean EVERY edge to a perfectly smooth, deliberate crisp curve, removing all white residue, yellow fringe, speckles, roughness, noise, stray pixels and tiny marks. Refine optical alignment only as needed to center and balance the whole mark.
+Background: Fill the entire canvas with one perfectly uniform, FULLY OPAQUE near-black color #0c0e11. Output must have no transparent or partially transparent pixels anywhere. All negative space and the channel between the figures must be exactly this same solid near-black background. Do not preserve transparency from the input.
+Colors: the main upper figure is uniform flat lime #b6f569, the smaller lower figure uniform flat lavender #b6a3f5. Crisp clean anti-aliased boundaries against near-black, with absolutely no white or yellow halo.
+Composition: one centered icon on square canvas, sufficient equal safe margins, bold silhouette legible at small size.
+Invariants: Preserve the original two-figure symbol concept, recognizable silhouettes and protective companion relationship. Do not invent a different logo. No text, wordmark, additional shapes, texture, gradients, shadows, highlights, 3D, ornament, mockup or watermark.
+Deliver one finished clean square PNG image, ideally 1024x1024, completely opaque.

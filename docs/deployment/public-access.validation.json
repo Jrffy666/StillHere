@@ -1,0 +1,32 @@
+{
+  "checkedAt": "2026-09-20T06:39:42.429Z",
+  "origin": "https://safety-guard-htn2026.klavander56.chatgpt.site",
+  "access": {
+    "mode": "public",
+    "revision": 3
+  },
+  "scope": "Anonymous HTTP entry, registration and authenticated account access through the public frontend proxy. No privileged site authorization, cookies or operator credential supplied. Not a browser interaction or full journey test.",
+  "checksPassed": 13,
+  "checks": [
+    "Anonymous homepage returns HTTP 200 without a login redirect",
+    "Published response includes the StillHere guest entry form",
+    "Public frontend proxy reaches the ready backend",
+    "Account endpoint still rejects an unauthenticated caller",
+    "A fresh rider guest can register without site credentials",
+    "The new rider guest can authenticate",
+    "A fresh guardian guest can register without site credentials",
+    "The new guardian guest can authenticate",
+    "The two guest identities are independent",
+    "Synthetic guest account deleted after verification",
+    "Deleted guest session no longer authenticates",
+    "Synthetic guest account deleted after verification",
+    "Deleted guest session no longer authenticates"
+  ],
+  "cleanup": {
+    "syntheticAccountsCreated": 2,
+    "syntheticAccountsDeleted": 2
+  },
+  "blockchainTransactions": 0,
+  "modelCalls": 0,
+  "externalNotifications": 0
+}

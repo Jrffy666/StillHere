@@ -10,7 +10,7 @@ The simplified interface has three destinations: **My journeys**, **Guard networ
 
 ## Prepare access and accounts
 
-The published site allows the owner and the additional demo viewer requested by the owner. Both browser contexts must first pass that website access gate using an allowed login. Viewer access permits using the application, not editing or administering the site. Inside the application, create different guest identities with **Enter StillHere**, for example `Demo Rider` and `Demo Guardian`. Separate browser profiles or different browsers are preferable to duplicated tabs. Application identity and the website access login are different layers.
+The published site is public as of September 20, 2026. Visitors do not need a site invitation or an allowed email address. Create different guest identities with **Enter StillHere**, for example `Demo Rider` and `Demo Guardian`. Separate browser profiles or different browsers are preferable to duplicated tabs. Public access permits using the application, not editing or administering the site, and does not expose private journeys to unapproved participants.
 
 Guest credentials are held in session storage. Keep the rehearsal sessions available; without an established recovery method or linked wallet, closing a session or signing out can lose access. Wallet identity is optional for participation and separate from the wallet-signed commitment option.
 

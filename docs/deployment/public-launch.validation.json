@@ -1,0 +1,33 @@
+{
+  "checkedAt": "2026-09-20T06:42:52.795Z",
+  "origin": "https://safety-guard-htn2026.klavander56.chatgpt.site",
+  "frontendVersion": 17,
+  "sourceCommit": "db278248a3e5789a922d50b1a676578d3610aeac",
+  "deploymentId": "appgdep_6aaf804dfd9c81918231c764173a4452",
+  "access": {
+    "mode": "public",
+    "revision": 3
+  },
+  "checks": [
+    "Anonymous homepage returns HTTP 200",
+    "Favicon metadata references project icon",
+    "Apple icon metadata references project icon",
+    "Icon publicly serves as image/png",
+    "Published bytes match local master",
+    "Image dimensions are 1254 by 1254",
+    "Backend remains ready through the frontend proxy"
+  ],
+  "icon": {
+    "path": "web/public/stillhere-icon.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 901266,
+    "sha256": "6172e369201545038abd38ad8cd8f4f178885670676643171b5779630c5805fe"
+  },
+  "validation": {
+    "frontendBuild": "passed",
+    "frontendTypecheck": "passed",
+    "anonymousRegistration": "public-access.validation.json"
+  },
+  "scope": "Public HTTP publication and exact icon verification. No browser visual acceptance, chain transaction, model call or account mutation in this check."
+}

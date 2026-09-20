@@ -1,0 +1,9 @@
+Use case: logo-brand
+Asset type: finished square project icon for StillHere, a volunteer journey companionship app.
+Primary request: Create ONE exceptional, polished minimalist brand symbol expressing continuous companionship: a human guardian stays with you, and when they rest, their personal agent continues the authorized presence.
+Scene/backdrop: perfectly uniform near-black #0c0e11 square background.
+Subject: a single bold, elegantly proportioned emblem made from two continuing rounded companion arcs, intertwined into an abstract S. The paired forms should feel softly protective, like one companion handing care to the next. The whole symbol must have a memorable unified silhouette, a clear open negative-space channel, and subtly human warmth. Primary arc lime #b6f569; smaller complementary arc muted lavender #b6a3f5.
+Style/medium: precise flat vector-like graphic logo with exceptionally clean edges, solid fills, optical balance, professional contemporary brand identity. No texture, shading, glow or 3D.
+Composition/framing: 1024x1024 square image, centered symbol occupying approximately 62% of canvas width and height, ample equal safe margins, strong recognizability at 32 pixels.
+Text: absolutely no text, letters, wordmark, numerals, caption, signature or watermark; the S is only suggested abstractly through the forms.
+Constraints: One finished icon only, no presentation board, no grid, no mockup. Bold simple silhouette, at most two continuous colored shapes. Avoid crypto/coin/currency imagery, literal dollar signs, medical crosses, police/security badges, locks, eyes, circuit traces, literal robots, hand illustrations, hearts, gradients, glossy lighting, tiny details.
