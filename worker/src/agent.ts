@@ -1,12 +1,13 @@
 import { z } from 'zod';
 import { semanticAssessmentSchema, type SemanticAssessment } from './agent-semantic';
 import { redactAgentText } from './agent-text';
+import type { CodexDemoResult } from './codex-demo';
 export { redactAgentText } from './agent-text';
 
 /** Offline protocol shared by the provider, durable runner, and participant UI. */
 export interface AgentTrigger {
   id: string;
-  kind: 'takeover' | 'rider-message' | 'follow-up' | 'stale-location' | 'notification-failure';
+  kind: 'takeover' | 'rider-message' | 'follow-up' | 'stale-location' | 'notification-failure' | 'codex-import';
   at: number;
   messageId?: string;
 }
@@ -56,7 +57,7 @@ export interface AgentEvidence {
 }
 export interface AgentHandoff {
   version: 1;
-  mode: 'offline_rules' | 'openai_assisted';
+  mode: 'offline_rules' | 'openai_assisted' | 'codex_demo';
   snapshotAt: number;
   snapshotSourceId: string;
   status: AgentContext['status'];
@@ -85,7 +86,7 @@ export interface AgentStep {
 export interface AgentRun {
   id: string;
   trigger: AgentTrigger;
-  provider: 'mock' | 'openai';
+  provider: 'mock' | 'openai' | 'codex_local';
   semantic?: SemanticRecord;
   semanticAttempt?: {id:string;status:'reserved'|'completed'|'failed'|'discarded';reservedTokens:number;error?:string;usage?:ModelUsage};
   status: 'queued' | 'running' | 'completed' | 'cancelled' | 'failed';
@@ -100,7 +101,7 @@ export interface AgentRun {
   leaseUntil: number;
 }
 export interface AgentState {
-  provider: 'mock' | 'openai';
+  provider: 'mock' | 'openai' | 'codex_local';
   liveModel: boolean;
   semanticHandoff?: SemanticRecord | null;
   fallbackReason?: string | null;
@@ -112,7 +113,10 @@ export interface AgentState {
 }
 export type AgentDecision = { type: 'tool'; call: AgentToolCall } | { type: 'complete'; summary: string };
 export interface ModelUsage {inputTokens:number;outputTokens:number;totalTokens:number}
-export interface SemanticRecord {assessment:SemanticAssessment;context:AgentContext;responseId:string;model:string;requestId:string|null;promptVersion:string;usage:ModelUsage;snapshotAt:number}
+interface SemanticBase {assessment:SemanticAssessment;context:AgentContext;snapshotAt:number}
+export interface OpenAISemanticRecord extends SemanticBase {source?:'openai';responseId:string;model:string;requestId:string|null;promptVersion:string;usage:ModelUsage}
+export interface CodexSemanticRecord extends SemanticBase {source:'codex_local';execution:CodexDemoResult['execution'];jobId:string;expiresAt:number}
+export type SemanticRecord = OpenAISemanticRecord | CodexSemanticRecord;
 
 const timestamp = z.number().int().min(0).max(8_640_000_000_000_000);
 const identifier = z.string().min(1).max(200);
@@ -135,7 +139,7 @@ export const contextSchema: z.ZodType<AgentContext> = z.object({
   unresolvedConcerns: z.array(concernSchema).max(8).optional(),
 }).strict();
 export const agentHandoffSchema: z.ZodType<AgentHandoff> = z.object({
-  version: z.literal(1), mode: z.enum(['offline_rules','openai_assisted']), snapshotAt: timestamp, snapshotSourceId: sourceIdentifier,
+  version: z.literal(1), mode: z.enum(['offline_rules','openai_assisted','codex_demo']), snapshotAt: timestamp, snapshotSourceId: sourceIdentifier,
   status: z.enum(['open', 'active', 'arrived', 'cancelled']), guardMode: z.enum(['waiting', 'human', 'ai']),
   risk: z.enum(['normal', 'attention', 'urgent']), escalationCause: escalationCauseSchema, notificationAuthorized: z.boolean(),
   location: z.object({ observedAt: timestamp.nullable(), freshness: z.enum(['fresh', 'stale_or_unverified']) }).strict(),
@@ -173,14 +177,20 @@ const stepSchema = z.object({
   id: identifier, call: ToolCallSchema, status: z.enum(['pending', 'succeeded', 'rejected']), at: timestamp, result: toolResultSchema.optional(),
 }).strict();
 export const modelUsageSchema=z.object({inputTokens:z.number().int().nonnegative().max(1000000),outputTokens:z.number().int().nonnegative().max(1000000),totalTokens:z.number().int().nonnegative().max(2000000)}).strict();
-export const semanticRecordSchema:z.ZodType<SemanticRecord>=z.object({assessment:semanticAssessmentSchema,context:contextSchema,responseId:identifier,model:z.string().max(100),requestId:identifier.nullable(),promptVersion:z.string().max(100),usage:modelUsageSchema,snapshotAt:timestamp}).strict();
+// Kept independent of codex-demo's runtime schemas to avoid a schema initialization cycle.
+const codexUsageSchema=z.object({inputTokens:z.number().int().nonnegative().safe(),outputTokens:z.number().int().nonnegative().safe(),cachedInputTokens:z.number().int().nonnegative().safe()}).strict().refine(usage=>usage.cachedInputTokens<=usage.inputTokens);
+export const semanticRecordSchema:z.ZodType<SemanticRecord>=z.union([
+  z.object({source:z.literal('openai').optional(),assessment:semanticAssessmentSchema,context:contextSchema,responseId:identifier,model:z.string().max(100),requestId:identifier.nullable(),promptVersion:z.string().max(100),usage:modelUsageSchema,snapshotAt:timestamp}).strict(),
+  z.object({source:z.literal('codex_local'),assessment:semanticAssessmentSchema,context:contextSchema,snapshotAt:timestamp,jobId:z.uuid(),expiresAt:timestamp,
+    execution:z.object({tool:z.literal('codex-cli'),auth:z.literal('chatgpt'),cliVersion:z.string().trim().min(1).max(80).regex(/^[^\x00-\x1f\x7f]+$/),completedAt:timestamp,usage:codexUsageSchema.nullable()}).strict()}).strict(),
+]);
 export const agentStateSchema: z.ZodType<AgentState> = z.object({
-  provider: z.enum(['mock','openai']), liveModel: z.boolean(),
+  provider: z.enum(['mock','openai','codex_local']), liveModel: z.boolean(),
   semanticHandoff:semanticRecordSchema.nullable().optional(),fallbackReason:z.string().max(200).nullable().optional(),
   runs: z.array(z.object({
     id: identifier,
-    trigger: z.object({ id: identifier, kind: z.enum(['takeover', 'rider-message', 'follow-up', 'stale-location', 'notification-failure']), at: timestamp, messageId: identifier.optional() }).strict(),
-    provider: z.enum(['mock','openai']), status: z.enum(['queued', 'running', 'completed', 'cancelled', 'failed']),
+    trigger: z.object({ id: identifier, kind: z.enum(['takeover', 'rider-message', 'follow-up', 'stale-location', 'notification-failure', 'codex-import']), at: timestamp, messageId: identifier.optional() }).strict(),
+    provider: z.enum(['mock','openai','codex_local']), status: z.enum(['queued', 'running', 'completed', 'cancelled', 'failed']),
     semantic:semanticRecordSchema.optional(),semanticAttempt:z.object({id:identifier,status:z.enum(['reserved','completed','failed','discarded']),reservedTokens:z.number().int().nonnegative().max(33200),error:z.string().max(200).optional(),usage:modelUsageSchema.optional()}).strict().optional(),
     createdAt: timestamp, updatedAt: timestamp, revision: z.number().int().nonnegative(),
     steps: z.array(stepSchema).max(8), summary: z.string().max(4000).optional(), error: z.string().max(1000).optional(),

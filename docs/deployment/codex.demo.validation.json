@@ -1,0 +1,72 @@
+{
+  "recordedAt": "2026-09-20T04:25:35.711Z",
+  "frontendVersion": 14,
+  "sourceCommit": "b4c8112192bd4573bf9cc6120c6b54809576f565",
+  "deploymentId": "appgdep_6aaf5bdd5f548191a8968d1f635dc8b8",
+  "status": "succeeded",
+  "workerVersion": "5e2ffd3a-d4c9-4694-9761-8c7331533d73",
+  "workerDeploymentId": "a90ecb23-4bc2-4232-85e5-6bfef55a27f3",
+  "workerTestsPassed": 328,
+  "workerTestFiles": 20,
+  "codexProtocolTestsPassed": 10,
+  "codexHarnessTestsPassed": 25,
+  "codexRunnerTestsPassed": 24,
+  "workerTypecheck": true,
+  "frontendTypecheck": true,
+  "frontendLint": true,
+  "frontendBuild": true,
+  "proxyTestsPassed": 8,
+  "journeyInterfaceTestsPassed": 13,
+  "honorTestsPassed": 14,
+  "hostedChecksPassed": 42,
+  "hostedEvidence": "codex.hosted.validation.json",
+  "localCodex": {
+    "completedTurns": 1,
+    "cliVersion": "0.155.1",
+    "reportedUsage": {
+      "inputTokens": 12292,
+      "outputTokens": 198,
+      "cachedInputTokens": 0
+    },
+    "durationMs": 9792,
+    "underlyingProviderRequestCount": null,
+    "creditCost": null,
+    "serverVerifiesExecutionProvenance": false
+  },
+  "earlierAttempts": [
+    {
+      "evidence": "codex.hosted.attempt1.json",
+      "completedTurns": 0,
+      "syntheticAccountsDeleted": 2,
+      "reason": "Transport-less inherited MCP configuration conflicted with ignored user config; reproduced offline and fixed."
+    },
+    {
+      "evidence": "codex.hosted.attempt2.json",
+      "completedTurns": 0,
+      "syntheticAccountsDeleted": 2,
+      "reason": "Windows cleanup masked the original failure; diagnostic unavailable. Cleanup now preserves the primary error."
+    },
+    {
+      "evidence": "codex.hosted.attempt3.json",
+      "completedTurns": 0,
+      "syntheticAccountsDeleted": 2,
+      "reason": "Pinned CLI startup diagnostic rejected before the turn; reproduced offline and a specific fail-closed host notice is now recognized."
+    }
+  ],
+  "syntheticAccountsDeleted": 8,
+  "hostedOpenAiEnabled": false,
+  "openAiApiCalls": 0,
+  "externalNotifications": 0,
+  "chainProgramChanged": false,
+  "blockchainTransactions": 0,
+  "access": {
+    "mode": "custom",
+    "owners": 1,
+    "externalViewers": 1,
+    "policyRevision": 2
+  },
+  "browserVisualQa": false,
+  "browserInteractiveAcceptance": false,
+  "browserLimitation": "The available browser connection reported No browser is available.",
+  "qualityEvaluation": "One synthetic acceptance case; no broad model-quality, emergency-response or reliability claim."
+}

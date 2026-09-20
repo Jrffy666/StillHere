@@ -325,9 +325,11 @@ describe('Server-grounded offline evidence', () => {
   });
 
   it('bounds and redacts contact details and obvious secrets in evidence free text', () => {
-    const original = 'Contact me at me@example.com or +1 (416) 555-0123, see https://example.com/private?token=secret. api_key=supersecret Bearer abc.def.ghi sk-abcdefghijklmnop';
+    const original = 'Contact me at me@example.com or +1 (416) 555-0123, see https://example.com/private?token=secret. api_key=supersecret Bearer abc.def.ghi sk-abcdefghijklmnop 31.12345,121.12345 -31.54321, -121.54321';
     const redacted = redactAgentText(original);
-    for (const sensitive of ['me@example.com', '555-0123', 'example.com/private', 'supersecret', 'abc.def.ghi', 'sk-abcdefghijklmnop']) expect(redacted).not.toContain(sensitive);
+    for (const sensitive of ['me@example.com', '555-0123', 'example.com/private', 'supersecret', 'abc.def.ghi', 'sk-abcdefghijklmnop', '31.12345', '121.12345', '31.54321', '121.54321']) expect(redacted).not.toContain(sensitive);
+    expect(redacted).toContain('[redacted coordinates]');
+    expect(redactAgentText(redacted)).toBe(redacted);
     expect(redactAgentText(original, 40).length).toBeLessThanOrEqual(40);
     expect(redactAgentText('x'.repeat(20_000), 50)).toHaveLength(50);
     expect(redactAgentText('x'.repeat(20_000), Infinity)).toHaveLength(600);

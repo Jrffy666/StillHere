@@ -2,6 +2,8 @@
 export function redactAgentText(text: string, maxLength = 600): string {
   const limit = Math.max(0, Math.min(2000, Number.isFinite(maxLength) ? Math.floor(maxLength) : 600));
   return text.slice(0, 10_000)
+    // Remove complete coordinate pairs before phone matching can obscure only one half.
+    .replace(/-?\b\d{1,3}\.\d{4,}\s*,\s*-?\d{1,3}\.\d{4,}\b/g, '[redacted coordinates]')
     .replace(/\b(?:https?:\/\/|www\.)[^\s<>"']+/gi, '[redacted URL]')
     .replace(/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi, '[redacted email]')
     .replace(/\bBearer\s+[^\s,;]+/gi, 'Bearer [redacted]')

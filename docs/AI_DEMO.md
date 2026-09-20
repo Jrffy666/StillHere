@@ -1,6 +1,8 @@
 # Demonstrating AI-assisted human handoffs
 
-Updated September 20, 2026. **The real adapter is implemented, but live processing remains disabled and has not received paid validation.** Today, use an explicitly labeled offline fixture to demonstrate the contract and execution boundaries. Only describe a result as live model behavior after an authorized request has actually produced the recorded result. Activation prerequisites are in [OPENAI_INTEGRATION.md](OPENAI_INTEGRATION.md).
+The main product story is now [volunteers delegating to their own agents](PERSONAL_AGENT_GUARDING.md). The existing manual Codex demo demonstrates cited interpretation and guarded execution; guardian-owned delegation and automatic event handling remain planned. Use the walkthrough below as protocol evidence, not as a claim that the personal-agent handoff is already implemented.
+
+Updated September 20, 2026. **The Responses API adapter is implemented, but hosted API processing remains disabled and has not received paid validation.** A [Local Codex demo](CODEX_DEMO.md) provides an operator-reviewed export, local CLI inference, and result import using a personal Codex login. It is a manual rehearsal, not an API deployment or a continuously running guardian. Imported metadata alone does not prove a model ran; show the local execution alongside the resulting private tool receipts. An offline fixture remains useful for failure tests, but must be labeled as such. API activation prerequisites are in [OPENAI_INTEGRATION.md](OPENAI_INTEGRATION.md).
 
 ## The story
 
@@ -12,7 +14,7 @@ This implementation gives the model a deliberately small output vocabulary. It s
 
 ## A 90-second walkthrough
 
-Prepare a controlled journey with a rider, the currently assigned guardian, and a replacement volunteer. Use synthetic messages and label them. Obtain current v2 processing consent before any live version of this demonstration. Keep external notification delivery disabled. Pre-stage earlier timestamps or show a clearly labeled recording rather than implying that several minutes elapsed during the presentation.
+Prepare a controlled journey with a rider, the currently assigned guardian, and a replacement volunteer. Use synthetic messages and label them. For the hosted API version, obtain current v2 processing consent. For the local Codex version, follow its separate synthetic-data notice, manual export and review steps. Keep external notification delivery disabled. Pre-stage earlier timestamps or show a clearly labeled recording rather than implying that several minutes elapsed during the presentation.
 
 | Time | Show | Explain honestly |
 | --- | --- | --- |
@@ -42,7 +44,7 @@ Semantic source validation establishes that the source exists, has an eligible a
 
 ## Failure demonstration
 
-Use a separate clearly labeled mocked timeout or provider-error fixture; do not repeatedly purchase requests to manufacture a failure. Show the safe failure code, fallback mode, preserved unresolved concerns, working human controls, and deterministic explicit help. The eight-second model deadline must not postpone the help workflow. Show that a result arriving after human takeover or consent revocation is discarded and creates no late action.
+Use a separate clearly labeled mocked timeout or provider-error fixture; do not repeatedly purchase requests to manufacture a failure. Show the safe failure code, fallback mode, preserved unresolved concerns, working human controls, and deterministic explicit help. The API adapter has an eight-second deadline; the manual Codex runner has a separate 60-second process limit. Neither path may postpone the help workflow. Show that a result arriving after human takeover or consent revocation is discarded and creates no late action.
 
 If the provider reports usage, display that reported usage separately from conservative reserved token units. A timeout with unknown usage should remain an unknown billable outcome with its reservation held, not be displayed as zero cost. A retry of the ordinary durable runner must not purchase a second assessment in the same run.
 

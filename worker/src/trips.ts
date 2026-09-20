@@ -1,13 +1,15 @@
 import { DurableObject } from 'cloudflare:workers';
+import { z } from 'zod';
 import { directoryName } from './accounts';
 import { allocateContributions } from './guarding';
 import { ruleAssessment, sendNotification } from './integrations';
 import { hasAgentConcern, buildAgentHandoff, renderAgentSummary, renderAgentCheckIn, redactAgentText, parseAgentToolCall, type AgentContext, type AgentRun, type AgentToolCall, type AgentToolResult, type AgentTrigger } from './agent';
 import { createMockProvider, runProviderDecision, AGENT_PROVIDER_LEASE_MS } from './agent-provider';
 import { assistanceInputSchema, defaultAssistance, assistanceEnabled, notificationAuthorized, notificationDispatchAuthorized, aiConsentInputSchema, LIVE_AI_NOTICE_VERSION } from './assistance';
-import { canUseLiveAi, openAiAvailable, liveAiContext, nextSemanticDecision, MAX_JOURNEY_AI_REQUESTS, MAX_JOURNEY_AI_RESERVED_TOKENS, AI_REQUEST_COOLDOWN_MS } from './ai-runtime';
+import { canUseLiveAi, canUseCodexDemo, canUseSemanticRun, openAiAvailable, liveAiContext, nextSemanticDecision, MAX_JOURNEY_AI_REQUESTS, MAX_JOURNEY_AI_RESERVED_TOKENS, AI_REQUEST_COOLDOWN_MS } from './ai-runtime';
+import { exportInputSchema, resultInputSchema, codexDemoContext, validateCodexDemoResult, CODEX_DEMO_TTL_MS, type CodexDemoJob, type CodexDemoExportFile } from './codex-demo';
 import { prepareOpenAIRequest, runOpenAIAssessmentWithDeadline, OpenAIProviderError } from './openai-provider';
-import { validateSemanticAssessment, renderSemanticQuestion } from './agent-semantic';
+import { validateSemanticAssessment, renderSemanticQuestion, type SemanticAssessment } from './agent-semantic';
 import type { ChainMember, ChainSnapshot } from './chain-types';
 import { tripSnapshotSchema } from './snapshots';
 import { captureCommunityEvents, randomCommunityReference, type SourceCommunityState, type SourceCommunityEvent } from './community-events';
@@ -15,6 +17,7 @@ import type { CommunityRecordView, CommunityCorrectionView } from './community-t
 import { fail, isClosed, isParticipant, ok, summary, type CreateTrip, type Notification, type Outcome, type Person, type Trip, type TripAction, type TripSummary, type WorkerEnv, type GratitudeKind, type GratitudeView } from './types';
 
 interface StoredTrip {
+  codexDemoJob?: CodexDemoJob;
   paidAiBudget?: {requests:number;reservedTokens:number;inputTokens:number;outputTokens:number;totalTokens:number;lastRequestAt:number};
   providerBudget?: {decisions:number;inputChars:number;runs:Record<string,{decisions:number;inputChars:number}>};
   community?:SourceCommunityState;
@@ -55,6 +58,7 @@ export class TripRoom extends DurableObject<WorkerEnv> {
     const state = {schemaVersion:1,monitoringStartedAt:null,indexVersion:1,indexedVersion:0,assessmentVersion:0,aiNextCheckInAt:null,aiMissedCheckIns:0,automatedEscalationSent:false,...JSON.parse(row.data)} as StoredTrip;
     state.trip.assistance ??= defaultAssistance();
     state.trip.liveAiAvailable=openAiAvailable(this.env);
+    this.syncCodexDemo(state);
     if (state.trip.relay) {
       const person = state.trip.relay.requestedBy;
       state.trip.relay.requestedBy = {id:person.id,name:person.name,...(person.wallet?{wallet:person.wallet}:{}),...(person.simulated?{simulated:true}:{})};
@@ -79,11 +83,13 @@ export class TripRoom extends DurableObject<WorkerEnv> {
     state.trip.updatedAt = Date.now();
     state.trip.events = state.trip.events.slice(-200);
     state.trip.messages = state.trip.messages.slice(-150);
+    this.syncCodexDemo(state);
     if (state.trip.agent) {
       const harness = state.trip.agent;
       if (isClosed(state.trip) || state.trip.guardMode !== 'ai' || !assistanceEnabled(state.trip)) harness.followUpAt = null;
       for (const run of harness.runs.filter(pendingRun)) {
-        if (isClosed(state.trip) || state.trip.guardMode !== 'ai' || !assistanceEnabled(state.trip) || run.revision !== state.assessmentVersion) {
+        if (isClosed(state.trip) || state.trip.guardMode !== 'ai' || !assistanceEnabled(state.trip) || run.revision !== state.assessmentVersion
+          || run.provider==='codex_local'&&!canUseSemanticRun(this.env,state.trip,run)) {
           run.status = 'cancelled'; run.leaseUntil = 0; run.updatedAt = Date.now();
           run.error = 'The journey ended, human monitoring resumed, or newer participant input superseded this run.';
         }
@@ -355,6 +361,82 @@ export class TripRoom extends DurableObject<WorkerEnv> {
       status:'queued',createdAt:now,updatedAt:now,revision:state.assessmentVersion,steps:[],attempts:0,nextAttemptAt:now,leaseUntil:0});
   }
 
+  private codexAuthorityChanged(before:AgentContext,after:AgentContext):boolean {
+    return this.agentContextChanged(before,after)||before.status!==after.status||before.guardMode!==after.guardMode
+      ||before.location.updatedAt!==after.location.updatedAt||before.relayOpen!==after.relayOpen;
+  }
+  private syncCodexDemo(state:StoredTrip):void {
+    const job=state.codexDemoJob;
+    if(!job){delete state.trip.codexDemo;return;}
+    if(job.status==='pending'&&(job.expiresAt<=Date.now()||job.revision!==state.assessmentVersion
+      ||!canUseCodexDemo(state.trip)||this.codexAuthorityChanged(job.authorityContext,this.agentContext(state))))job.status='cancelled';
+    state.trip.codexDemo={id:job.id,status:job.status,expiresAt:job.expiresAt};
+  }
+
+  async exportCodexDemo(userId:string,input:unknown):Promise<Outcome<{request:CodexDemoExportFile;trip:Trip}>> {
+    if(!exportInputSchema.safeParse(input).success)return fail(400,'Explicit synthetic-data consent is required.');
+    const state=this.load();if(!state)return fail(404,'Journey not found.');
+    if(state.trip.rider.id!==userId)return fail(403,'Only the rider may export their own local demo context.');
+    this.expire(state);
+    if(!canUseCodexDemo(state.trip)){this.save(state);return fail(409,'Local demo requires an open journey with automated check-ins and no explicit help request.');}
+    // Supersede all earlier proposals before providing the manually processed snapshot.
+    state.assessmentVersion++;
+    const now=Date.now(),authorityContext=this.agentContext(state),context=codexDemoContext(state.trip,authorityContext);
+    const job:CodexDemoJob={id:crypto.randomUUID(),revision:state.assessmentVersion,createdAt:now,expiresAt:now+CODEX_DEMO_TTL_MS,context,authorityContext,status:'pending'};
+    state.codexDemoJob=job;
+    if(state.trip.agent)Object.assign(state.trip.agent,{provider:'mock',liveModel:false,semanticHandoff:null,handoffSummary:null,structuredHandoff:null});
+    this.event(state.trip,'codex-demo-export','Local Codex demo exported','The rider confirmed synthetic data and explicitly exported a minimized snapshot. No model request was made by this service.');
+    this.save(state);
+    // No await before snapshot persistence. Export itself performs no provider or other external I/O.
+    return ok({request:{version:1,kind:'safety-guard-codex-request',jobId:job.id,createdAt:now,expiresAt:job.expiresAt,context},trip:state.trip});
+  }
+
+  async cancelCodexDemo(userId:string,input:unknown):Promise<Outcome<Trip>> {
+    const parsed=z.object({jobId:z.uuid()}).strict().safeParse(input);if(!parsed.success)return fail(400,'Invalid demo cancellation.');
+    const state=this.load();if(!state)return fail(404,'Journey not found.');
+    if(state.trip.rider.id!==userId)return fail(403,'Only the rider may cancel their local demo.');
+    if(!state.codexDemoJob||state.codexDemoJob.id!==parsed.data.jobId)return fail(409,'The local demo job is no longer current.');
+    if(state.codexDemoJob.status==='consumed')return fail(409,'This local demo result was already consumed.');
+    state.codexDemoJob.status='cancelled';state.assessmentVersion++;this.save(state);
+    return ok(state.trip);
+  }
+
+  async importCodexDemo(userId:string,input:unknown):Promise<Outcome<Trip>> {
+    const state=this.load();if(!state)return fail(404,'Journey not found.');
+    if(state.trip.rider.id!==userId)return fail(403,'Only the rider may import their local demo result.');
+    this.expire(state);this.syncCodexDemo(state);
+    const job=state.codexDemoJob;
+    if(!job||job.status!=='pending'||job.revision!==state.assessmentVersion||!canUseCodexDemo(state.trip)){
+      this.save(state);return fail(409,'The local demo snapshot expired, was consumed, or was superseded. Export again.');
+    }
+    let imported:ReturnType<typeof validateCodexDemoResult>;
+    const parsed=resultInputSchema.safeParse(input);if(!parsed.success)return fail(400,'Invalid local demo result.');
+    if(parsed.data.jobId!==job.id)return fail(409,'This result belongs to a different or superseded local demo job.');
+    try{imported=validateCodexDemoResult(parsed.data,job,Date.now());}
+    catch{return fail(400,'The local result does not match this snapshot or its allowed evidence.');}
+    // Authorization, one-shot consumption, fresh context receipt and run creation are synchronous.
+    // The manual wait never borrows a provider lease created at export time.
+    job.status='consumed';state.assessmentVersion++;job.revision=state.assessmentVersion;
+    this.syncCodexDemo(state);
+    const now=Date.now(),runId=crypto.randomUUID();
+    const harness=state.trip.agent??={provider:'mock',liveModel:false,runs:[],followUpAt:null,handoffSummary:null};
+    const run:AgentRun={id:runId,trigger:{id:job.id,kind:'codex-import',at:now},provider:'codex_local',
+      semantic:{source:'codex_local',assessment:imported.assessment,context:job.context,snapshotAt:job.context.now,execution:imported.execution,jobId:job.id,expiresAt:job.expiresAt},
+      status:'queued',createdAt:now,updatedAt:now,revision:state.assessmentVersion,steps:[],attempts:0,nextAttemptAt:now,leaseUntil:0};
+    const call:AgentToolCall={name:'get_journey_context',arguments:{}};
+    run.steps.push({id:`${runId}:0`,call,status:'succeeded',at:now,result:this.executeAgentTool(state,call,run)});
+    harness.runs.push(run);Object.assign(harness,{provider:'codex_local',liveModel:false,fallbackReason:null});
+    this.retainSemanticConcerns(state,imported.assessment,job.context);
+    this.event(state.trip,'codex-demo-import','Local Codex result imported','Operator-supplied execution metadata is unverified. Only cited interpretations and permitted local actions can be used; no contact or recognition authority is granted.');
+    this.save(state);
+    await this.runAgent(runId);
+    await this.syncIndexes();await this.schedule();
+    const current=this.load();if(!current)return fail(410,'Private journey data has been erased.');
+    const finished=current.trip.agent?.runs.find(item=>item.id===runId);
+    if(!finished||finished.status!=='completed')return fail(409,'The imported run was superseded or could not finish. Its result cannot be replayed.');
+    return ok(current.trip);
+  }
+
   private agentContext(state: StoredTrip): AgentContext {
     const trip = state.trip, now = Date.now();
     const ageSeconds = Math.max(0, Math.floor((now - trip.location.updatedAt) / 1000));
@@ -368,19 +450,31 @@ export class TripRoom extends DurableObject<WorkerEnv> {
       unresolvedConcerns:trip.agent?.concerns ?? []};
   }
 
+  private retainSemanticConcerns(state:StoredTrip,assessment:SemanticAssessment,context:AgentContext):void {
+    const harness=state.trip.agent!;harness.concerns??=[];
+    for(const finding of assessment.findings.filter(item=>item.kind==='concern'))for(const sourceId of finding.sourceIds){
+      if(!sourceId.startsWith('message:'))continue;
+      const source=context.messages.find(item=>`message:${item.id}`===sourceId&&item.role==='rider');
+      if(source&&!harness.concerns.some(item=>item.id===source.id)&&harness.concerns.length<8)harness.concerns.push({id:source.id,observedAt:source.at,receivedAt:Date.now(),text:redactAgentText(source.text)});
+    }
+  }
+
   /** Tools are scoped to this object. No tool can invoke participant actions or wallet operations. */
   private executeAgentTool(state: StoredTrip, call: AgentToolCall, run:AgentRun): AgentToolResult {
     const trip = state.trip;
+    if(run.provider==='codex_local'&&(call.name==='notify_trusted_contact'||!canUseSemanticRun(this.env,trip,run)))return {ok:false,code:'local_demo_authority',detail:'An imported local result cannot authorize external contact or execute after its snapshot expires.'};
     if (call.name !== 'get_journey_context' && !run.steps.some(step=>step.call.name==='get_journey_context' && step.status==='succeeded' && step.result?.context)) return {ok:false,code:'context_required',detail:'A successful current context read is required before any action.'};
     switch (call.name) {
       case 'get_journey_context': return {ok:true,code:'context_read',detail:'Read bounded private journey context at this timestamp.',context:this.agentContext(state)};
       case 'send_check_in':
         // Interpretation selects a server question; arbitrary provider prose is never published.
         {
-          const live=Boolean(run.semantic)&&canUseLiveAi(this.env,trip);
-          const text=live?renderSemanticQuestion(run.semantic!.assessment,run.semantic!.context):renderAgentCheckIn(run.trigger,this.agentContext(state));
-          this.message(trip,agent,'agent',text);trip.messages.at(-1)!.automatedBy=live?'openai':'rules';
-          if (trip.risk !== 'urgent') trip.ai = {mode:live?'openai':'rules',lastAssessment:text};
+          const semantic=canUseSemanticRun(this.env,trip,run),local=run.semantic?.source==='codex_local';
+          const rendered=semantic?renderSemanticQuestion(run.semantic!.assessment,run.semantic!.context):renderAgentCheckIn(run.trigger,this.agentContext(state));
+          const text=semantic&&local?`Local Codex demo (imported, unverified): ${rendered}`:rendered;
+          const mode=semantic?(local?'codex_local':'openai'):'rules';
+          this.message(trip,agent,'agent',text);trip.messages.at(-1)!.automatedBy=mode;
+          if (trip.risk !== 'urgent') trip.ai = {mode,lastAssessment:text};
         }
         return {ok:true,code:'check_in_posted',detail:'Posted an automated message in this journey. This does not confirm anyone read it.'};
       case 'schedule_follow_up': {
@@ -411,7 +505,7 @@ export class TripRoom extends DurableObject<WorkerEnv> {
   private async analyzeWithOpenAI(runId:string,attempt:number):Promise<void> {
     let state=this.load();if(!state)return;
     let run=state.trip.agent?.runs.find(item=>item.id===runId);
-    if(!run||run.status!=='running'||run.attempts!==attempt||run.semanticAttempt||!canUseLiveAi(this.env,state.trip))return;
+    if(!run||run.status!=='running'||run.attempts!==attempt||run.semantic||run.provider==='codex_local'||run.semanticAttempt||!canUseLiveAi(this.env,state.trip))return;
     const authorityContext=this.agentContext(state),id=crypto.randomUUID();
     const budget=state.paidAiBudget??={requests:0,reservedTokens:0,inputTokens:0,outputTokens:0,totalTokens:0,lastRequestAt:0};
     let reservedTokens:number,context:AgentContext;
@@ -453,11 +547,7 @@ export class TripRoom extends DurableObject<WorkerEnv> {
       const assessment=validateSemanticAssessment(outcome.assessment,context);
       run.semantic={...outcome,assessment,context,snapshotAt:context.now};run.semanticAttempt.status='completed';run.provider='openai';
       const harness=state.trip.agent!;harness.provider='openai';harness.liveModel=true;harness.fallbackReason=null;harness.concerns??=[];
-      for(const finding of assessment.findings.filter(item=>item.kind==='concern'))for(const sourceId of finding.sourceIds){
-        if(!sourceId.startsWith('message:'))continue;
-        const source=context.messages.find(item=>`message:${item.id}`===sourceId&&item.role==='rider');
-        if(source&&!harness.concerns.some(item=>item.id===source.id)&&harness.concerns.length<8)harness.concerns.push({id:source.id,observedAt:source.at,receivedAt:Date.now(),text:redactAgentText(source.text)});
-      }
+      this.retainSemanticConcerns(state,assessment,context);
       this.event(state.trip,'ai-assessment','AI interpretation recorded','Source references passed validation. Interpretations are uncertain; no notification or community recognition is authorized by this result.');
     } else {
       run.semanticAttempt.status='failed';run.semanticAttempt.error=failure??'AI_UNAVAILABLE';
@@ -468,11 +558,11 @@ export class TripRoom extends DurableObject<WorkerEnv> {
   }
 
   /** Persist a proposal before executing it; persist each local effect and result in one SQL write. */
-  private async runAgent(): Promise<void> {
+  private async runAgent(onlyRunId?:string): Promise<void> {
     for (let round = 0; round < 3; round++) {
       let state = this.load(); if (!state) return;
       this.save(state);
-      const run = state.trip.agent?.runs.find(item => pendingRun(item) && item.nextAttemptAt <= Date.now() && item.leaseUntil <= Date.now());
+      const run = state.trip.agent?.runs.find(item => (!onlyRunId||item.id===onlyRunId)&&pendingRun(item) && item.nextAttemptAt <= Date.now() && item.leaseUntil <= Date.now());
       if (!run) return;
       if (run.attempts >= 3 || Date.now() - run.createdAt > 600000) {
         run.status = 'failed'; run.error = 'Run retry or age limit reached. Baseline monitoring remains active.';
@@ -492,13 +582,13 @@ export class TripRoom extends DurableObject<WorkerEnv> {
           let current = state.trip.agent?.runs.find(item => item.id === run.id);
           if (!current || current.status !== 'running' || current.attempts !== attempt || current.leaseUntil <= Date.now()) break;
           const previousContext = current.steps.find(item => item.call.name === 'get_journey_context' && item.status === 'succeeded')?.result?.context;
-          if (previousContext && this.agentContextChanged(previousContext,this.agentContext(state))) {
+          if (previousContext && this.agentRunContextChanged(current,previousContext,this.agentContext(state))) {
             current.status = 'cancelled'; current.leaseUntil = 0; current.updatedAt = Date.now();
             current.error = 'Location freshness, risk, consent, or notification status changed. A new context check was queued.';
-            this.queueAgent(state,current.trigger.kind,`${current.id}:refresh`,current.trigger.messageId);
+            if(current.provider!=='codex_local')this.queueAgent(state,current.trigger.kind,`${current.id}:refresh`,current.trigger.messageId);
             this.save(state); break;
           }
-          if(previousContext&&current.steps.length===1&&!current.semanticAttempt&&canUseLiveAi(this.env,state.trip)){
+          if(previousContext&&current.steps.length===1&&!current.semantic&&!current.semanticAttempt&&canUseLiveAi(this.env,state.trip)){
             await this.analyzeWithOpenAI(current.id,attempt);continue;
           }
           let step = current.steps.find(item => item.status === 'pending');
@@ -516,7 +606,7 @@ export class TripRoom extends DurableObject<WorkerEnv> {
             const activeCall = {revision:current.revision,attempt,controller};
             this.providerCalls.set(current.id,activeCall);
             this.save(state);await this.schedule();
-            const decision = await (current.semantic&&canUseLiveAi(this.env,state.trip)
+            const decision = await (canUseSemanticRun(this.env,state.trip,current)
               ?Promise.resolve(nextSemanticDecision(current,this.agentContext(state)))
               :runProviderDecision({provider:createMockProvider(),trigger:current.trigger,steps:current.steps,signal:controller.signal}))
               .finally(()=>{if(this.providerCalls.get(run.id)===activeCall)this.providerCalls.delete(run.id);});
@@ -524,10 +614,10 @@ export class TripRoom extends DurableObject<WorkerEnv> {
             this.expire(state); this.save(state);
             current = state.trip.agent?.runs.find(item => item.id === run.id);
             if (!current || current.status !== 'running' || current.attempts !== attempt || current.leaseUntil <= Date.now()) break;
-            if (previousContext && this.agentContextChanged(previousContext,this.agentContext(state))) {
+            if (previousContext && this.agentRunContextChanged(current,previousContext,this.agentContext(state))) {
               current.status = 'cancelled'; current.leaseUntil = 0; current.updatedAt = Date.now();
               current.error = 'Journey context changed while a decision was pending. A new context check was queued.';
-              this.queueAgent(state,current.trigger.kind,`${current.id}:refresh`,current.trigger.messageId);
+              if(current.provider!=='codex_local')this.queueAgent(state,current.trigger.kind,`${current.id}:refresh`,current.trigger.messageId);
               this.save(state); break;
             }
             if (decision.type === 'complete') {
@@ -536,13 +626,15 @@ export class TripRoom extends DurableObject<WorkerEnv> {
               current.summary = renderAgentSummary(current.steps,context); state.trip.agent!.handoffSummary = current.summary;
               state.trip.agent!.structuredHandoff = buildAgentHandoff(current.steps,context);
               if(current.semantic){
+                const local=current.semantic.source==='codex_local';
                 state.trip.agent!.semanticHandoff=current.semantic;
-                current.summary='OpenAI interpretations and complete source excerpts are available in the private AI interpretation panel.\n'+current.summary.replace('Offline mock run (rule inference, no LLM)','Server execution record for an OpenAI-assisted run').slice(0,3800);
-                state.trip.agent!.handoffSummary=current.summary;state.trip.agent!.structuredHandoff!.mode='openai_assisted';
+                current.summary=(local?'Imported local Codex interpretations and unverified execution metadata':'OpenAI interpretations and complete source excerpts')+' are available in the private AI interpretation panel.\n'+current.summary.replace('Offline mock run (rule inference, no LLM)',local?'Server execution record for a local Codex demo':'Server execution record for an OpenAI-assisted run').slice(0,3800);
+                state.trip.agent!.handoffSummary=current.summary;state.trip.agent!.structuredHandoff!.mode=local?'codex_demo':'openai_assisted';
+                state.trip.agent!.provider=local?'codex_local':'openai';state.trip.agent!.liveModel=!local;
               }else{
                 state.trip.agent!.provider='mock';state.trip.agent!.liveModel=false;
               }
-              this.event(state.trip,'agent-run',current.semantic?'AI-assisted run completed':'Offline agent run completed',current.semantic?'Validated interpretations and actual tool results are available in the private handoff.':'Tool results and a handoff summary are available. No live language model was used.');
+              this.event(state.trip,'agent-run',current.semantic?.source==='codex_local'?'Local Codex demo run completed':current.semantic?'AI-assisted run completed':'Offline agent run completed',current.semantic?'Source-validated interpretations and actual tool results are available in the private handoff.':'Tool results and a handoff summary are available. No live language model was used.');
               this.save(state); break;
             }
             const call = parseAgentToolCall(decision.call);
@@ -582,6 +674,9 @@ export class TripRoom extends DurableObject<WorkerEnv> {
     return before.location.stale !== after.location.stale || before.risk !== after.risk
       || before.contactAvailable !== after.contactAvailable || before.notificationAuthorized !== after.notificationAuthorized
       || before.escalationCause !== after.escalationCause || notices(before) !== notices(after);
+  }
+  private agentRunContextChanged(run:AgentRun,before:AgentContext,after:AgentContext):boolean {
+    return this.agentContextChanged(before,after)||(run.provider==='codex_local'&&before.location.updatedAt!==after.location.updatedAt);
   }
   async setAssistance(userId:string,input:unknown):Promise<Outcome<Trip>> {
     const parsed=assistanceInputSchema.safeParse(input);if(!parsed.success)return fail(400,'Invalid assistance settings.');
@@ -1063,6 +1158,7 @@ export class TripRoom extends DurableObject<WorkerEnv> {
     state.trip.events=[];
     // Context snapshots and summaries may quote the erased participant's messages.
     state.trip.agent = {provider:'mock',liveModel:false,runs:[],followUpAt:null,handoffSummary:null};
+    delete state.codexDemoJob;delete state.trip.codexDemo;
     if(state.trip.aiConsent)delete state.trip.aiConsent[userId];
     state.assessmentVersion+=1;
     if(state.trip.guardian?.id===userId){state.trip.guardian=null;if(!isClosed(state.trip))this.takeover(state,'The assigned account was deleted. Human replacement is required.');}
@@ -1106,6 +1202,7 @@ export class TripRoom extends DurableObject<WorkerEnv> {
     // gratitude retains its original cancellation policy and is never backfilled.
     value.gratitude=(value.gratitude??[]).filter(item=>!deleted.has(item.guardianId)).map(item=>({...item,status:!value.community&&item.status==='pending'?'cancelled':item.status,inFlightUntil:0}));
     value.trip.agent={provider:'mock',liveModel:false,runs:[],followUpAt:null,handoffSummary:null};
+    delete value.codexDemoJob;delete value.trip.codexDemo;
     value.trip.aiConsent={};if(value.trip.assistance)value.trip.assistance.liveAiConsent=false;
     if(value.community){
       for(const id of deleted)delete value.community.members[id];

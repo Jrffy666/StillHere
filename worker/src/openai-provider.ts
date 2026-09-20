@@ -69,9 +69,11 @@ function evidenceId(value: string): string {
 function minimize(text: string, length: number): string {
   if (typeof text !== 'string') throw new OpenAIProviderError('OPENAI_INVALID_INPUT');
   // Heuristic minimization is not a guarantee that free text is anonymous.
-  return redactAgentText(text, 2000)
+  // Mask the pair before phone redaction can consume one coordinate and leave the other.
+  const coordinatesRemoved = text.slice(0, 10_000)
+    .replace(/-?\b\d{1,3}\.\d{4,}\s*,\s*-?\d{1,3}\.\d{4,}\b/g, '[redacted coordinates]');
+  return redactAgentText(coordinatesRemoved, 2000)
     .replace(/\b[1-9A-HJ-NP-Za-km-z]{32,44}\b/g, '[redacted identifier]')
-    .replace(/-?\b\d{1,3}\.\d{4,}\s*,\s*-?\d{1,3}\.\d{4,}\b/g, '[redacted coordinates]')
     .slice(0, length);
 }
 

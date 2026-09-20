@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { assistanceInputSchema, aiConsentInputSchema } from './assistance';
+import { exportInputSchema, resultInputSchema } from './codex-demo';
 import { digest, safeEqual } from './accounts';
 import { boundedJson, configuration } from './integrations';
 import { authenticate, createGuestSession, handleIdentity, IdentityError } from './identity';
@@ -186,6 +187,14 @@ async function handle(request: Request, env: WorkerEnv): Promise<Response> {
       if(!await env.USERS.getByName(user.id).allow('gratitude',30,60000))throw new HttpError(429,'Too many gratitude requests.');
       return result(await room.sendGratitude(user.id,input.guardianId,input.kind),'gratitude');
     }
+  }
+  const codexMatch=new RegExp(`^/api/trips/(${uuid})/codex-demo/(export|import|cancel)$`).exec(path);
+  if(codexMatch&&method==='POST'){
+    const input=await body(request),room=env.TRIPS.getByName(codexMatch[1]);
+    if(!await env.USERS.getByName(user.id).allow('codex-demo',30,60000))throw new HttpError(429,'Too many local demo requests.');
+    if(codexMatch[2]==='export')return result(await room.exportCodexDemo(user.id,exportInputSchema.parse(input)));
+    if(codexMatch[2]==='import')return result(await room.importCodexDemo(user.id,resultInputSchema.parse(input)),'trip');
+    return result(await room.cancelCodexDemo(user.id,z.object({jobId:z.uuid()}).strict().parse(input)),'trip');
   }
   const match = new RegExp(`^/api/trips/(${uuid})(/actions|/voice|/assistance|/ai-consent)?$`).exec(path);
   if (match) {

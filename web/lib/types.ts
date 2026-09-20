@@ -80,6 +80,7 @@ export interface TripSummary {
   application: { id: string; expiresAt: number } | null;
 }
 export interface Trip {
+  codexDemo?: {id:string;status:'pending'|'consumed'|'cancelled';expiresAt:number}|null;
   assistance?: {automatedCheckIns:boolean;timeoutContact:boolean;liveAiConsent:boolean;noticeVersion:'openai-assistance-v1'|'openai-assistance-v2';updatedAt:number};
   aiConsent?:Record<string,{accepted:boolean;noticeVersion:'openai-assistance-v2';updatedAt:number}>;
   liveAiAvailable?:boolean;
@@ -87,15 +88,15 @@ export interface Trip {
   agent?: {
     concerns?: {id:string;observedAt:number;receivedAt:number;text:string}[];
     structuredHandoff?: {snapshotAt:number} | null;
-    provider: 'mock'|'openai';
+    provider: 'mock'|'openai'|'codex_local';
     liveModel: boolean;
     fallbackReason?:string|null;
-    semanticHandoff?:{model:string;promptVersion:string;snapshotAt:number;usage:{inputTokens:number;outputTokens:number;totalTokens:number};assessment:{findings:{kind:string;topic:string;sourceIds:string[]}[]};context:{messages:{id:string;at:number;role:string;text:string}[];unresolvedConcerns?:{id:string;observedAt:number;text:string}[]}}|null;
+    semanticHandoff?:{source?:'openai'|'codex_local';model?:string;promptVersion?:string;snapshotAt:number;usage?:{inputTokens:number;outputTokens:number;totalTokens:number}|null;assessment:{findings:{kind:string;topic:string;sourceIds:string[]}[]};context:{messages:{id:string;at:number;role:string;text:string}[];unresolvedConcerns?:{id:string;observedAt:number;text:string}[]}}|null;
     followUpAt: number | null;
     handoffSummary: string | null;
     runs: {
       id: string;
-      trigger: { kind: 'takeover' | 'rider-message' | 'follow-up' | 'stale-location' | 'notification-failure' };
+      trigger: { kind: 'takeover' | 'rider-message' | 'follow-up' | 'stale-location' | 'notification-failure' | 'codex-import' };
       status: 'queued' | 'running' | 'completed' | 'cancelled' | 'failed';
       createdAt: number;
       updatedAt: number;
@@ -130,9 +131,9 @@ export interface Trip {
   nextCheckInAt: number | null;
   lastGuardianCheckInAt: number | null;
   risk: 'normal' | 'attention' | 'urgent';
-  ai: { mode: 'rules' | 'openai'; lastAssessment: string };
+  ai: { mode: 'rules' | 'openai' | 'codex_local'; lastAssessment: string };
   messages: {
-    automatedBy?:'rules'|'openai';
+    automatedBy?:'rules'|'openai'|'codex_local';
     id: string;
     at: number;
     senderId: string;

@@ -14,7 +14,7 @@ export interface GratitudeView {
 }
 export interface Place { label: string; lat: number; lng: number }
 export interface TripMessage {
-  automatedBy?: 'rules' | 'openai';
+  automatedBy?: 'rules' | 'openai' | 'codex_local';
   id: string; at: number; senderId: string; senderName: string;
   role: 'rider' | 'guardian' | 'agent' | 'system'; text: string;
 }
@@ -34,6 +34,7 @@ export interface GuardianContribution {
   points: number; reputation: number; rewardStatus: 'pending' | 'credited' | 'ineligible' | 'demo';
 }
 export interface Trip {
+  codexDemo?: {id:string;status:'pending'|'consumed'|'cancelled';expiresAt:number};
   aiConsent?:Record<string,AiConsent>;
   liveAiAvailable?:boolean;
   assistance?: Assistance;
@@ -47,7 +48,7 @@ export interface Trip {
   createdAt: number; updatedAt: number; checkInIntervalSeconds: number;
   nextCheckInAt: number | null; lastGuardianCheckInAt: number | null;
   risk: 'normal' | 'attention' | 'urgent';
-  ai: { mode: 'rules' | 'openai'; lastAssessment: string };
+  ai: { mode: 'rules' | 'openai' | 'codex_local'; lastAssessment: string };
   messages: TripMessage[]; events: TripEvent[]; notifications: Notification[];
   reward: { points: number; reputation: number; status: 'pending' | 'credited' | 'demo' | 'ineligible' };
   shareUrl?: string; emergencyContact?: { name: string; contact: string }; notificationConsent: boolean;

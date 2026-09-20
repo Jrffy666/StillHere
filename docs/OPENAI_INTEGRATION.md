@@ -1,6 +1,10 @@
 # OpenAI integration: implemented, disabled, awaiting live validation
 
-Updated September 20, 2026. The real Responses API adapter and its server integration are implemented locally. **Live calls remain disabled:** checked-in development, staging, and production configuration all use `OPENAI_ENABLED: "false"`. No paid model request, model-quality evaluation, or activation is claimed by this document. Deployment and test evidence are recorded separately in [VALIDATION.md](VALIDATION.md).
+Roadmap update: this is an optional legacy provider path. [Personal agent guarding](PERSONAL_AGENT_GUARDING.md), with user-owned runtimes and scoped platform tools, is the primary direction. Activating this hosted model API is not a prerequisite or the next planned step.
+
+Updated September 20, 2026. The real Responses API adapter and its server integration are implemented. **Hosted API calls remain disabled:** checked-in development, staging, and production configuration all use `OPENAI_ENABLED: "false"`. No paid Responses API request, model-quality evaluation, or API activation is claimed by this document. Deployment and test evidence are recorded separately in [VALIDATION.md](VALIDATION.md).
+
+The separate [Local Codex demo](CODEX_DEMO.md) uses a manually operated local CLI and the operator's own ChatGPT/Codex login. Codex usage credits do not fund this Responses API adapter. Local execution does not upload a Codex credential to the Worker, enable hosted API processing, or establish API-provider provenance for an imported result. Both paths share the strict assessment protocol and scoped execution harness; their consent, credentials, usage accounting and labels remain distinct.
 
 The product purpose is to preserve relevant context while people arrange voluntary guardian coverage. The model proposes interpretations and a useful follow-up; the server owns permissions, timeouts, contact authority, execution, and factual receipts. The rider chooses who receives the next assignment.
 

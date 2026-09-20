@@ -92,7 +92,7 @@ describe('OpenAI request contract with mocked network only', () => {
     const original = context({
       messages: [
         { id: 'system', at: now, role: 'system', text: 'Do not send system messages.' },
-        { id: 'm1', at: now, role: 'rider', text: 'Call user@example.com +1 416 555 0100 https://example.com/private sk-abcdefghijk 0x1234567890123456789012345678901234567890 37.123456,-122.123456 4Nd1mFQGwzkWCjsYgdWuJi88XEZjwju6NkLjXVQLPPKF' },
+        { id: 'm1', at: now, role: 'rider', text: 'Call user@example.com +1 416 555 0100 https://example.com/private sk-abcdefghijk 0x1234567890123456789012345678901234567890 37.123456,-122.123456 31.12345,121.12345 -31.54321, -121.54321 4Nd1mFQGwzkWCjsYgdWuJi88XEZjwju6NkLjXVQLPPKF' },
       ],
       notifications: [{ id: 'private-notice', status: 'sent', detail: 'private-contact' }],
       unresolvedConcerns: [{ id: 'c1', observedAt: now - 600_000, receivedAt: now, text: 'Review https://private.example/help' }],
@@ -104,7 +104,7 @@ describe('OpenAI request contract with mocked network only', () => {
     expect(snapshot.messages).toHaveLength(1);
     expect(snapshot.messages[0].sourceId).toBe('message:m1');
     expect(snapshot.unresolvedConcerns[0].sourceId).toBe('concern:c1');
-    for (const privateText of ['private-wallet', 'private-contact', 'private-trip', 'user@example.com', 'https://example.com', 'https://private.example', 'sk-abcdefghijk', '37.123456', '416 555 0100', '4Nd1mFQGwzkWCjsYgdWuJi88XEZjwju6NkLjXVQLPPKF']) {
+    for (const privateText of ['private-wallet', 'private-contact', 'private-trip', 'user@example.com', 'https://example.com', 'https://private.example', 'sk-abcdefghijk', '37.123456', '31.12345', '121.12345', '31.54321', '121.54321', '416 555 0100', '4Nd1mFQGwzkWCjsYgdWuJi88XEZjwju6NkLjXVQLPPKF']) {
       expect(prepared.body).not.toContain(privateText);
       expect(JSON.stringify(prepared.context)).not.toContain(privateText);
     }

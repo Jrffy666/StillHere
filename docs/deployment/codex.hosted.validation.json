@@ -1,0 +1,98 @@
+{
+  "checkedAt": "2026-09-20T04:21:47.143Z",
+  "origin": "https://safety-guard-htn2026.klavander56.chatgpt.site",
+  "status": "passed",
+  "checks": [
+    "Hosted model requests and external notifications remain disabled",
+    "Production readiness passes",
+    "Existing homepage responds",
+    "Built application manifest present",
+    "Exact published asset: _next/static/chunks/page-AdacauzE.js",
+    "Exact published asset: _next/static/css/page.CvSRdraM.css",
+    "Exact published asset: _next/static/chunks/rolldown-runtime-B0Z9INg1.js",
+    "Exact published asset: _next/static/chunks/framework-CmSD8C3f.js",
+    "Exact published asset: _next/static/chunks/vinext-CnbGwD8e.js",
+    "Exact published asset: _next/static/chunks/hybrid-client-route-owner-BfkjlcyK.js",
+    "Exact published asset: _next/static/chunks/query-DugiHe4Q.js",
+    "Exact published asset: _next/static/chunks/wallet-juZkMD25.js",
+    "Exact published asset: _next/static/chunks/leaflet-src-DqvTMPtY.js",
+    "Assistance choices and rider resolution shipped",
+    "Root stylesheets linked",
+    "Exact published stylesheet: /_next/static/css/index.CRwUbDfn.css",
+    "Exact published stylesheet: /_next/static/css/page.CvSRdraM.css",
+    "New journeys default to offline reminders without timeout or live AI permission",
+    "Outsider cannot alter assistance",
+    "String consent is rejected",
+    "Offline takeover produces completed persisted tool evidence",
+    "Possible concern remains private and does not contact anyone",
+    "Reassurance neither adds a concern nor clears saved evidence",
+    "Rider resolution clears current concern and stale handoff",
+    "Outsider cannot export a local Codex job",
+    "Local Codex requires explicit Boolean consent",
+    "Rider receives one minimized expiring request",
+    "Private export excludes authority and identifiers",
+    "Local CLI completed one reviewed synthetic inference",
+    "Imported proposal passes normal harness and retains truthful provenance",
+    "Imported proposal has no contact or award authority",
+    "An imported result cannot execute twice",
+    "Cancelled exports reject imported results",
+    "A newer rider message invalidates an old exported proposal",
+    "Future consent cannot activate model; disabling automation clears follow-up",
+    "Outsider cannot grant AI processing consent",
+    "AI processing consent requires a Boolean",
+    "Fresh consent cannot enable a disabled deployment",
+    "Rider can revoke future AI processing",
+    "Explicit help still works with automation off",
+    "A routine check-in cannot downgrade an explicit help request",
+    "Closed journeys reject policy changes"
+  ],
+  "syntheticAccountsDeleted": 2,
+  "openAiApiCalls": 0,
+  "localCodexInvocations": 1,
+  "completedCodexTurns": 1,
+  "externalNotifications": 0,
+  "newBlockchainTransactions": 0,
+  "browserInteractiveAcceptance": false,
+  "localCodex": {
+    "durationMs": 9792,
+    "execution": {
+      "tool": "codex-cli",
+      "auth": "chatgpt",
+      "cliVersion": "0.155.1",
+      "completedAt": 1789878137893,
+      "usage": {
+        "inputTokens": 12292,
+        "outputTokens": 198,
+        "cachedInputTokens": 0
+      }
+    },
+    "assessment": {
+      "findings": [
+        {
+          "kind": "concern",
+          "topic": "route",
+          "sourceIds": [
+            "message:b619956c-16cf-427a-b618-4fa94b3384d3",
+            "message:d90df3f7-330a-49d6-aeb5-8a5e98d1cf97"
+          ]
+        },
+        {
+          "kind": "reassurance",
+          "topic": "wellbeing",
+          "sourceIds": [
+            "message:f4bb6b43-e5ab-4679-bc18-884300d2282a",
+            "message:d90df3f7-330a-49d6-aeb5-8a5e98d1cf97"
+          ]
+        }
+      ],
+      "question": {
+        "kind": "route_explanation",
+        "sourceIds": [
+          "message:d90df3f7-330a-49d6-aeb5-8a5e98d1cf97"
+        ]
+      },
+      "requestRelay": false,
+      "followUpSeconds": 60
+    }
+  }
+}

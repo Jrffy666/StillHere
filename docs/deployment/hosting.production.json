@@ -1,13 +1,13 @@
 {
-  "recordedAt": "2026-09-20T02:57:53.071Z",
+  "recordedAt": "2026-09-20T04:25:35.711Z",
   "frontend": {
     "url": "https://safety-guard-htn2026.klavander56.chatgpt.site",
     "projectId": "appgprj_6aaeb438ee7c81918e772f03d67510af",
-    "versionId": "appgprj_6aaeb438ee7c81918e772f03d67510af~appgver_e04734e356a4819188ab4d701092d60c",
-    "versionNumber": 12,
-    "deploymentId": "appgdep_6aaf4b356ae4819190f34c1b63e68627",
+    "versionId": "appgprj_6aaeb438ee7c81918e772f03d67510af~appgver_163b82140bc48191bb835a55216ae118",
+    "versionNumber": 14,
+    "deploymentId": "appgdep_6aaf5bdd5f548191a8968d1f635dc8b8",
     "status": "succeeded",
-    "sourceCommit": "48331aa5f4c927c162539c16f4d0d94bf1e30255",
+    "sourceCommit": "b4c8112192bd4573bf9cc6120c6b54809576f565",
     "environmentRevision": 2,
     "access": "owner and one explicitly authorized external demo viewer"
   },
@@ -15,10 +15,10 @@
     "origin": "https://safety-guard-api-production.2012044zj.workers.dev",
     "worker": "safety-guard-api-production",
     "environment": "production",
-    "versionId": "984c111c-b6f3-4c83-8407-d809d3628663",
+    "versionId": "5e2ffd3a-d4c9-4694-9761-8c7331533d73",
     "readinessPassed": true,
     "privateRpcSecretSupportDeployed": true,
-    "deploymentId": "8cfb2943-2a35-4df4-a80a-b3f2603baec8",
+    "deploymentId": "a90ecb23-4bc2-4232-85e5-6bfef55a27f3",
     "privateRpcConfigured": true,
     "rpcProvider": "Helius",
     "communityPublicationConfigured": true
@@ -194,6 +194,14 @@
       "publishedChecksPassed": 32,
       "liveModel": false,
       "evidence": "openai.integration.validation.json"
+    },
+    "localCodexDemo": {
+      "workerTestsPassed": 328,
+      "codexHarnessTestsPassed": 25,
+      "hostedChecksPassed": 42,
+      "hostedOpenAiEnabled": false,
+      "completedCodexTurns": 1,
+      "evidence": "codex.demo.validation.json"
     }
   },
   "remaining": "Manual browser and wallet-extension acceptance; Devnet sponsorship/abuse operations before any wider community launch. Site access is limited to the owner and one explicitly authorized demo viewer.",

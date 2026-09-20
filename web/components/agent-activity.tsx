@@ -10,6 +10,7 @@ const triggers = {
   'follow-up': 'Scheduled follow-up',
   'stale-location': 'Location update overdue',
   'notification-failure': 'Contact alert unconfirmed',
+  'codex-import': 'Local Codex result imported',
 };
 const tools: Record<string, string> = {
   get_journey_context: 'Check journey context',
@@ -28,9 +29,9 @@ export function AgentActivity({ trip }: { trip: Trip }) {
     <article className="agent-card">
       <div className="card-header">
         <h3><Bot size={17} /> Companion activity</h3>
-        <span className="agent-provider">OFFLINE MOCK</span>
+        <span className="agent-provider">{agent.provider==='codex_local'?'LOCAL CODEX DEMO':agent.provider==='openai'?'OPENAI API':'OFFLINE RULES'}</span>
       </div>
-      <p className="agent-intro">A simulated decision-maker uses real journey tools. No live AI model is connected.</p>
+      <p className="agent-intro">{agent.provider==='codex_local'?'A rider-supplied local result passed source and permission checks. Model execution is not independently verified.':agent.provider==='openai'?'Model interpretations use limited journey tools under current participant permissions.':'Deterministic reminders use journey tools without a model request.'}</p>
       <div className="agent-state-row">
         <span><span className={`agent-status-dot ${active ? 'active' : ''}`} />{active ? 'Automated monitoring' : trip.status === 'active' ? 'Human monitoring' : trip.status === 'open' ? 'Companion on standby' : 'Monitoring ended'}</span>
         {active && agent.followUpAt && <span><Clock3 size={13} /> Follow-up {timeLabel(agent.followUpAt)}</span>}
