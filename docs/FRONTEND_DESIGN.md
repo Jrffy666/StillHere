@@ -1,6 +1,6 @@
 # Frontend design: Obsidian
 
-Safety Guard uses an app-focused Web3 visual system: an obsidian background, lime primary actions, lavender chain details, and a generated glass shield with a chrome orbit. Geist handles interface copy; Geist Mono distinguishes transaction labels and reward numbers. The interface stays in English.
+StillHere uses an app-focused Web3 visual system: an obsidian background, lime primary actions, lavender chain details, and a generated glass shield with a chrome orbit. Geist handles interface copy; Geist Mono distinguishes transaction labels and reward numbers. The interface stays in English.
 
 ## Visual system
 

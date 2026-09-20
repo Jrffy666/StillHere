@@ -185,7 +185,7 @@ function GuardApp() {
     <div className="simple-app">
       <a className="skip-link" href="#main-content">Skip to content</a>
       <header className="simple-header">
-        <Link href="/" className="simple-brand"><ShieldCheck size={23} /> safety<span>guard</span></Link>
+        <Link href="/" className="simple-brand" aria-label="StillHere home"><ShieldCheck size={23} /> Still<span>Here</span></Link>
         {session && <nav className="simple-nav" aria-label="Main navigation">
           {([{ id: 'journeys', icon: Route }, { id: 'community', icon: HeartHandshake }, { id: 'impact', icon: UserRound }] as const).map(item => (
             <Button key={item.id} variant="ghost" aria-current={tab === item.id ? 'page' : undefined} onClick={() => setTab(item.id)}>
@@ -221,11 +221,11 @@ function GuardApp() {
         </div>}
         {!session ? <section className="simple-welcome">
           <ShieldCheck size={35} strokeWidth={1.5} />
-          <h1>Go together.</h1><p>Find someone to accompany your journey, or be there for theirs. Always free.</p>
+          <h1>Be there for someone.</h1><p>Find someone to accompany your journey, or be there for theirs. Always free.</p>
           <form onSubmit={event => { event.preventDefault(); void join(); }}>
             <label className="field-label" htmlFor="welcome-name">Your name</label>
             <Input id="welcome-name" placeholder="First name" value={name} maxLength={60} required onChange={event => setName(event.target.value)} />
-            <Button type="submit" className="primary-action" disabled={busy || !name.trim() || !joined}>{busy ? 'Joining…' : 'Enter Safety Guard'}<ArrowRight size={16} /></Button>
+            <Button type="submit" className="primary-action" disabled={busy || !name.trim() || !joined}>{busy ? 'Joining…' : 'Enter StillHere'}<ArrowRight size={16} /></Button>
           </form>
           <p className="simple-note">No wallet needed. Keep this tab open to retain your guest account. Member profiles and contributions are visible to the community.</p>
         </section> : tab === 'community' ? <section>

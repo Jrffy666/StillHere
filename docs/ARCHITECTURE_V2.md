@@ -1,6 +1,6 @@
 # Human guarding architecture, version 2
 
-Safety Guard separates private coordination from public commitments. The browser hosts the user interface and asks the user's Solana wallet to sign. A Cloudflare Worker authenticates accounts and coordinates private journeys through SQLite Durable Objects. The separate V2 Solana program stores assignment and reward evidence. The website and its private database are not deployed into a Solana program.
+StillHere separates private coordination from public commitments. The browser hosts the user interface and asks the user's Solana wallet to sign. A Cloudflare Worker authenticates accounts and coordinates private journeys through SQLite Durable Objects. The separate V2 Solana program stores assignment and reward evidence. The website and its private database are not deployed into a Solana program.
 
 The [community ledger](COMMUNITY_LEDGER.md) adds a separate publication path for free walletless participation: transactional TripRoom intents feed per-journey CommunityLedger journals, dedicated issuer/sponsor keys publish minimal platform attestations, and per-member indexes expose finalized recognition. This document describes the retained V2 wallet-signature path. Its protocol receipts are not added to community-ledger points.
 

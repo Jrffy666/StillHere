@@ -1,6 +1,6 @@
 # Account identity and recovery
 
-Safety Guard uses an application account ID to keep a guardian's history and contribution ledger consistent across browsers. A Solana wallet can prove access to that account. Wallet ownership does not verify a person's real-world identity.
+StillHere uses an application account ID to keep a guardian's history and contribution ledger consistent across browsers. A Solana wallet can prove access to that account. Wallet ownership does not verify a person's real-world identity.
 
 ## User flow
 

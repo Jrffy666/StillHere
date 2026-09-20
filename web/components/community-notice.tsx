@@ -44,7 +44,7 @@ export function CommunityNotice({ token }: { token: string }) {
     <section className="community-notice" aria-label="Public community records">
       <h4><Globe2 size={18} /> A shared record of being there</h4>
       <p>New journeys, guarding contributions and any thank-you banners you send are published on Solana Devnet under community identifiers. These records are public beyond this website and may remain after you delete your account.</p>
-      <p>Your route, messages and contact details stay off chain. Identifiers and timing can still link participation. Safety Guard pays publication costs and signs platform attestations; these are not your wallet signature or proof of someone’s character.</p>
+      <p>Your route, messages and contact details stay off chain. Identifiers and timing can still link participation. StillHere pays publication costs and signs platform attestations; these are not your wallet signature or proof of someone’s character.</p>
       <label className="consent-row" htmlFor={id}>
         <Checkbox id={id} checked={checked} onCheckedChange={value => setChecked(Boolean(value))} disabled={busy} />
         <span>I understand that my new community participation and recognition records will be public.</span>

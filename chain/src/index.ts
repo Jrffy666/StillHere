@@ -71,7 +71,7 @@ export function deriveReputationAddress(guardian: PublicKey, programId = DEFAULT
 
 function validateData(data: Uint8Array, size: number, discriminator: number[]): Uint8Array {
   if (data.byteLength !== size || discriminator.some((byte, index) => data[index] !== byte)) {
-    throw new Error('Account does not match the Safety Guard wire format.');
+    throw new Error('Account does not match the StillHere wire format.');
   }
   return data;
 }

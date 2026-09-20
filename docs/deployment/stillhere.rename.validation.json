@@ -1,0 +1,41 @@
+{
+  "recordedAt": "2026-09-20T04:39:39.018Z",
+  "projectName": "StillHere",
+  "status": "succeeded",
+  "frontendVersion": 15,
+  "sourceCommit": "54999bc94373e2a41b28967cd63b07682a016b71",
+  "deploymentId": "appgdep_6aaf632eb8048191aa95041fce53022f",
+  "versionId": "appgprj_6aaeb438ee7c81918e772f03d67510af~appgver_2d4d5ba136c881918a93549183b23e06",
+  "workerVersion": "b7d00564-a942-47c8-80c9-391ececa01db",
+  "workerDeploymentId": "b7d5c93e-9687-49ee-904d-7a10a61ec54b",
+  "workerTypecheck": true,
+  "frontendTypecheck": true,
+  "frontendLint": true,
+  "frontendBuild": true,
+  "identityAndApiTestsPassed": 28,
+  "hostedChecksPassed": 26,
+  "hostedEvidence": "stillhere.hosted.validation.json",
+  "socialImageReviewed": true,
+  "socialImageDimensions": {
+    "width": 1733,
+    "height": 908
+  },
+  "browserVisualQa": false,
+  "browserInteractiveAcceptance": false,
+  "browserLimitation": "No browser is available.",
+  "personalAgentDelegationImplemented": false,
+  "openAiApiCalls": 0,
+  "localCodexTurns": 0,
+  "externalNotifications": 0,
+  "chainProgramChanged": false,
+  "blockchainTransactions": 0,
+  "infrastructureMigration": false,
+  "access": {
+    "mode": "custom",
+    "owners": 1,
+    "externalViewers": 1,
+    "policyRevision": 2
+  },
+  "sponsorAssessment": "Rox is a plausible target for implemented messy-data personal-agent workflows. A subscription-authenticated Codex runtime does not establish OpenAI API Prizes' separate API-use condition.",
+  "devpostSubmissionEdited": false
+}

@@ -1,4 +1,4 @@
-# Data handling implemented by Safety Guard
+# Data handling implemented by StillHere
 
 This document describes current application behavior and operator responsibilities. It is a technical data policy, not a claim of regulatory certification.
 

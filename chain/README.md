@@ -1,4 +1,4 @@
-# Safety Guard chain client
+# StillHere chain client
 
 This package builds unsigned Solana transactions. It is compatible with wallets that support legacy `@solana/web3.js` v1 transactions. The code imports `Buffer` explicitly for browser bundlers. It does not manage keys, request wallet connection, or submit transactions automatically.
 
@@ -8,7 +8,7 @@ import { SafetyGuardClient, randomTripId, tripIdToHex } from './src/index';
 
 const connection = new Connection('https://api.devnet.solana.com', 'confirmed');
 const client = new SafetyGuardClient(connection, new PublicKey(deployedProgramId));
-if (!(await client.isProgramDeployed())) throw new Error('Deploy Safety Guard first.');
+if (!(await client.isProgramDeployed())) throw new Error('Deploy StillHere first.');
 const tripId = randomTripId();
 const reference = { rider: riderWallet.publicKey, guardian: guardianPublicKey, tripId };
 const tx = client.createTask({ ...reference, deadline: Math.floor(Date.now() / 1000) + 3600 });

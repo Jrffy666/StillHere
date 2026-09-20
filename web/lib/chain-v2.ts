@@ -49,7 +49,7 @@ function time(data: DataView, offset: number): number {
   return value;
 }
 function validate(bytes: Uint8Array, size: number, discriminator: readonly number[]): DataView {
-  if (bytes.byteLength !== size || discriminator.some((byte, i) => bytes[i] !== byte) || bytes[8] !== 2) throw new Error('Account does not match the Safety Guard V2 format.');
+  if (bytes.byteLength !== size || discriminator.some((byte, i) => bytes[i] !== byte) || bytes[8] !== 2) throw new Error('Account does not match the StillHere V2 format.');
   return view(bytes);
 }
 export function decodeJourneyV2(bytes: Uint8Array): JourneyV2 {

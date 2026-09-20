@@ -1,6 +1,6 @@
 # Connect a private Devnet RPC
 
-The hosted human-guarding application is available at [Safety Guard](https://safety-guard-htn2026.klavander56.chatgpt.site), with owner-only access. Its application-only approval, relay, help, and reward workflows passed five live HTTP integration tests. The separate V2 Solana program is deployed on Devnet.
+The hosted human-guarding application is available at [StillHere](https://safety-guard-htn2026.klavander56.chatgpt.site), with owner-only access. Its application-only approval, relay, help, and reward workflows passed five live HTTP integration tests. The separate V2 Solana program is deployed on Devnet.
 
 A private Helius Devnet endpoint is now configured as a Cloudflare secret. All 17 hosted preparation checks passed on both the direct Worker and frontend-proxy paths, resolving the public endpoint HTTP 403 failure. The [signed hosted verification](deployment/application.v2.hosted.devnet.json) also passed: ten finalized journey transactions, successful relay and access revocation, and a single 25-point / 10-reputation reward pool. No private endpoint or API key appears in public configuration. The steps below describe setup or credential rotation. This RPC transports blockchain requests; it is separate from the deferred AI API integration.
 

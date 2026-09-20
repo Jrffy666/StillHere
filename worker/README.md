@@ -1,4 +1,4 @@
-# Safety Guard Worker
+# StillHere Worker
 
 Cloudflare Workers API with one SQLite Durable Object per trip, persisted monitoring alarms, private rider/guardian sessions, and idempotent contribution rewards. It runs locally without a cloud account, wallet, or API keys. See [API.md](API.md) for endpoint schemas, authorization, state transitions, and provider contracts.
 

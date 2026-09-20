@@ -129,7 +129,7 @@ async function createChallenge(request:Request,env:IdentityEnv,input:unknown):Pr
   if((await env.GOVERNANCE.getByName('governance-v1').status(user.id)).deleted)throw new IdentityError(401,'Account access has been removed.');
   if(!await env.USERS.getByName(user.id).allow('identity-challenge',12,60000))throw new IdentityError(429,'Too many account challenges. Try again in a minute.');
   const id=crypto.randomUUID(),nonce=randomHex(),issuedAt=Date.now(),expiresAt=issuedAt+5*60000;
-  const message=['Safety Guard account authorization',`Domain: ${domain}`,`Intent: ${parsed.intent}`,`Wallet: ${parsed.wallet}`,`Account: ${user.id}`,
+  const message=['StillHere account authorization',`Domain: ${domain}`,`Intent: ${parsed.intent}`,`Wallet: ${parsed.wallet}`,`Account: ${user.id}`,
     `Current wallet: ${user.wallet??'none'}`,`Auth version: ${user.authVersion}`,`Nonce: ${nonce}`,`Issued at: ${new Date(issuedAt).toISOString()}`,
     `Expires at: ${new Date(expiresAt).toISOString()}`,'This signature authorizes only this account operation. It is not a blockchain transaction.'].join('\n');
   const challenge:Challenge={id,message,domain,intent:parsed.intent,wallet:parsed.wallet,accountId:user.id,oldWallet:user.wallet,authVersion:user.authVersion,expiresAt,used:false};

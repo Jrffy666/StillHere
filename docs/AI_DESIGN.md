@@ -1,12 +1,14 @@
-# AI scope, authority, and controlled OpenAI integration
+# StillHere AI scope and authority
 
-Updated September 20, 2026. The real OpenAI Responses adapter and controlled semantic execution path are implemented. **Live processing remains disabled:** development, staging, and production configuration all set `OPENAI_ENABLED: "false"`. No paid validation or model-quality result is claimed. A key or consent alone does not activate the path. See [OPENAI_INTEGRATION.md](OPENAI_INTEGRATION.md) for exact limits and the future activation runbook, [AGENT_HARNESS.md](AGENT_HARNESS.md) for both execution paths, and [VALIDATION.md](VALIDATION.md) for test and deployment evidence.
+Current direction: [StillHere](STILLHERE.md) prioritizes [volunteer-owned personal agents](PERSONAL_AGENT_GUARDING.md), with platform tools and explicit delegation. The API adapter below is a disabled optional legacy path. [The sponsor review](SPONSORS.md) distinguishes Rox fit from the unconfirmed eligibility of a Codex-only runtime for OpenAI's API prize. One real manual Codex assessment and hosted import have passed; automatic personal-agent delegation remains planned.
+
+Updated September 20, 2026. The real OpenAI Responses adapter and controlled semantic execution path are implemented. **Live Responses processing remains disabled:** development, staging, and production configuration all set `OPENAI_ENABLED: "false"`. No paid Responses API validation or broad model-quality result is claimed. A key or consent alone does not activate the path. See [OPENAI_INTEGRATION.md](OPENAI_INTEGRATION.md) for exact limits and the future activation runbook, [AGENT_HARNESS.md](AGENT_HARNESS.md) for both execution paths, and [VALIDATION.md](VALIDATION.md) for test and deployment evidence.
 
 ## Purpose and award fit
 
 AI should help people keep a journey accompanied: clarify uncertain messages, preserve relevant context, request human coverage, and prepare a useful handoff. The community remains centered on voluntary human participation. AI does not earn recognition or certify character.
 
-The [official HTN prize description](https://hackthenorth2026.devpost.com/#prizes) requires Rox entrants to use an LLM on messy information and take useful actions. OpenAI evaluates API-powered product behavior and a concrete Codex development contribution. Current mock execution establishes neither live requirement. The published descriptions do not require a Rox integration, multiple agents, or MCP. This is our fit assessment, not an eligibility decision.
+The [official HTN prize description](https://hackthenorth2026.devpost.com/#prizes) makes Rox a plausible target for the proposed personal-agent workflow. OpenAI's separate API requirement is not established by using a subscription-authenticated Codex runtime. The manual Codex demonstration establishes one real assessment, not continuous delegation or broad robustness. See [SPONSORS.md](SPONSORS.md) for the rechecked requirements and evidence gaps.
 
 Rox's engineering guidance favors restricted data interfaces and repeatable snapshots. We can apply this to one journey's evidence and replay tests; a knowledge graph is unnecessary for the initial scope. See [Rox's controlled data interface](https://www.rox.com/articles/why-revenue-agents-are-uniquely-hard-to-build). Its [agent architecture article](https://www.rox.com/articles/how-we-build-agents-at-rox) also emphasizes correct data scope, typed actions, and simpler orchestration. These are engineering references, not additional competition rules.
 

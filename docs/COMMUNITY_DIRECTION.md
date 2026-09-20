@@ -4,7 +4,7 @@ Updated September 20, 2026. This document records the accepted product direction
 
 ## Product purpose
 
-Safety Guard is a community where people voluntarily accompany one another through journeys. A member can be a rider on one occasion and a guardian on another. People with available time can contribute attention, including across time zones.
+StillHere is a community where people voluntarily accompany one another through journeys. A member can be a rider on one occasion and a guardian on another. People with available time can contribute attention, including across time zones.
 
 Human relationships, dependable handoffs, and free participation are central. Blockchain receipts record specific actions. The offline agent supports check-ins and continuity. Neither a receipt nor an automated message certifies a person's character, professional competence, uninterrupted attention, or future conduct.
 

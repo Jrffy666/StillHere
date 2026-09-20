@@ -1,6 +1,6 @@
 # Human guarding and relay
 
-Safety Guard coordinates a rider and community guardians through applications, rider approval, explicit check-ins, and a controlled relay. The current work focuses on that human workflow. AI, voice, provider APIs, external notification setup, and hosting authentication are deferred; the core can be exercised locally without service credentials.
+StillHere coordinates a rider and community guardians through applications, rider approval, explicit check-ins, and a controlled relay. The current work focuses on that human workflow. AI, voice, provider APIs, external notification setup, and hosting authentication are deferred; the core can be exercised locally without service credentials.
 
 This is a coordination prototype. A display name is a guest identity, approval is the rider's selection of that identity, and a check-in is a recorded action. None independently verifies who the person is, whether they are continuously attentive, or whether a journey is safe.
 

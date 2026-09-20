@@ -41,7 +41,7 @@ interface StoredTrip {
   automatedEscalationSent: boolean;
   notificationJobs: Record<string, {attempts:number;retryAt:number;inFlightUntil:number}>;
 }
-const agent: Person = {id:'agent',name:'Safety Guard'};
+const agent: Person = {id:'agent',name:'StillHere'};
 const pendingRun = (run: AgentRun) => run.status === 'queued' || run.status === 'running';
 
 export class TripRoom extends DurableObject<WorkerEnv> {
@@ -493,7 +493,7 @@ export class TripRoom extends DurableObject<WorkerEnv> {
         if (!notificationAuthorized(trip)) return {ok:false,code:'explicit_concern_required',detail:'A model inference alone cannot trigger external contact notifications.'};
         if (trip.notifications.length) return {ok:true,code:'notification_already_exists',detail:'An existing notification owns delivery and retry. No second notification was queued.'};
         const count = trip.notifications.length;
-        this.queueNotification(state,trip.escalation?.cause==='explicit_help'?'A journey participant requested help in Safety Guard. Please try to contact the rider.':'The rider authorized a notification after unanswered check-ins. Connectivity may be unavailable.');
+        this.queueNotification(state,trip.escalation?.cause==='explicit_help'?'A journey participant requested help in StillHere. Please try to contact the rider.':'The rider authorized a notification after unanswered check-ins. Connectivity may be unavailable.');
         return trip.notifications.length > count
           ? {ok:true,code:'notification_queued',detail:'Queued a notification for the configured contact. Check notification status for delivery; no receipt is assumed.'}
           : {ok:true,code:'notification_rate_limited',detail:'A recent notification already covers this interval. No duplicate was queued.'};
@@ -833,7 +833,7 @@ export class TripRoom extends DurableObject<WorkerEnv> {
         this.event(trip,'help','Help requested','Escalation was requested explicitly.');
         const result = ruleAssessment(action.text || '',true); trip.ai = {mode:result.mode,lastAssessment:result.message};
         this.message(trip,agent,'agent',result.message);
-        this.queueNotification(state,'A Safety Guard trip participant requested help. Please contact the rider.'); break;
+        this.queueNotification(state,'A StillHere trip participant requested help. Please contact the rider.'); break;
       }
       case 'message': {
         if (!action.text?.trim()) return fail(400,'Message text is required.');

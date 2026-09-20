@@ -2547,7 +2547,7 @@ h1 {
 .agent-footnote { border-top: 1px solid var(--border); margin: 0; padding-top: 12px; font-size: 11px; }
 @media (max-width: 600px) { .agent-card { padding: 16px; } .agent-card .card-header { gap: 8px; flex-wrap: wrap; } }
 
-/* Safety Guard / Obsidian. Shared visual rules for every product surface. */
+/* StillHere / Obsidian. Shared visual rules for every product surface. */
 body {
   font-size: 14px;
   line-height: 1.5;

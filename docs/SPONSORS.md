@@ -1,5 +1,22 @@
 # Sponsor fit and development priorities
 
+## StillHere: current decision, September 20, 2026
+
+The final project name is **StillHere**. Its primary direction is voluntary human companionship with [personal-agent delegation](PERSONAL_AGENT_GUARDING.md). The platform provides authorized tools; each volunteer brings a compatible runtime. Hosted model API activation is outside the primary roadmap.
+
+The [official award page](https://hackthenorth2026.devpost.com/#prizes) was rechecked for these two awards:
+
+| Award | Published requirement | Assessment for StillHere |
+| --- | --- | --- |
+| Rox: Best AI Agent | An LLM handles messy, incomplete or conflicting information and takes meaningful actions; technical execution and practical utility matter. No Rox API requirement is stated. | A plausible target once personal-agent handoff and real tool execution work. Demonstrate ambiguous chat, stale observations, source conflicts and recovery. |
+| OpenAI: API Prizes | Meaningful OpenAI API use in the product, plus a concrete Codex contribution to development. | Codex-assisted development is established. A subscription-authenticated Codex runtime calling our MCP does not establish the separate API condition. Do not claim qualification without sponsor confirmation or an implemented, meaningful API use. |
+
+The existing API adapter is disabled. One real manual Codex assessment and hosted import passed, but continuous guardian delegation remains planned. The [StillHere demo design](STILLHERE.md) specifies proposed evidence; it is not a claim those capabilities already work. No sponsor was contacted, and no Devpost submission was edited by this review.
+
+Our recommendation is to prioritize the community and Rox demonstration. Preserve the API adapter as optional; do not add nominal API traffic just to display a sponsor logo. If the owner later chooses actual API use, a personal agent could use its owner's API credentials without changing the community model, subject to sponsor interpretation. That is not the current implementation or a requirement for StillHere itself.
+
+## Earlier research and development context
+
 Prepared: September 19, 2026. Event: [Hack the North 2026](https://hackthenorth2026.devpost.com/).
 
 This document translates and consolidates the sponsor research recorded before development. The unchanged Chinese source is [SPONSORS.zh-CN.md](SPONSORS.zh-CN.md). Award descriptions and deadlines below reflect that research, not a new verification of the event website. Confirm the linked official requirements before submitting. Project fit is our assessment; implementing an integration does not guarantee eligibility or an award.
@@ -8,7 +25,7 @@ The September 20 [AI scope and award review](AI_DESIGN.md) rechecks Rox and Open
 
 ## Project positioning
 
-**Safety Guard is a trip companion network where a human guardian and an AI assistant can hand over responsibility, with blockchain records for commitments and community contributions.**
+**StillHere is a trip companion network where a human guardian and an AI assistant can hand over responsibility, with blockchain records for commitments and community contributions.**
 
 The rider shares a journey, a guardian accepts the task, and the system tracks explicit check-ins. If the guardian stops responding, a backend timer activates AI assistance. The assistant can ask clarifying questions and request authorized notifications. Rider confirmation closes the task and permits contribution settlement.
 

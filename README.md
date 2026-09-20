@@ -1,4 +1,6 @@
-﻿# Safety Guard
+﻿# StillHere
+
+**Be there for someone.** StillHere means a volunteer stays with you, and their personal agent can help carry that care forward during an approved break. See the [product story and handoff design](docs/STILLHERE.md). This is the final hackathon project name; existing infrastructure names and protocol identifiers remain compatible.
 
 A community journey-guarding application for Hack the North 2026. Riders approve human guardians and arrange relays when someone needs a break. Optional deterministic reminders continue after missed check-ins. The new [personal-agent direction](docs/PERSONAL_AGENT_GUARDING.md) lets volunteers bring their own agents through explicit, limited delegations. That delegation workflow is planned, not yet implemented. The existing OpenAI API adapter remains disabled and is outside the primary development path.
 
@@ -63,7 +65,7 @@ The separate [V2 program is deployed on Solana Devnet](https://explorer.solana.c
 
 The existing V1 program remains a legacy, separate single-guardian receipt. New linked journeys use V2. Never configure the V1 address as `SOLANA_V2_PROGRAM_ID`.
 
-The frontend is published at **[Safety Guard](https://safety-guard-htn2026.klavander56.chatgpt.site)**. The [production Worker](https://safety-guard-api-production.2012044zj.workers.dev/api/ready) is deployed and passes readiness checks, with the published site configured as its canonical signing origin. A [hosted identity verification](docs/evidence/hosted-identity-2026-09-20.json) passed 36 checks covering wallet binding/login, recovery, replay/origin rejection, session revocation, and synthetic-account deletion. It submitted no blockchain transactions and persisted no credentials.
+The frontend is published at **[StillHere](https://safety-guard-htn2026.klavander56.chatgpt.site)**. The [production Worker](https://safety-guard-api-production.2012044zj.workers.dev/api/ready) is deployed and passes readiness checks, with the published site configured as its canonical signing origin. A [hosted identity verification](docs/evidence/hosted-identity-2026-09-20.json) passed 36 checks covering wallet binding/login, recovery, replay/origin rejection, session revocation, and synthetic-account deletion. It submitted no blockchain transactions and persisted no credentials.
 
 The site permits its owner and one owner-requested demo viewer. The [simplified frontend](docs/FRONTEND_SIMPLIFICATION.md) puts active journey controls beside conversation, folds ended-journey history, and combines account actions in an avatar menu. The [appreciation wall and honor cabinet](docs/COMMUNITY_HONORS.md) remain public to members, with compact previews and complete receipt access. Thirteen journey-interface tests, 14 honor-projection tests, frontend type checking, lint, and build pass. See [DEMO.md](docs/DEMO.md) to demonstrate recognition using separate rider and guardian identities.
 

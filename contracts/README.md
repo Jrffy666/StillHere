@@ -1,6 +1,6 @@
-# Safety Guard Solana program
+# StillHere Solana program
 
-This is the blockchain component of Safety Guard. A Solana program is shared code executed by the network. Each guarding commitment is stored in a program-derived account (PDA), whose address is deterministically calculated from the rider wallet and a random trip ID. The program checks signatures and state transitions before changing these accounts.
+This is the blockchain component of StillHere. A Solana program is shared code executed by the network. Each guarding commitment is stored in a program-derived account (PDA), whose address is deterministically calculated from the rider wallet and a random trip ID. The program checks signatures and state transitions before changing these accounts.
 
 The rider and guardian use separate wallets. The app never needs either wallet's private key. In this first version, points are non-transferable counters, not tokens or money. There is no escrow, deposit, payment, token mint, withdrawal, or AI wallet. Transactions still require small network fees and account rent in test SOL.
 

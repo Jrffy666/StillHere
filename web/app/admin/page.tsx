@@ -60,7 +60,7 @@ export default function Operations() {
   }
   return (
     <main className="operations-page">
-      <Link href="/">← Back to Safety Guard</Link>
+      <Link href="/">← Back to StillHere</Link>
       <h1>Community operations</h1>
       <p>
         Review reports and restrict recruitment for accounts that misuse the

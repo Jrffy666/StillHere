@@ -1,4 +1,4 @@
-# Deploy Safety Guard to Solana Devnet
+# Deploy StillHere to Solana Devnet
 
 > This guide documents the preserved **V1** deployment. New integrated journeys use **V2**, program `23f7UAfNbQCGdfQbJV3Tois98dETDfXnAXgjE5qTH5gb`. See [OPERATIONS.md](OPERATIONS.md) for current hosting, [ARCHITECTURE_V2.md](ARCHITECTURE_V2.md) for the design, and [V2 Devnet evidence](deployment/verification.v2.devnet.json). V2 scripts are `chain/scripts/setup-v2.ts`, `contracts/scripts/build-v2.sh`, `contracts/scripts/deploy-v2-devnet.sh`, and `chain/scripts/verify-v2.ts`.
 

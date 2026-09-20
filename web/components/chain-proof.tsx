@@ -122,7 +122,7 @@ export function ChainProof({
     );
     if (!(await sdk.isProgramDeployed()))
       throw new Error(
-        'No executable Safety Guard program was found at the configured address.',
+        'No executable StillHere program was found at the configured address.',
       );
     return sdk;
   }

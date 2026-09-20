@@ -118,7 +118,7 @@ function BannerCard({ record, compact = false }: { record: CommunityRecord; comp
           <Icon size={28} strokeWidth={1.4} aria-hidden="true" />
           <span>{presentation.label}</span>
           <h5>{presentation.title}</h5>
-          <i>SAFETY GUARD</i>
+          <i>STILLHERE</i>
         </div>
       </div>
       <figcaption>

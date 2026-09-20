@@ -27,4 +27,4 @@ for (const [folder, args] of [['worker', ['run', 'dev']], ['web', ['run', 'dev',
 }
 process.on('SIGINT', () => stop());
 process.on('SIGTERM', () => stop());
-console.log('Safety Guard is starting. Open http://localhost:5173 when the frontend is ready.');
+console.log('StillHere is starting. Open http://localhost:5173 when the frontend is ready.');

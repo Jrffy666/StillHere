@@ -14,30 +14,30 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'Safety Guard — Go together. Get home.',
+  title: 'StillHere — Be there for someone.',
   description:
-    'A community journey companion with human guardians, signed relays, and verifiable contributions.',
+    'Free community companionship for your journey, with human guardians, thoughtful handoffs, and verifiable contributions.',
   robots: { index: false, follow: false },
   metadataBase: new URL(
     process.env.SITE_ORIGIN ||
       'https://safety-guard-htn2026.klavander56.chatgpt.site',
   ),
   openGraph: {
-    title: 'Safety Guard',
-    description: 'Go together. Get home. Human care. Verifiable contributions.',
+    title: 'StillHere',
+    description: 'Be there for someone. Free community companionship and verifiable contributions.',
     images: [
       {
         url: '/og.png',
-        width: 1734,
-        height: 907,
-        alt: 'Safety Guard — Go together. Get home. A glass shield with a chrome orbit and green community figures.',
+        width: 1733,
+        height: 908,
+        alt: 'StillHere — Be there for someone. Community companionship that carries forward.',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Safety Guard',
-    description: 'Go together. Get home. Human care. Verifiable contributions.',
+    title: 'StillHere',
+    description: 'Be there for someone. Free community companionship and verifiable contributions.',
     images: ['/og.png'],
   },
 };

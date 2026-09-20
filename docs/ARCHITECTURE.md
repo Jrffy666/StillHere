@@ -2,7 +2,7 @@
 
 > Historical architecture before the integrated V2 update. See [ARCHITECTURE_V2.md](ARCHITECTURE_V2.md) for the current identity, relay, chain synchronization, and operations design.
 
-Safety Guard currently focuses on rider-approved human guarding and relay. AI/provider integration work is deferred. This document describes the core design; [VALIDATION.md](VALIDATION.md) records actual checks and [HUMAN_GUARDING.md](HUMAN_GUARDING.md) explains the user-facing rules.
+StillHere currently focuses on rider-approved human guarding and relay. AI/provider integration work is deferred. This document describes the core design; [VALIDATION.md](VALIDATION.md) records actual checks and [HUMAN_GUARDING.md](HUMAN_GUARDING.md) explains the user-facing rules.
 
 ## Components
 
