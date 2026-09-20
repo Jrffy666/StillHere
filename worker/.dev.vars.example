@@ -6,7 +6,8 @@ SOLANA_V2_PROGRAM_ID=23f7UAfNbQCGdfQbJV3Tois98dETDfXnAXgjE5qTH5gb
 SOLANA_NETWORK=devnet
 # Optional server-only HTTPS Devnet RPC endpoint; store as a Worker secret when deployed.
 # SOLANA_PRIVATE_RPC_URL=https://your-devnet-rpc.example/?api-key=YOUR_KEY
-# Live models are disabled in the offline-agent release; adding a key has no effect.
+# The real adapter is implemented but OPENAI_ENABLED remains false in wrangler.jsonc.
+# A key alone cannot enable calls; activation also requires current participant consent.
 # OPENAI_API_KEY=
 # NOTIFICATION_WEBHOOK_URL=https://your-owned-notification-service.example/notify
 # NOTIFICATION_WEBHOOK_SECRET=

@@ -2,9 +2,13 @@ import { z } from 'zod';
 import type { Trip, Notification } from './types';
 
 export const ASSISTANCE_NOTICE_VERSION = 'openai-assistance-v1' as const;
+export const LIVE_AI_NOTICE_VERSION = 'openai-assistance-v2' as const;
+export const aiConsentInputSchema=z.object({consent:z.boolean(),noticeVersion:z.literal(LIVE_AI_NOTICE_VERSION)}).strict();
+export const aiConsentSchema=z.object({accepted:z.boolean(),noticeVersion:z.literal(LIVE_AI_NOTICE_VERSION),updatedAt:z.number().int().nonnegative().safe()}).strict();
+export type AiConsent = z.infer<typeof aiConsentSchema>;
 export const assistanceInputSchema = z.object({
   automatedCheckIns:z.boolean(), timeoutContact:z.boolean(), liveAiConsent:z.boolean(),
-  noticeVersion:z.literal(ASSISTANCE_NOTICE_VERSION),
+  noticeVersion:z.enum([ASSISTANCE_NOTICE_VERSION,LIVE_AI_NOTICE_VERSION]),
 }).strict();
 export const assistanceSchema = assistanceInputSchema.extend({updatedAt:z.number().int().nonnegative().safe()}).strict();
 export type Assistance = z.infer<typeof assistanceSchema>;

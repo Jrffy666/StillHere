@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { assistanceInputSchema } from './assistance';
+import { assistanceInputSchema, aiConsentInputSchema } from './assistance';
 import { digest, safeEqual } from './accounts';
 import { boundedJson, configuration } from './integrations';
 import { authenticate, createGuestSession, handleIdentity, IdentityError } from './identity';
@@ -187,9 +187,14 @@ async function handle(request: Request, env: WorkerEnv): Promise<Response> {
       return result(await room.sendGratitude(user.id,input.guardianId,input.kind),'gratitude');
     }
   }
-  const match = new RegExp(`^/api/trips/(${uuid})(/actions|/voice|/assistance)?$`).exec(path);
+  const match = new RegExp(`^/api/trips/(${uuid})(/actions|/voice|/assistance|/ai-consent)?$`).exec(path);
   if (match) {
     const stub = env.TRIPS.getByName(match[1]);
+    if (method === 'POST' && match[2] === '/ai-consent') {
+      const input=aiConsentInputSchema.parse(await body(request));
+      if(!await env.USERS.getByName(user.id).allow('assistance',30,60000))throw new HttpError(429,'Too many assistance changes.');
+      return result(await stub.setAiConsent(user.id,input),'trip');
+    }
     if (method === 'POST' && match[2] === '/assistance') {
       const input = assistanceInputSchema.parse(await body(request));
       if (!await env.USERS.getByName(user.id).allow('assistance',30,60000)) throw new HttpError(429,'Too many assistance changes.');

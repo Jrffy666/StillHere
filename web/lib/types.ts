@@ -80,13 +80,17 @@ export interface TripSummary {
   application: { id: string; expiresAt: number } | null;
 }
 export interface Trip {
-  assistance?: {automatedCheckIns:boolean;timeoutContact:boolean;liveAiConsent:boolean;noticeVersion:'openai-assistance-v1';updatedAt:number};
+  assistance?: {automatedCheckIns:boolean;timeoutContact:boolean;liveAiConsent:boolean;noticeVersion:'openai-assistance-v1'|'openai-assistance-v2';updatedAt:number};
+  aiConsent?:Record<string,{accepted:boolean;noticeVersion:'openai-assistance-v2';updatedAt:number}>;
+  liveAiAvailable?:boolean;
   escalation?: {cause:'explicit_help'|'user_authorized_timeout_policy'|'model_concern';at:number;sourceId?:string};
   agent?: {
     concerns?: {id:string;observedAt:number;receivedAt:number;text:string}[];
     structuredHandoff?: {snapshotAt:number} | null;
-    provider: 'mock';
-    liveModel: false;
+    provider: 'mock'|'openai';
+    liveModel: boolean;
+    fallbackReason?:string|null;
+    semanticHandoff?:{model:string;promptVersion:string;snapshotAt:number;usage:{inputTokens:number;outputTokens:number;totalTokens:number};assessment:{findings:{kind:string;topic:string;sourceIds:string[]}[]};context:{messages:{id:string;at:number;role:string;text:string}[];unresolvedConcerns?:{id:string;observedAt:number;text:string}[]}}|null;
     followUpAt: number | null;
     handoffSummary: string | null;
     runs: {
@@ -128,6 +132,7 @@ export interface Trip {
   risk: 'normal' | 'attention' | 'urgent';
   ai: { mode: 'rules' | 'openai'; lastAssessment: string };
   messages: {
+    automatedBy?:'rules'|'openai';
     id: string;
     at: number;
     senderId: string;

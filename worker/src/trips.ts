@@ -4,7 +4,10 @@ import { allocateContributions } from './guarding';
 import { ruleAssessment, sendNotification } from './integrations';
 import { hasAgentConcern, buildAgentHandoff, renderAgentSummary, renderAgentCheckIn, redactAgentText, parseAgentToolCall, type AgentContext, type AgentRun, type AgentToolCall, type AgentToolResult, type AgentTrigger } from './agent';
 import { createMockProvider, runProviderDecision, AGENT_PROVIDER_LEASE_MS } from './agent-provider';
-import { assistanceInputSchema, defaultAssistance, assistanceEnabled, notificationAuthorized, notificationDispatchAuthorized } from './assistance';
+import { assistanceInputSchema, defaultAssistance, assistanceEnabled, notificationAuthorized, notificationDispatchAuthorized, aiConsentInputSchema, LIVE_AI_NOTICE_VERSION } from './assistance';
+import { canUseLiveAi, openAiAvailable, liveAiContext, nextSemanticDecision, MAX_JOURNEY_AI_REQUESTS, MAX_JOURNEY_AI_RESERVED_TOKENS, AI_REQUEST_COOLDOWN_MS } from './ai-runtime';
+import { prepareOpenAIRequest, runOpenAIAssessmentWithDeadline, OpenAIProviderError } from './openai-provider';
+import { validateSemanticAssessment, renderSemanticQuestion } from './agent-semantic';
 import type { ChainMember, ChainSnapshot } from './chain-types';
 import { tripSnapshotSchema } from './snapshots';
 import { captureCommunityEvents, randomCommunityReference, type SourceCommunityState, type SourceCommunityEvent } from './community-events';
@@ -12,6 +15,7 @@ import type { CommunityRecordView, CommunityCorrectionView } from './community-t
 import { fail, isClosed, isParticipant, ok, summary, type CreateTrip, type Notification, type Outcome, type Person, type Trip, type TripAction, type TripSummary, type WorkerEnv, type GratitudeKind, type GratitudeView } from './types';
 
 interface StoredTrip {
+  paidAiBudget?: {requests:number;reservedTokens:number;inputTokens:number;outputTokens:number;totalTokens:number;lastRequestAt:number};
   providerBudget?: {decisions:number;inputChars:number;runs:Record<string,{decisions:number;inputChars:number}>};
   community?:SourceCommunityState;
   communityEvents?:SourceCommunityEvent[];
@@ -50,6 +54,7 @@ export class TripRoom extends DurableObject<WorkerEnv> {
     if (!row) return null;
     const state = {schemaVersion:1,monitoringStartedAt:null,indexVersion:1,indexedVersion:0,assessmentVersion:0,aiNextCheckInAt:null,aiMissedCheckIns:0,automatedEscalationSent:false,...JSON.parse(row.data)} as StoredTrip;
     state.trip.assistance ??= defaultAssistance();
+    state.trip.liveAiAvailable=openAiAvailable(this.env);
     if (state.trip.relay) {
       const person = state.trip.relay.requestedBy;
       state.trip.relay.requestedBy = {id:person.id,name:person.name,...(person.wallet?{wallet:person.wallet}:{}),...(person.simulated?{simulated:true}:{})};
@@ -370,9 +375,13 @@ export class TripRoom extends DurableObject<WorkerEnv> {
     switch (call.name) {
       case 'get_journey_context': return {ok:true,code:'context_read',detail:'Read bounded private journey context at this timestamp.',context:this.agentContext(state)};
       case 'send_check_in':
-        // Provider text is never presented as a fact or delivery receipt.
-        this.message(trip,agent,'agent',renderAgentCheckIn(run.trigger,this.agentContext(state)));
-        if (trip.risk !== 'urgent') trip.ai = {mode:'rules',lastAssessment:renderAgentCheckIn(run.trigger,this.agentContext(state))};
+        // Interpretation selects a server question; arbitrary provider prose is never published.
+        {
+          const live=Boolean(run.semantic)&&canUseLiveAi(this.env,trip);
+          const text=live?renderSemanticQuestion(run.semantic!.assessment,run.semantic!.context):renderAgentCheckIn(run.trigger,this.agentContext(state));
+          this.message(trip,agent,'agent',text);trip.messages.at(-1)!.automatedBy=live?'openai':'rules';
+          if (trip.risk !== 'urgent') trip.ai = {mode:live?'openai':'rules',lastAssessment:text};
+        }
         return {ok:true,code:'check_in_posted',detail:'Posted an automated message in this journey. This does not confirm anyone read it.'};
       case 'schedule_follow_up': {
         const due = Date.now() + call.arguments.delaySeconds * 1000;
@@ -398,6 +407,66 @@ export class TripRoom extends DurableObject<WorkerEnv> {
     }
   }
 
+  /** Reserve once before network I/O; uncertain attempts are never paid again after eviction. */
+  private async analyzeWithOpenAI(runId:string,attempt:number):Promise<void> {
+    let state=this.load();if(!state)return;
+    let run=state.trip.agent?.runs.find(item=>item.id===runId);
+    if(!run||run.status!=='running'||run.attempts!==attempt||run.semanticAttempt||!canUseLiveAi(this.env,state.trip))return;
+    const authorityContext=this.agentContext(state),id=crypto.randomUUID();
+    const budget=state.paidAiBudget??={requests:0,reservedTokens:0,inputTokens:0,outputTokens:0,totalTokens:0,lastRequestAt:0};
+    let reservedTokens:number,context:AgentContext;
+    try{({reservedTokens,context}=prepareOpenAIRequest({model:this.env.OPENAI_MODEL,context:liveAiContext(state.trip,authorityContext)}));}
+    catch {run.semanticAttempt={id,status:'failed',reservedTokens:0,error:'AI_INPUT_LIMIT'};Object.assign(state.trip.agent!,{fallbackReason:'AI_INPUT_LIMIT',provider:'mock',liveModel:false});this.save(state);return;}
+    if(budget.requests>=MAX_JOURNEY_AI_REQUESTS||budget.reservedTokens+reservedTokens>MAX_JOURNEY_AI_RESERVED_TOKENS||Date.now()-budget.lastRequestAt<AI_REQUEST_COOLDOWN_MS){
+      run.semanticAttempt={id,status:'failed',reservedTokens:0,error:'AI_JOURNEY_BUDGET_OR_COOLDOWN'};Object.assign(state.trip.agent!,{fallbackReason:'AI_JOURNEY_BUDGET_OR_COOLDOWN',provider:'mock',liveModel:false});this.save(state);return;
+    }
+    run.semanticAttempt={id,status:'reserved',reservedTokens};run.leaseUntil=Date.now()+AGENT_PROVIDER_LEASE_MS;
+    budget.requests++;budget.reservedTokens+=reservedTokens;budget.lastRequestAt=Date.now();
+    const controller=new AbortController(),activeCall={revision:run.revision,attempt,controller};this.providerCalls.set(runId,activeCall);
+    this.save(state);
+    let outcome:Awaited<ReturnType<typeof runOpenAIAssessmentWithDeadline>>|undefined;
+    let failure:string|undefined,usage:import('./agent').ModelUsage|undefined;
+    try {
+      await this.schedule();
+      const reservation=await this.env.GOVERNANCE.getByName('governance-v1').reserveAiBudget(id,reservedTokens);
+      state=this.load();if(!state)return;this.expire(state);this.save(state);
+      run=state.trip.agent?.runs.find(item=>item.id===runId);
+      if(!reservation.allowed)failure='AI_GLOBAL_BUDGET';
+      else if(!run||run.status!=='running'||run.attempts!==attempt||run.revision!==state.assessmentVersion||run.leaseUntil<=Date.now()||!canUseLiveAi(this.env,state.trip)||controller.signal.aborted||this.agentContextChanged(authorityContext,this.agentContext(state)))failure='AI_SUPERSEDED';
+      else {
+        run.leaseUntil=Date.now()+AGENT_PROVIDER_LEASE_MS;this.save(state);
+        outcome=await runOpenAIAssessmentWithDeadline({apiKey:this.env.OPENAI_API_KEY!,model:this.env.OPENAI_MODEL,context,signal:controller.signal});
+        usage=outcome.usage;
+      }
+    } catch(error) {
+      failure=error instanceof OpenAIProviderError?error.code:'AI_UNAVAILABLE';
+      usage=error instanceof OpenAIProviderError?error.usage:undefined;
+    } finally {if(this.providerCalls.get(runId)===activeCall)this.providerCalls.delete(runId);}
+    state=this.load();if(!state)return;this.expire(state);this.save(state);
+    run=state.trip.agent?.runs.find(item=>item.id===runId);
+    if(!run||run.semanticAttempt?.id!==id)return;
+    if(usage){run.semanticAttempt.usage=usage;const ledger=state.paidAiBudget!;ledger.inputTokens+=usage.inputTokens;ledger.outputTokens+=usage.outputTokens;ledger.totalTokens+=usage.totalTokens;}
+    if(run.status!=='running'||run.attempts!==attempt||run.revision!==state.assessmentVersion||run.leaseUntil<=Date.now()||!canUseLiveAi(this.env,state.trip)||controller.signal.aborted||this.agentContextChanged(authorityContext,this.agentContext(state))){
+      run.semanticAttempt.status='discarded';run.semanticAttempt.error='AI_SUPERSEDED';this.save(state);return;
+    }
+    if(outcome&&!failure){
+      const assessment=validateSemanticAssessment(outcome.assessment,context);
+      run.semantic={...outcome,assessment,context,snapshotAt:context.now};run.semanticAttempt.status='completed';run.provider='openai';
+      const harness=state.trip.agent!;harness.provider='openai';harness.liveModel=true;harness.fallbackReason=null;harness.concerns??=[];
+      for(const finding of assessment.findings.filter(item=>item.kind==='concern'))for(const sourceId of finding.sourceIds){
+        if(!sourceId.startsWith('message:'))continue;
+        const source=context.messages.find(item=>`message:${item.id}`===sourceId&&item.role==='rider');
+        if(source&&!harness.concerns.some(item=>item.id===source.id)&&harness.concerns.length<8)harness.concerns.push({id:source.id,observedAt:source.at,receivedAt:Date.now(),text:redactAgentText(source.text)});
+      }
+      this.event(state.trip,'ai-assessment','AI interpretation recorded','Source references passed validation. Interpretations are uncertain; no notification or community recognition is authorized by this result.');
+    } else {
+      run.semanticAttempt.status='failed';run.semanticAttempt.error=failure??'AI_UNAVAILABLE';
+      state.trip.agent!.fallbackReason=run.semanticAttempt.error;state.trip.agent!.provider='mock';state.trip.agent!.liveModel=false;
+      this.event(state.trip,'ai-fallback','Rules-based assistance continued','The AI request could not be used. Existing check-ins, human controls and explicit help remain available.');
+    }
+    this.save(state);
+  }
+
   /** Persist a proposal before executing it; persist each local effect and result in one SQL write. */
   private async runAgent(): Promise<void> {
     for (let round = 0; round < 3; round++) {
@@ -408,6 +477,10 @@ export class TripRoom extends DurableObject<WorkerEnv> {
       if (run.attempts >= 3 || Date.now() - run.createdAt > 600000) {
         run.status = 'failed'; run.error = 'Run retry or age limit reached. Baseline monitoring remains active.';
         run.updatedAt = Date.now(); this.save(state); continue;
+      }
+      if(run.semanticAttempt?.status==='reserved'){
+        run.semanticAttempt.status='failed';run.semanticAttempt.error='AI_INTERRUPTED';
+        Object.assign(state.trip.agent!,{fallbackReason:'AI_INTERRUPTED',provider:'mock',liveModel:false});
       }
       run.status = 'running'; run.attempts += 1; run.leaseUntil = Date.now() + AGENT_PROVIDER_LEASE_MS; run.updatedAt = Date.now();
       const attempt = run.attempts;
@@ -425,6 +498,9 @@ export class TripRoom extends DurableObject<WorkerEnv> {
             this.queueAgent(state,current.trigger.kind,`${current.id}:refresh`,current.trigger.messageId);
             this.save(state); break;
           }
+          if(previousContext&&current.steps.length===1&&!current.semanticAttempt&&canUseLiveAi(this.env,state.trip)){
+            await this.analyzeWithOpenAI(current.id,attempt);continue;
+          }
           let step = current.steps.find(item => item.status === 'pending');
           if (!step) {
             const budget = state.providerBudget ??= {decisions:0,inputChars:0,runs:{}};
@@ -440,7 +516,9 @@ export class TripRoom extends DurableObject<WorkerEnv> {
             const activeCall = {revision:current.revision,attempt,controller};
             this.providerCalls.set(current.id,activeCall);
             this.save(state);await this.schedule();
-            const decision = await runProviderDecision({provider:createMockProvider(),trigger:current.trigger,steps:current.steps,signal:controller.signal})
+            const decision = await (current.semantic&&canUseLiveAi(this.env,state.trip)
+              ?Promise.resolve(nextSemanticDecision(current,this.agentContext(state)))
+              :runProviderDecision({provider:createMockProvider(),trigger:current.trigger,steps:current.steps,signal:controller.signal}))
               .finally(()=>{if(this.providerCalls.get(run.id)===activeCall)this.providerCalls.delete(run.id);});
             state = this.load(); if (!state) return;
             this.expire(state); this.save(state);
@@ -457,7 +535,14 @@ export class TripRoom extends DurableObject<WorkerEnv> {
               const context=this.agentContext(state);
               current.summary = renderAgentSummary(current.steps,context); state.trip.agent!.handoffSummary = current.summary;
               state.trip.agent!.structuredHandoff = buildAgentHandoff(current.steps,context);
-              this.event(state.trip,'agent-run','Offline agent run completed','Tool results and a handoff summary are available. No live language model was used.');
+              if(current.semantic){
+                state.trip.agent!.semanticHandoff=current.semantic;
+                current.summary='OpenAI interpretations and complete source excerpts are available in the private AI interpretation panel.\n'+current.summary.replace('Offline mock run (rule inference, no LLM)','Server execution record for an OpenAI-assisted run').slice(0,3800);
+                state.trip.agent!.handoffSummary=current.summary;state.trip.agent!.structuredHandoff!.mode='openai_assisted';
+              }else{
+                state.trip.agent!.provider='mock';state.trip.agent!.liveModel=false;
+              }
+              this.event(state.trip,'agent-run',current.semantic?'AI-assisted run completed':'Offline agent run completed',current.semantic?'Validated interpretations and actual tool results are available in the private handoff.':'Tool results and a handoff summary are available. No live language model was used.');
               this.save(state); break;
             }
             const call = parseAgentToolCall(decision.call);
@@ -505,13 +590,27 @@ export class TripRoom extends DurableObject<WorkerEnv> {
     this.expire(state);if(isClosed(state.trip)){this.save(state);return fail(409,'This journey is closed.');}
     const wasEnabled=assistanceEnabled(state.trip);
     state.trip.assistance={...parsed.data,updatedAt:Date.now()};state.assessmentVersion++;
-    if(state.trip.agent){state.trip.agent.handoffSummary=null;state.trip.agent.structuredHandoff=null;}
+    state.trip.aiConsent??={};state.trip.aiConsent[userId]={accepted:parsed.data.liveAiConsent&&parsed.data.noticeVersion===LIVE_AI_NOTICE_VERSION,noticeVersion:LIVE_AI_NOTICE_VERSION,updatedAt:Date.now()};
+    if(state.trip.agent){state.trip.agent.handoffSummary=null;state.trip.agent.structuredHandoff=null;state.trip.agent.semanticHandoff=null;state.trip.agent.provider='mock';state.trip.agent.liveModel=false;}
     if (!wasEnabled && parsed.data.automatedCheckIns && state.trip.guardMode==='ai') {
       state.aiNextCheckInAt=Date.now()+Math.max(60,state.trip.checkInIntervalSeconds)*1000;state.aiMissedCheckIns=0;
     }
-    this.event(state.trip,'assistance-settings','Assistance preferences updated','Live model calls remain disabled. Notification authority is checked separately for every dispatch.');
+    this.event(state.trip,'assistance-settings','Assistance preferences updated','Model processing requires server activation and current processing consent. Notification authority remains separate.');
     this.save(state);await this.schedule();await this.deliverNotifications();await this.schedule();
     state=this.load();return state?ok(state.trip):fail(410,'Private journey data has been erased.');
+  }
+  async setAiConsent(userId:string,input:unknown):Promise<Outcome<Trip>> {
+    const parsed=aiConsentInputSchema.safeParse(input);if(!parsed.success)return fail(400,'Invalid AI processing choice.');
+    const state=this.load();if(!state)return fail(404,'Journey not found.');
+    if(!isParticipant(state.trip,userId))return fail(403,'Only current participants may change their own AI processing choice.');
+    this.expire(state);if(isClosed(state.trip)){this.save(state);return fail(409,'This journey is closed.');}
+    state.trip.aiConsent??={};state.trip.aiConsent[userId]={accepted:parsed.data.consent,noticeVersion:LIVE_AI_NOTICE_VERSION,updatedAt:Date.now()};
+    if(state.trip.rider.id===userId)state.trip.assistance={...(state.trip.assistance??defaultAssistance()),liveAiConsent:parsed.data.consent,noticeVersion:LIVE_AI_NOTICE_VERSION,updatedAt:Date.now()};
+    state.assessmentVersion++;
+    if(state.trip.agent){state.trip.agent.semanticHandoff=null;state.trip.agent.handoffSummary=null;state.trip.agent.structuredHandoff=null;state.trip.agent.provider='mock';state.trip.agent.liveModel=false;}
+    this.event(state.trip,'ai-consent','AI processing choice updated','This participant changed permission for future processing of their messages. Already transmitted requests cannot be recalled.');
+    this.save(state);await this.schedule();
+    const current=await this.read(userId);return current.ok&&'rider'in current.value?ok(current.value):current.ok?fail(403,'Private journey access changed.'):current;
   }
   async act(user: Person, action: TripAction): Promise<Outcome<Trip | TripSummary>> {
     const identity=action.action==='accept'?await this.env.USERS.getByName(user.id).communityIdentity():null;
@@ -651,7 +750,7 @@ export class TripRoom extends DurableObject<WorkerEnv> {
           if (hasAgentConcern(action.text)) {
             const source=trip.messages.at(-1)!;
             const harness=trip.agent??={provider:'mock',liveModel:false,runs:[],followUpAt:null,handoffSummary:null};
-            harness.handoffSummary=null;harness.structuredHandoff=null;
+            harness.handoffSummary=null;harness.structuredHandoff=null;harness.semanticHandoff=null;
             harness.concerns??=[];
             if(harness.concerns.length<8)harness.concerns.push({id:source.id,observedAt:source.at,receivedAt:Date.now(),text:redactAgentText(source.text)});
             else this.event(trip,'concern-capacity','Additional concern in conversation',`Eight earlier concerns remain pinned. Review additional source ${source.id} in conversation history.`);
@@ -669,7 +768,7 @@ export class TripRoom extends DurableObject<WorkerEnv> {
         const concern=trip.agent?.concerns?.find(item=>item.id===action.requestId);
         if(!concern)return fail(404,'Unresolved concern not found.');
         trip.agent!.concerns=trip.agent!.concerns!.filter(item=>item.id!==concern.id);
-        trip.agent!.handoffSummary=null;trip.agent!.structuredHandoff=null;
+        trip.agent!.handoffSummary=null;trip.agent!.structuredHandoff=null;trip.agent!.semanticHandoff=null;
         this.event(trip,'concern-resolved','Concern resolved by rider',`The rider resolved source ${concern.id}. This does not withdraw an explicit help request.`);
         break;
       }
@@ -964,6 +1063,7 @@ export class TripRoom extends DurableObject<WorkerEnv> {
     state.trip.events=[];
     // Context snapshots and summaries may quote the erased participant's messages.
     state.trip.agent = {provider:'mock',liveModel:false,runs:[],followUpAt:null,handoffSummary:null};
+    if(state.trip.aiConsent)delete state.trip.aiConsent[userId];
     state.assessmentVersion+=1;
     if(state.trip.guardian?.id===userId){state.trip.guardian=null;if(!isClosed(state.trip))this.takeover(state,'The assigned account was deleted. Human replacement is required.');}
     if(state.community)delete state.community.members[userId];
@@ -1006,6 +1106,7 @@ export class TripRoom extends DurableObject<WorkerEnv> {
     // gratitude retains its original cancellation policy and is never backfilled.
     value.gratitude=(value.gratitude??[]).filter(item=>!deleted.has(item.guardianId)).map(item=>({...item,status:!value.community&&item.status==='pending'?'cancelled':item.status,inFlightUntil:0}));
     value.trip.agent={provider:'mock',liveModel:false,runs:[],followUpAt:null,handoffSummary:null};
+    value.trip.aiConsent={};if(value.trip.assistance)value.trip.assistance.liveAiConsent=false;
     if(value.community){
       for(const id of deleted)delete value.community.members[id];
       const source=value.communityEvents??[];delete value.communityEvents;

@@ -1,4 +1,5 @@
 import { DurableObject } from 'cloudflare:workers';
+import { AiBudgetLedger } from './ai-budget';
 import { z } from 'zod';
 import { digest, safeEqual } from './accounts';
 import { fail, ok, type Outcome, type WorkerEnv } from './types';
@@ -46,6 +47,7 @@ export async function operatorAuthorized(request:Request, secret:string|undefine
 
 /** Low-volume moderation and recovery metadata only; private journey content remains in TripRoom. */
 export class GovernanceStore extends DurableObject<WorkerEnv> {
+  reserveAiBudget(id:string,reservedTokens:number) { return new AiBudgetLedger(this.ctx.storage).reserve(id,reservedTokens); }
   constructor(ctx:DurableObjectState,env:WorkerEnv) {
     super(ctx,env);
     ctx.storage.sql.exec('CREATE TABLE IF NOT EXISTS reports (id TEXT PRIMARY KEY, reporter TEXT NOT NULL, idem TEXT NOT NULL, fingerprint TEXT NOT NULL, created INTEGER NOT NULL, data TEXT NOT NULL, UNIQUE(reporter,idem))');

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { openAiAvailable } from './ai-runtime';
 import type { Trip, WorkerEnv, Notification } from './types';
 
 const Assessment = z.object({risk:z.enum(['normal','attention','urgent']),message:z.string().min(1).max(800)}).strict();
@@ -54,7 +55,7 @@ export async function sendNotification(env: WorkerEnv, trip: Trip, notification:
 
 export function configuration(env: WorkerEnv) {
   return {
-    ai:{provider:'mock',configured:false,liveModel:false,model:null,detail:'Offline deterministic agent with durable tools. No language model API is called.'},
+    ai:{provider:openAiAvailable(env)?'openai':'mock',configured:openAiAvailable(env),liveModel:openAiAvailable(env),model:openAiAvailable(env)?env.OPENAI_MODEL:null,noticeVersion:'openai-assistance-v2',detail:openAiAvailable(env)?'OpenAI semantic assistance is available only with current journey consent. Rules remain available.':'OpenAI integration is disabled. Offline rules remain active; no model request is made.'},
     notifications:{provider:env.NOTIFICATIONS_ENABLED === 'true' && env.NOTIFICATION_WEBHOOK_URL && env.NOTIFICATION_WEBHOOK_SECRET ? 'webhook' : 'demo',configured:env.NOTIFICATIONS_ENABLED === 'true' && Boolean(env.NOTIFICATION_WEBHOOK_URL && env.NOTIFICATION_WEBHOOK_SECRET)},
     voice:{provider:'elevenlabs',configured:Boolean(env.ELEVENLABS_API_KEY)},
     // Browser-only legacy proof uses a public endpoint; server RPC URLs may carry API keys.

@@ -1,8 +1,8 @@
 ﻿# Safety Guard
 
-A community journey-guarding application for Hack the North 2026. Riders approve human guardians and arrange relays when someone needs a break. Optional deterministic reminders continue after missed check-ins. Live AI-provider integration remains deferred.
+A community journey-guarding application for Hack the North 2026. Riders approve human guardians and arrange relays when someone needs a break. Optional deterministic reminders continue after missed check-ins. An OpenAI adapter is implemented but remains switched off pending credits and live evaluation.
 
-The [offline assistance boundary](docs/AGENT_HARNESS.md) adds rider-controlled reminders, separate timeout-contact authorization, private unresolved concerns, and evidence-based handoffs. Provider proposals pass strict tool validation, cancellation and durable execution budgets. OpenAI is hard-disabled: this release makes no model calls and spends no API credits. Open a journey's **Automated assistance** disclosure to review preferences and resolve concerns.
+The [assistance harness](docs/AGENT_HARNESS.md) adds rider-controlled reminders, separate timeout-contact authorization, private unresolved concerns, and evidence-based handoffs. The [OpenAI integration](docs/OPENAI_INTEGRATION.md) accepts bounded semantic findings, source references, a targeted question category, and a proposed human relay. Current consent, source validation, durable spending reservations, cancellation, and server permissions govern execution. Live requests remain disabled. Open a journey's **Automated assistance** disclosure to review preferences and resolve concerns; see [AI_DEMO.md](docs/AI_DEMO.md) for a truthful evaluation and presentation plan.
 
 The accepted [community v1 scope](docs/COMMUNITY_V1.md) adds member profiles, contextual contribution records, and free structured appreciation banners. Profiles and contribution values are visible to other authenticated community members before applying or approving; there is no visibility toggle or sitewide leaderboard. Availability and language matching remain future work in the [community direction](docs/COMMUNITY_DIRECTION.md).
 
@@ -47,13 +47,13 @@ Help, conversation, availability check-ins, and ending monitoring require no par
 | Accounts | Verified wallet binding, stable identities, expiring/revocable sessions, wallet rotation, single-use recovery codes |
 | Human relay | Rider approval plus guardian acceptance, private-access changes, contributions across returning guardians |
 | Community | Always-visible member profiles, pre-decision profile review, redacted contribution history, a received-appreciation wall, and a contribution honor cabinet |
-| Offline agent | Durable mock runs, five validated tools, bounded retries, private action traces, and a human handoff summary; no live model calls |
+| Journey assistant | Durable runs, five validated tools, consent-scoped OpenAI semantic assessment, source references, bounded spending, private receipts, and an offline fallback; live activation pending |
 | Chain synchronization | Persistent journey mapping, durable outbox, finalized receipt verification, failure/expiry handling, idempotent credit |
 | Operations | Isolated environments, readiness checks, deployment/rollback tooling, reports/restrictions, retention/deletion, encrypted backup/restore |
 
 React/Vinext serves the interface. Cloudflare Workers and SQLite-backed Durable Objects coordinate private data. Solana stores public commitments and rewards. Names, routes, contact details, messages, location, and credentials stay off chain.
 
-The [offline agent guide](docs/AGENT_HARNESS.md) explains the no-credits development phase. The mock uses fixed rules to exercise actual application tools. Its scenario launcher and agent trace dashboard are no longer in the simplified human-journey interface. Adding an OpenAI key does not enable API calls; live-model integration remains a later step.
+The [agent guide](docs/AGENT_HARNESS.md) distinguishes the offline rule planner from the real API adapter. Mocked-provider tests exercise the integration without credits; they do not measure real-model quality. Adding a key alone does not enable requests: server activation and current participant consent are also required. The simplified journey interface keeps settings and source evidence folded away from core human controls.
 
 ## Deployment status
 

@@ -122,7 +122,7 @@ export function TripDetail({ trip, user, token, busy, act, onProfile }: {
     {closed && trip.messages.length > 35 && <p className="simple-note">Showing the latest 35 messages.</p>}
     <div ref={messageViewport} className="messages" aria-live={closed ? 'off' : 'polite'} aria-relevant="additions">
       {trip.messages.length === 0 ? <p className="simple-note">{closed ? 'No messages on this journey.' : 'Say hello to your travel companion.'}</p> : trip.messages.slice(-35).map(message => <div key={message.id} className={'message ' + (message.senderId === user.id ? 'mine' : '') + (message.role === 'agent' ? ' agent-message' : '')}>
-        <div><strong>{message.senderId === user.id ? 'You' : message.role === 'agent' ? 'Automated reminder' : message.senderName}</strong><time>{timeLabel(message.at)}</time></div><p>{message.text}</p>
+        <div><strong>{message.senderId === user.id ? 'You' : message.role === 'agent' ? message.automatedBy==='openai'?'AI check-in':'Automated reminder' : message.senderName}</strong><time>{timeLabel(message.at)}</time></div><p>{message.text}</p>
       </div>)}
     </div>
     {!closed && <form className="message-form" onSubmit={event => void send(event).catch(() => {})}>

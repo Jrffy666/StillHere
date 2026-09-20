@@ -1,4 +1,7 @@
 import { z } from 'zod';
+import { semanticAssessmentSchema, type SemanticAssessment } from './agent-semantic';
+import { redactAgentText } from './agent-text';
+export { redactAgentText } from './agent-text';
 
 /** Offline protocol shared by the provider, durable runner, and participant UI. */
 export interface AgentTrigger {
@@ -53,7 +56,7 @@ export interface AgentEvidence {
 }
 export interface AgentHandoff {
   version: 1;
-  mode: 'offline_rules';
+  mode: 'offline_rules' | 'openai_assisted';
   snapshotAt: number;
   snapshotSourceId: string;
   status: AgentContext['status'];
@@ -82,7 +85,9 @@ export interface AgentStep {
 export interface AgentRun {
   id: string;
   trigger: AgentTrigger;
-  provider: 'mock';
+  provider: 'mock' | 'openai';
+  semantic?: SemanticRecord;
+  semanticAttempt?: {id:string;status:'reserved'|'completed'|'failed'|'discarded';reservedTokens:number;error?:string;usage?:ModelUsage};
   status: 'queued' | 'running' | 'completed' | 'cancelled' | 'failed';
   createdAt: number;
   updatedAt: number;
@@ -95,8 +100,10 @@ export interface AgentRun {
   leaseUntil: number;
 }
 export interface AgentState {
-  provider: 'mock';
-  liveModel: false;
+  provider: 'mock' | 'openai';
+  liveModel: boolean;
+  semanticHandoff?: SemanticRecord | null;
+  fallbackReason?: string | null;
   runs: AgentRun[];
   followUpAt: number | null;
   handoffSummary: string | null;
@@ -104,6 +111,8 @@ export interface AgentState {
   structuredHandoff?: AgentHandoff | null;
 }
 export type AgentDecision = { type: 'tool'; call: AgentToolCall } | { type: 'complete'; summary: string };
+export interface ModelUsage {inputTokens:number;outputTokens:number;totalTokens:number}
+export interface SemanticRecord {assessment:SemanticAssessment;context:AgentContext;responseId:string;model:string;requestId:string|null;promptVersion:string;usage:ModelUsage;snapshotAt:number}
 
 const timestamp = z.number().int().min(0).max(8_640_000_000_000_000);
 const identifier = z.string().min(1).max(200);
@@ -111,7 +120,7 @@ const sourceIdentifier = z.string().min(1).max(240);
 const concernSchema: z.ZodType<AgentConcern> = z.object({ id: identifier, observedAt: timestamp, receivedAt: timestamp, text: z.string().max(600) }).strict();
 const escalationCauseSchema = z.enum(['explicit_help', 'user_authorized_timeout_policy', 'model_concern']).nullable();
 const notificationStateSchema = z.enum(['queued', 'sent', 'failed', 'acknowledged', 'simulated']);
-const contextSchema: z.ZodType<AgentContext> = z.object({
+export const contextSchema: z.ZodType<AgentContext> = z.object({
   now: timestamp,
   status: z.enum(['open', 'active', 'arrived', 'cancelled']),
   guardMode: z.enum(['waiting', 'human', 'ai']),
@@ -126,7 +135,7 @@ const contextSchema: z.ZodType<AgentContext> = z.object({
   unresolvedConcerns: z.array(concernSchema).max(8).optional(),
 }).strict();
 export const agentHandoffSchema: z.ZodType<AgentHandoff> = z.object({
-  version: z.literal(1), mode: z.literal('offline_rules'), snapshotAt: timestamp, snapshotSourceId: sourceIdentifier,
+  version: z.literal(1), mode: z.enum(['offline_rules','openai_assisted']), snapshotAt: timestamp, snapshotSourceId: sourceIdentifier,
   status: z.enum(['open', 'active', 'arrived', 'cancelled']), guardMode: z.enum(['waiting', 'human', 'ai']),
   risk: z.enum(['normal', 'attention', 'urgent']), escalationCause: escalationCauseSchema, notificationAuthorized: z.boolean(),
   location: z.object({ observedAt: timestamp.nullable(), freshness: z.enum(['fresh', 'stale_or_unverified']) }).strict(),
@@ -163,19 +172,23 @@ const toolResultSchema = z.object({ ok: z.boolean(), code: z.string().min(1).max
 const stepSchema = z.object({
   id: identifier, call: ToolCallSchema, status: z.enum(['pending', 'succeeded', 'rejected']), at: timestamp, result: toolResultSchema.optional(),
 }).strict();
+export const modelUsageSchema=z.object({inputTokens:z.number().int().nonnegative().max(1000000),outputTokens:z.number().int().nonnegative().max(1000000),totalTokens:z.number().int().nonnegative().max(2000000)}).strict();
+export const semanticRecordSchema:z.ZodType<SemanticRecord>=z.object({assessment:semanticAssessmentSchema,context:contextSchema,responseId:identifier,model:z.string().max(100),requestId:identifier.nullable(),promptVersion:z.string().max(100),usage:modelUsageSchema,snapshotAt:timestamp}).strict();
 export const agentStateSchema: z.ZodType<AgentState> = z.object({
-  provider: z.literal('mock'), liveModel: z.literal(false),
+  provider: z.enum(['mock','openai']), liveModel: z.boolean(),
+  semanticHandoff:semanticRecordSchema.nullable().optional(),fallbackReason:z.string().max(200).nullable().optional(),
   runs: z.array(z.object({
     id: identifier,
     trigger: z.object({ id: identifier, kind: z.enum(['takeover', 'rider-message', 'follow-up', 'stale-location', 'notification-failure']), at: timestamp, messageId: identifier.optional() }).strict(),
-    provider: z.literal('mock'), status: z.enum(['queued', 'running', 'completed', 'cancelled', 'failed']),
+    provider: z.enum(['mock','openai']), status: z.enum(['queued', 'running', 'completed', 'cancelled', 'failed']),
+    semantic:semanticRecordSchema.optional(),semanticAttempt:z.object({id:identifier,status:z.enum(['reserved','completed','failed','discarded']),reservedTokens:z.number().int().nonnegative().max(33200),error:z.string().max(200).optional(),usage:modelUsageSchema.optional()}).strict().optional(),
     createdAt: timestamp, updatedAt: timestamp, revision: z.number().int().nonnegative(),
     steps: z.array(stepSchema).max(8), summary: z.string().max(4000).optional(), error: z.string().max(1000).optional(),
     attempts: z.number().int().min(0).max(3), nextAttemptAt: timestamp, leaseUntil: timestamp,
   }).strict()).max(20),
   followUpAt: timestamp.nullable(), handoffSummary: z.string().max(4000).nullable(),
   concerns: z.array(concernSchema).max(8).optional(), structuredHandoff: agentHandoffSchema.nullable().optional(),
-}).strict();
+}).strict().refine(state => state.liveModel === (state.provider === 'openai'), 'Provider and live-model labels must agree.');
 
 const recentWindowMs = 300_000;
 const concernPattern = /\b(route|detour|lost|uncomfortable|worried|strange|wrong|not sure|uneasy)\b|路线|绕路|不对|不安|担心|迷路|不确定|不舒服|不太放心|ruta|desv[ií]o|inquiet|d[ée]tour/i;
@@ -194,21 +207,6 @@ export function hasAgentConcern(text: string): boolean {
   // Merely mentioning a route is not a concern. More specific terms remain available to the shared patterns.
   const specific = remaining.replace(/\b(?:route|ruta)\b|路线/gi, ' ');
   return concernPattern.test(specific) || urgentPattern.test(specific);
-}
-
-/** Best-effort bounded minimization, not guaranteed anonymity or a live-AI consent mechanism. */
-export function redactAgentText(text: string, maxLength = 600): string {
-  const limit = Math.max(0, Math.min(2000, Number.isFinite(maxLength) ? Math.floor(maxLength) : 600));
-  return text.slice(0, 10_000)
-    .replace(/\b(?:https?:\/\/|www\.)[^\s<>"']+/gi, '[redacted URL]')
-    .replace(/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi, '[redacted email]')
-    .replace(/\bBearer\s+[^\s,;]+/gi, 'Bearer [redacted]')
-    .replace(/\b(?:api[_ -]?key|access[_ -]?token|token|secret|password)\s*[:=]\s*["']?[^\s,;"']+["']?/gi, '[redacted credential]')
-    .replace(/\b(?:sk-|gh[pousr]_|github_pat_)[A-Za-z0-9_-]{8,}\b/g, '[redacted credential]')
-    .replace(/\b0x[A-Fa-f0-9]{32,}\b/g, '[redacted identifier]')
-    .replace(/\+?\d(?:[\s().-]*\d){7,}\b/g, '[redacted phone]')
-    .replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, '')
-    .slice(0, limit);
 }
 
 function recentRiderMessages(context: AgentContext) {

@@ -82,6 +82,8 @@ describe('Offline agent protocol', () => {
     };
     expect(agentStateSchema.safeParse(state).success).toBe(true);
     expect(agentStateSchema.safeParse({ ...state, liveModel: true }).success).toBe(false);
+    expect(agentStateSchema.safeParse({ ...state, provider: 'openai', liveModel: true }).success).toBe(true);
+    expect(agentStateSchema.safeParse({ ...state, provider: 'openai', liveModel: false }).success).toBe(false);
     expect(agentStateSchema.safeParse({ ...state, runs: Array(21).fill(state.runs[0]) }).success).toBe(false);
     expect(agentStateSchema.safeParse({ ...state, runs: [{ ...state.runs[0], attempts: 4 }] }).success).toBe(false);
     expect(agentStateSchema.safeParse({ ...state, runs: [{ ...state.runs[0], steps: Array(9).fill(result.steps[0]) }] }).success).toBe(false);

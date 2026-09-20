@@ -1,5 +1,5 @@
 import type { AgentState } from './agent';
-import type { Assistance, Escalation } from './assistance';
+import type { Assistance, Escalation, AiConsent } from './assistance';
 export interface Person { id: string; name: string; simulated?: boolean; wallet?: string | null }
 export interface User extends Person { points: number; reputation: number; completedGuards: number; recoveryConfigured?: boolean; bio?: string; communityNoticeVersion?: string | null }
 export type GratitudeKind = 'companionship' | 'thoughtfulness' | 'relay';
@@ -14,6 +14,7 @@ export interface GratitudeView {
 }
 export interface Place { label: string; lat: number; lng: number }
 export interface TripMessage {
+  automatedBy?: 'rules' | 'openai';
   id: string; at: number; senderId: string; senderName: string;
   role: 'rider' | 'guardian' | 'agent' | 'system'; text: string;
 }
@@ -33,6 +34,8 @@ export interface GuardianContribution {
   points: number; reputation: number; rewardStatus: 'pending' | 'credited' | 'ineligible' | 'demo';
 }
 export interface Trip {
+  aiConsent?:Record<string,AiConsent>;
+  liveAiAvailable?:boolean;
   assistance?: Assistance;
   escalation?: Escalation;
   agent?: AgentState;
@@ -89,7 +92,7 @@ export const summary = (trip: Trip, viewerId?: string): TripSummary => {
 export const isClosed = (trip: Trip) => trip.status === 'arrived' || trip.status === 'cancelled';
 export const isParticipant = (trip: Trip, id: string) => trip.rider.id === id || trip.guardian?.id === id;
 export type WorkerEnv = Omit<Env,'SOLANA_PRIVATE_RPC_URL'|'COMMUNITY_ISSUER_SECRET_KEY'|'COMMUNITY_SPONSOR_SECRET_KEY'> & {
-  OPENAI_API_KEY?: string; NOTIFICATION_WEBHOOK_URL?: string; NOTIFICATION_WEBHOOK_SECRET?: string;
+  OPENAI_API_KEY?: string; OPENAI_ENABLED?:string; NOTIFICATION_WEBHOOK_URL?: string; NOTIFICATION_WEBHOOK_SECRET?: string;
   NOTIFICATION_ACK_SECRET?: string; ELEVENLABS_API_KEY?: string;
   OPERATOR_SECRET?: string;
   SOLANA_PRIVATE_RPC_URL?: string;
