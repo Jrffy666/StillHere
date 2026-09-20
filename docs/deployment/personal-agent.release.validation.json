@@ -1,5 +1,6 @@
 {
   "recordedAt": "2026-09-20T05:02:04Z",
+  "closureCheckedAt": "2026-09-20T05:33:50Z",
   "status": "application-published-chain-upgrade-pending",
   "product": "StillHere",
   "site": {
@@ -26,13 +27,13 @@
     "operations": {"passed": 20},
     "frontendProxyAndLogic": {"passed": 38},
     "existingCodexRunner": {"passed": 24},
-    "personalAgentClient": {"passed": 30, "officialMcpSdkVersion": "1.30.0", "nativeCodexMcpProbe": "inconclusive; separate real Codex watch passed"},
+    "personalAgentClient": {"passed": 31, "officialMcpSdkVersion": "1.30.0", "nativeCodexMcpProbe": "passed with the real 0.155.1 executable and STDIO bridge, a scripted loopback provider and backend; zero real model calls"},
     "hostedPersonalAgent": {"passed": 23, "realCodexTurns": 1},
     "publishedFrontend": {"passed": 29},
     "typecheck": "passed: Worker source/tests, frontend, chain",
     "lint": "passed",
     "build": "passed: frontend, Worker, community SBF",
-    "browserVisualAndInteractiveQa": "unavailable"
+    "browserVisualAndInteractiveQa": {"status": "passed", "checks": 12, "realCodexTurns": 1, "desktopAndMobileScreenshotsReviewed": true}
   },
   "communityProgram": {
     "network": "devnet",
@@ -43,6 +44,9 @@
     "blockingCondition": "Insufficient Devnet test SOL for the temporary deployment buffer; public faucet rejected the request.",
     "deployer": "AHdX6zJn3xYQXCBix3TvEqXUyV9x8PdPcEstsCkyhdE8",
     "observedDeployerBalanceLamports": 700413560,
+    "requiredAvailableLamports": 1793107960,
+    "shortfallLamports": 1092694400,
+    "readiness": {"authorityVerified": true, "currentBytecodeVerified": true, "bufferRentLamports": 1561211000, "programDataExtensionRentLamports": 211896960, "feeReserveLamports": 20000000},
     "requestedTestSolTopUp": 2,
     "publicationBehavior": "Unsupported service records remain pending/retry. Later records wait in sequence until upgrade; no false finality.",
     "priorDeployment": "deployment.community.before-personal-agent.json"
@@ -50,15 +54,17 @@
   "evidence": {
     "hosted": "personal-agent.hosted.validation.json",
     "frontend": "personal-agent.frontend.validation.json",
-    "chain": "personal-agent.chain.validation.json"
+    "chain": "personal-agent.chain.validation.json",
+    "browser": "personal-agent.browser.validation.json",
+    "mcp": "personal-agent.mcp.validation.json"
   },
-  "cleanup": {"syntheticAccountsCreated": 2, "syntheticAccountsDeleted": 2, "privateFollowupCredentialsRemoved": true},
+  "cleanup": {"syntheticAccountsCreated": 2, "syntheticAccountsDeleted": 2, "privateFollowupCredentialsRemoved": true, "browserRunAndSetup": {"syntheticAccountsCreated": 6, "syntheticAccountsDeleted": 6, "downloadedCapabilityFilesDeleted": true}},
   "limits": [
-    "One real owner-authenticated Codex turn establishes this bounded workflow, not broad model quality or unattended overnight reliability.",
+    "Two bounded acceptance scenarios each used one real owner-authenticated Codex turn; they do not establish broad model quality or unattended overnight reliability.",
     "The owner must keep the runtime awake and connected with available model allowance.",
     "A local STDIO MCP bridge is not a hosted ChatGPT Work connector.",
     "Agent service is platform attestation, not independently verified model identity or physical safety.",
     "New agent-service chain finality is not yet established."
   ],
-  "next": "Fund Devnet upgrade, deploy the validated community binary, independently verify pending records, then prepare the demonstration."
+  "next": "Fund the Devnet upgrade, deploy the validated community binary and independently verify pending records. The owner then trials the product using docs/PERSONAL_TRIAL.md; presentation scripting and visual redesign are deferred until feedback."
 }

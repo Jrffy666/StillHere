@@ -1,0 +1,36 @@
+{
+  "project": "StillHere",
+  "validation": "Personal agent MCP interoperability",
+  "date": "2026-09-20",
+  "clientTests": { "passed": 31, "failed": 0, "skipped": 0 },
+  "isolatedAssessmentTests": { "passed": 24, "failed": 0, "skipped": 0 },
+  "officialSdk": {
+    "version": "1.30.0",
+    "protocolVersion": "2025-11-25",
+    "initialize": true,
+    "toolDiscovery": true,
+    "toolInvocation": true,
+    "standardRequestMetadata": true
+  },
+  "nativeCodex": {
+    "version": "0.155.1",
+    "realExecutable": true,
+    "realStdioBridge": true,
+    "scriptedLoopbackProvider": true,
+    "loopbackBackend": true,
+    "providerRequests": 2,
+    "backendOperations": ["status"],
+    "initialize": true,
+    "toolDiscovery": true,
+    "codeModeToolInvocation": true,
+    "backendResultReturned": true,
+    "turnCompleted": true,
+    "realModelCalls": 0,
+    "capabilityLeakedToProvider": false,
+    "savedConfigurationModified": false,
+    "savedAuthenticationModified": false,
+    "assessmentRunnerRestrictionsChanged": false
+  },
+  "scope": "Protocol interoperability and native tool execution with synthetic local fixtures. Does not establish model quality or a complete interactive client session.",
+  "commands": ["npm run test:personal-agent", "npm run test:codex-demo"]
+}

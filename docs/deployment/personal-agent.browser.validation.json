@@ -1,0 +1,52 @@
+{
+  "checkedAt": "2026-09-20T05:31:51.881Z",
+  "origin": "https://safety-guard-htn2026.klavander56.chatgpt.site",
+  "status": "passed",
+  "checks": [
+    "Two isolated guest browser contexts",
+    "Journey created through the form",
+    "Approved guardian completes a real human check-in",
+    "Rider approval disabled before processing consent",
+    "Download uses the backend origin and one journey only",
+    "A real Codex assessment produces visible named assistance",
+    "Agent processing adds no human check-in",
+    "Mobile viewport has no horizontal overflow",
+    "Human return invalidates the downloaded capability",
+    "Arrival and free banner work through the published UI",
+    "Guardian profile exposes contribution and appreciation sections",
+    "No unhandled browser JavaScript errors"
+  ],
+  "browser": "Playwright Chromium headless",
+  "syntheticAccountsCreated": 2,
+  "syntheticAccountsDeleted": 2,
+  "realCodexTurns": 1,
+  "viewports": [
+    {"width": 1280, "height": 900},
+    {"width": 390, "height": 844}
+  ],
+  "screenshotsReviewed": true,
+  "setupAttempts": {
+    "attemptsBeforeSuccessfulRun": 4,
+    "realModelCalls": 0,
+    "syntheticAccountsCreated": 4,
+    "syntheticAccountsDeleted": 4,
+    "corrections": [
+      "Wait for hydration before entering the guest name.",
+      "Disambiguate the header and empty-state New journey buttons.",
+      "Wait for the action POST response before reading the updated check-in count."
+    ]
+  },
+  "chainFinalityClaimed": false,
+  "pageErrors": [],
+  "limits": [
+    "One bounded scenario and one real Codex turn, not sustained unattended coverage or broad model evaluation.",
+    "No wallet-extension interaction or cross-browser coverage.",
+    "Confirmed profile totals and the banner wall remain pending for this journey until the agent-service contract upgrade."
+  ],
+  "screenshots": [
+    ".dev/closure-browser/active-desktop.png",
+    ".dev/closure-browser/active-mobile.png",
+    ".dev/closure-browser/completed-desktop.png",
+    ".dev/closure-browser/profile-desktop.png"
+  ]
+}

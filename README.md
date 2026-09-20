@@ -4,7 +4,7 @@
 
 A community journey-guarding application for Hack the North 2026. Riders approve human guardians and arrange relays when someone needs a break. Optional deterministic reminders continue after missed check-ins. The implemented [personal-agent workflow](docs/PERSONAL_AGENT_GUARDING.md) lets an assigned volunteer request a named agent for a limited period, obtain rider approval, and connect their own runtime through six scoped tools. Coverage becomes active only after a valid assessment. The existing OpenAI API adapter remains disabled and is outside the primary development path.
 
-The personal-agent backend and interface are deployed; the owner-operated CLI watcher and local MCP bridge are implemented. A [hosted acceptance run](docs/deployment/personal-agent.hosted.validation.json) passed 23 checks with one real Codex assessment, canonical posted assistance, human return, scoped-token revocation, arrival, and a free banner. Agent activity added no human check-ins. This bounded run does not establish broad model quality, interactive browser acceptance, or finalized chain publication. See the [client guide](docs/PERSONAL_AGENT_CLIENT.md) and [HTTP protocol](docs/PERSONAL_AGENT_PROTOCOL.md).
+The personal-agent backend and interface are deployed; the owner-operated CLI watcher and local MCP bridge are implemented. A [hosted acceptance run](docs/deployment/personal-agent.hosted.validation.json) passed 23 checks with one real Codex assessment. A separate [published-browser run](docs/deployment/personal-agent.browser.validation.json) passed 12 checks through the actual interface: two participants, named-agent consent, a real Codex response, human return, capability revocation, arrival, and a free banner. Agent activity added no human check-ins. These bounded runs do not establish broad model quality, unattended overnight availability, or finalized new chain publication. Start with the [personal trial checklist](docs/PERSONAL_TRIAL.md); implementation details are in the [client guide](docs/PERSONAL_AGENT_CLIENT.md) and [HTTP protocol](docs/PERSONAL_AGENT_PROTOCOL.md).
 
 The new zero-award agent-service contract extension is built and tested, but its Devnet upgrade is waiting for test-SOL funding. Those service receipts and later records in the same journey remain pending/retry until the upgrade. See the [release boundary](docs/deployment/personal-agent.release.validation.json); do not present those pending records as confirmed chain evidence.
 
@@ -113,6 +113,7 @@ npm run test:integration
 - [Human guarding workflow](docs/HUMAN_GUARDING.md)
 - [Personal-agent guarding and operational limits](docs/PERSONAL_AGENT_GUARDING.md)
 - [Personal-agent CLI and MCP client](docs/PERSONAL_AGENT_CLIENT.md)
+- [Personal trial checklist](docs/PERSONAL_TRIAL.md)
 - [Personal-agent HTTP protocol](docs/PERSONAL_AGENT_PROTOCOL.md)
 - [Community v1 scope and validation](docs/COMMUNITY_V1.md)
 - [Validation evidence](docs/VALIDATION.md)

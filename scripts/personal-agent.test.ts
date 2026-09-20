@@ -15,7 +15,7 @@ import {
 import { parsePersonalAgentArguments } from './personal-agent';
 import { PersonalAgentMcp, serveMcp, MCP_TOOLS, MCP_MAX_LINE_BYTES, MCP_MAX_METADATA_BYTES } from './personal-agent-mcp';
 import { submitAssessment, watchPersonalAgent } from './personal-agent-watch';
-import { assessInMemory, DISABLED_FEATURES, VERIFIED_CODEX_VERSION, runProcess, type SpawnProcess } from './codex-demo';
+import { assessInMemory, DISABLED_FEATURES, VERIFIED_CODEX_VERSION, runProcess, findCodexInstallation, configurationArgs, scrubEnvironment, type SpawnProcess } from './codex-demo';
 import type { PersonalAgentJob, PersonalAgentResponse, PersonalAgentOperation } from '../worker/src/personal-agent';
 import type { SemanticAssessment } from '../worker/src/agent-semantic';
 import { parseHostedValidationArguments } from './verify-personal-agent-hosted';
@@ -402,6 +402,69 @@ test('official MCP SDK initializes and invokes the handwritten STDIO bridge with
     const result = await client.callTool({ name: 'stillhere_status', arguments: {}, _meta: { progressToken: 'sdk-call', 'com.example/context': { url: 'https://ignored.example' } } });
     assert.equal(result.isError, false); assert.deepEqual(bodies, [{}]); assert.equal(diagnostic, '');
   } finally { await client?.close(); server.closeAllConnections(); await new Promise<void>(resolve => server.close(() => resolve())); await rm(directory, { recursive: true, force: true }); }
+});
+test('native Codex discovers and invokes StillHere MCP through Code Mode with a loopback fake provider', async context => {
+  let installation;
+  try { installation = await findCodexInstallation(); } catch { context.skip('Pinned native Codex CLI unavailable.'); return; }
+  const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+  const directory = await mkdtemp(path.join(tmpdir(), 'stillhere-native-mcp-test-'));
+  const current = Date.now(); const liveConnection = { ...connection(), expiresAt: current + 300_000 };
+  const liveResponse = response(null); liveResponse.delegation.expiresAt = liveConnection.expiresAt;
+  let requests = 0; let resultSeen = false; let tokenLeaked = false; let wrongAuth = false; let failure = '';
+  const operations: string[] = []; const eventTypes: string[] = [];
+  const server = createServer((request, reply) => {
+    if (request.url?.startsWith(`/api/agent/trips/${UUID}/delegations/${UUID}/`)) {
+      operations.push(request.url.split('/').at(-1)!);
+      wrongAuth ||= request.headers.authorization !== `Bearer ${TOKEN}`;
+      reply.writeHead(200, { 'content-type': 'application/json' }); reply.end(JSON.stringify(liveResponse)); return;
+    }
+    let text = '';
+    request.on('data', chunk => { text += chunk.toString(); if (text.length > 512_000) request.destroy(); });
+    request.on('end', () => {
+      try {
+        if (request.url !== '/v1/responses') throw new Error('Unexpected loopback route');
+        const body = JSON.parse(text); requests++;
+        if (requests > 2) throw new Error('Unexpected additional provider request');
+        tokenLeaked ||= text.includes(TOKEN); resultSeen ||= JSON.stringify(body.input).includes('Night companion');
+        // This CLI's bundled model uses Responses Lite + Code Mode: schemas
+        // live in prompt context, so a missing HTTP tools array is expected.
+        const item = requests === 1 ? {
+          type: 'custom_tool_call', id: 'ct_mock', call_id: 'call_mock', name: 'exec', status: 'completed',
+          input: 'const selected = ALL_TOOLS.find(tool => tool.name.endsWith("stillhere_status")); if (!selected) throw new Error("STILLHERE_TOOL_MISSING"); text(await tools[selected.name]({}));',
+        } : { type: 'message', id: 'msg_mock', role: 'assistant', phase: 'final_answer', status: 'completed',
+          content: [{ type: 'output_text', text: 'Offline interoperability complete.', annotations: [] }] };
+        const base = { id: `resp_mock_${requests}`, object: 'response', created_at: Math.floor(current / 1000), model: 'gpt-5.6-terra', output: [] };
+        const events = [{ type: 'response.created', response: { ...base, status: 'in_progress' } },
+          { type: 'response.output_item.added', output_index: 0, item }, { type: 'response.output_item.done', output_index: 0, item },
+          { type: 'response.completed', response: { ...base, status: 'completed', output: [item], usage: { input_tokens: 100, output_tokens: 20, total_tokens: 120,
+            input_tokens_details: { cached_tokens: 0 }, output_tokens_details: { reasoning_tokens: 0 } } } }];
+        reply.writeHead(200, { 'content-type': 'text/event-stream' });
+        reply.end(events.map((event, sequence_number) => `event: ${event.type}\ndata: ${JSON.stringify({ ...event, sequence_number })}\n\n`).join(''));
+      } catch { failure = 'Offline provider fixture failed'; reply.writeHead(500); reply.end(); }
+    });
+  });
+  await new Promise<void>(resolve => server.listen(0, '127.0.0.1', resolve));
+  try {
+    const port = (server.address() as { port: number }).port; const file = path.join(directory, 'connection.json');
+    await writeFile(file, JSON.stringify({ ...liveConnection, origin: `http://127.0.0.1:${port}` }), { mode: 0o600 });
+    const args = configurationArgs();
+    args[args.indexOf('forced_login_method="chatgpt"')] = 'forced_login_method="api"';
+    // Only this explicit MCP interoperability fixture enables Code Mode. The
+    // real assessment runner continues to disable all model action tools.
+    args[args.indexOf('features.code_mode=false')] = 'features.code_mode=true';
+    args[args.indexOf('features.code_mode_host=false')] = 'features.code_mode_host=true';
+    const bridgeArgs = [path.join(root, 'chain/node_modules/tsx/dist/cli.mjs'), path.join(root, 'scripts/personal-agent.ts'), 'mcp', '--connection', file, '--allow-processing', '--allow-loopback'];
+    args.push('-c', 'model_provider="offline_stillhere"', '-c', 'model="gpt-5.6-terra"', '-c',
+      `model_providers.offline_stillhere={name="Offline StillHere",base_url="http://127.0.0.1:${port}/v1",wire_api="responses",requires_openai_auth=false,request_max_retries=0,stream_max_retries=0}`,
+      '-c', `mcp_servers.stillhere={command=${JSON.stringify(process.execPath)},args=${JSON.stringify(bridgeArgs)},enabled=true,required=true,startup_timeout_sec=5,tool_timeout_sec=5}`,
+      '-a', 'never', 'exec', '--ignore-user-config', '--ignore-rules', '--ephemeral', '--sandbox', 'read-only', '--skip-git-repo-check', '--json', '--color', 'never', '-');
+    await runProcess({ installation, args, cwd: directory, environment: { ...scrubEnvironment(process.env), CODEX_API_KEY: 'dummy-offline-test' }, spawn: nodeSpawn,
+      timeoutMs: 15_000, input: 'Synthetic offline fixture. Call the configured StillHere status tool, then finish.',
+      onLine: line => { const event = JSON.parse(line); eventTypes.push(`${event.type}${event.item?.type ? `:${event.item.type}` : ''}`); } });
+    assert.equal(failure, ''); assert.equal(requests, 2); assert.deepEqual(operations, ['status']);
+    assert.equal(wrongAuth, false); assert.equal(tokenLeaked, false); assert.ok(resultSeen);
+    assert.ok(eventTypes.includes('item.started:mcp_tool_call')); assert.ok(eventTypes.includes('item.completed:mcp_tool_call')); assert.ok(eventTypes.includes('turn.completed'));
+  } finally { server.closeAllConnections(); await new Promise<void>(resolve => server.close(() => resolve())); await rm(directory, { recursive: true, force: true }); }
 });
 
 class FakeChild extends EventEmitter {
