@@ -1,7 +1,7 @@
 {
   "recordedAt": "2026-09-20T05:02:04Z",
-  "closureCheckedAt": "2026-09-20T05:33:50Z",
-  "status": "application-published-chain-upgrade-pending",
+  "closureCheckedAt": "2026-09-20T05:54:51.913Z",
+  "status": "application-and-devnet-workflow-verified",
   "product": "StillHere",
   "site": {
     "url": "https://safety-guard-htn2026.klavander56.chatgpt.site",
@@ -21,50 +21,126 @@
     "notificationsEnabled": false
   },
   "checks": {
-    "worker": {"passed": 374, "files": 22},
-    "chainClient": {"passed": 42},
-    "rust": {"passed": 26},
-    "operations": {"passed": 20},
-    "frontendProxyAndLogic": {"passed": 38},
-    "existingCodexRunner": {"passed": 24},
-    "personalAgentClient": {"passed": 31, "officialMcpSdkVersion": "1.30.0", "nativeCodexMcpProbe": "passed with the real 0.155.1 executable and STDIO bridge, a scripted loopback provider and backend; zero real model calls"},
-    "hostedPersonalAgent": {"passed": 23, "realCodexTurns": 1},
-    "publishedFrontend": {"passed": 29},
+    "worker": {
+      "passed": 374,
+      "files": 22
+    },
+    "chainClient": {
+      "passed": 42
+    },
+    "rust": {
+      "passed": 26
+    },
+    "operations": {
+      "passed": 20
+    },
+    "frontendProxyAndLogic": {
+      "passed": 38
+    },
+    "existingCodexRunner": {
+      "passed": 24
+    },
+    "personalAgentClient": {
+      "passed": 31,
+      "officialMcpSdkVersion": "1.30.0",
+      "nativeCodexMcpProbe": "passed with the real 0.155.1 executable and STDIO bridge, a scripted loopback provider and backend; zero real model calls"
+    },
+    "hostedPersonalAgent": {
+      "passed": 23,
+      "realCodexTurns": 1
+    },
+    "publishedFrontend": {
+      "passed": 29
+    },
     "typecheck": "passed: Worker source/tests, frontend, chain",
     "lint": "passed",
     "build": "passed: frontend, Worker, community SBF",
-    "browserVisualAndInteractiveQa": {"status": "passed", "checks": 12, "realCodexTurns": 1, "desktopAndMobileScreenshotsReviewed": true}
+    "browserVisualAndInteractiveQa": {
+      "status": "passed",
+      "checks": 12,
+      "realCodexTurns": 1,
+      "desktopAndMobileScreenshotsReviewed": true
+    },
+    "personalAgentChain": {
+      "passed": 36,
+      "finalizedRecords": 9,
+      "independentlyDecoded": true
+    },
+    "postUpgradeReadiness": {
+      "checkedAt": "2026-09-20T05:54:51.913Z",
+      "ready": true,
+      "hostedOpenAiEnabled": false,
+      "notificationsEnabled": false
+    }
   },
   "communityProgram": {
     "network": "devnet",
     "programId": "7vuz78V9Tu53Bpt3iXHc37VSDBmRSYxcEguWewR9LXzm",
     "extension": "agent_service wire kind 9, rule version 2, zero awards",
     "validatedBinarySha256": "f0f8fac5caea4b14170354bc87e7f66ac026ea961c07d481ff740f08a8e07569",
-    "upgradeSubmitted": false,
-    "blockingCondition": "Insufficient Devnet test SOL for the temporary deployment buffer; public faucet rejected the request.",
+    "bytecodeMatches": true,
+    "upgradeSubmitted": true,
+    "upgradeFinalized": true,
+    "upgradeSignature": "8VyYYtLvGEedGUWTBsCQ9WfFCEr38Xupt28MWuhtkepCTaiTf7LVdEKCbcapLZu4uRacTRSQ62ixT1SE8KYAUZX",
+    "upgradeSlot": 501236996,
+    "blockingCondition": null,
     "deployer": "AHdX6zJn3xYQXCBix3TvEqXUyV9x8PdPcEstsCkyhdE8",
-    "observedDeployerBalanceLamports": 700413560,
-    "requiredAvailableLamports": 1793107960,
-    "shortfallLamports": 1092694400,
-    "readiness": {"authorityVerified": true, "currentBytecodeVerified": true, "bufferRentLamports": 1561211000, "programDataExtensionRentLamports": 211896960, "feeReserveLamports": 20000000},
-    "requestedTestSolTopUp": 2,
-    "publicationBehavior": "Unsupported service records remain pending/retry. Later records wait in sequence until upgrade; no false finality.",
-    "priorDeployment": "deployment.community.before-personal-agent.json"
+    "observedDeployerBalanceLamports": 5305569080,
+    "sponsorBalanceAtUpgradeLamports": 250000000,
+    "sponsorFundingSignature": "aPFo1Qb2TezhGCmo12pjgJawkFsiHE422eExpAWrVeTtfSjzCHQj7DDAtzbtR9FmpqJx1bGUKmPxDPW4BPQuf7A",
+    "resolvedFundingBlock": {
+      "previousBalanceLamports": 700413560,
+      "requiredAvailableLamports": 1793107960,
+      "shortfallLamports": 1092694400,
+      "requestedTestSolTopUp": 2,
+      "fundedBalanceBeforeUploadLamports": 5700413560
+    },
+    "uploadRecovery": {
+      "failedBulkUploadAttempts": 3,
+      "reusedExistingBuffer": true,
+      "sequentialConfirmedWrites": 218,
+      "sequentialWriteFeesLamports": 1090000,
+      "finalizedFullBufferHashMatched": true
+    },
+    "publicationBehavior": "The verified hosted journey has nine finalized records. New records still publish asynchronously; outages or insufficient sponsor funds remain visible as pending/retry.",
+    "publicationReconciliation": {
+      "checkedAt": "2026-09-20T05:54:51.540Z",
+      "journeyId": "ec06b17322219f76d719d99ca7baa76f8175afc333dd6c18bc52e37afd971eff",
+      "origin": "https://safety-guard-api-production.2012044zj.workers.dev",
+      "records": 9,
+      "counts": {
+        "finalized": 9
+      },
+      "retryRequested": false,
+      "queued": false
+    },
+    "priorDeployment": "deployment.community.before-personal-agent.json",
+    "deploymentReceipt": "deployment.community.devnet.json"
   },
   "evidence": {
     "hosted": "personal-agent.hosted.validation.json",
     "frontend": "personal-agent.frontend.validation.json",
     "chain": "personal-agent.chain.validation.json",
     "browser": "personal-agent.browser.validation.json",
-    "mcp": "personal-agent.mcp.validation.json"
+    "mcp": "personal-agent.mcp.validation.json",
+    "communityUpgrade": "deployment.community.devnet.json"
   },
-  "cleanup": {"syntheticAccountsCreated": 2, "syntheticAccountsDeleted": 2, "privateFollowupCredentialsRemoved": true, "browserRunAndSetup": {"syntheticAccountsCreated": 6, "syntheticAccountsDeleted": 6, "downloadedCapabilityFilesDeleted": true}},
+  "cleanup": {
+    "syntheticAccountsCreated": 2,
+    "syntheticAccountsDeleted": 2,
+    "privateFollowupCredentialsRemoved": true,
+    "browserRunAndSetup": {
+      "syntheticAccountsCreated": 6,
+      "syntheticAccountsDeleted": 6,
+      "downloadedCapabilityFilesDeleted": true
+    }
+  },
   "limits": [
     "Two bounded acceptance scenarios each used one real owner-authenticated Codex turn; they do not establish broad model quality or unattended overnight reliability.",
     "The owner must keep the runtime awake and connected with available model allowance.",
     "A local STDIO MCP bridge is not a hosted ChatGPT Work connector.",
     "Agent service is platform attestation, not independently verified model identity or physical safety.",
-    "New agent-service chain finality is not yet established."
+    "Independent finality and profile reconstruction cover the nine-record hosted acceptance journey, not every historical journey or automatic-end/failure variant."
   ],
-  "next": "Fund the Devnet upgrade, deploy the validated community binary and independently verify pending records. The owner then trials the product using docs/PERSONAL_TRIAL.md; presentation scripting and visual redesign are deferred until feedback."
+  "next": "The owner trials the deployed product using docs/PERSONAL_TRIAL.md. Presentation scripting and visual redesign follow that feedback."
 }

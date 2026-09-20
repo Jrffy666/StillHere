@@ -41,7 +41,7 @@
   "limits": [
     "One bounded scenario and one real Codex turn, not sustained unattended coverage or broad model evaluation.",
     "No wallet-extension interaction or cross-browser coverage.",
-    "Confirmed profile totals and the banner wall remain pending for this journey until the agent-service contract upgrade."
+    "At the time of this browser run, profile totals and the banner wall were pending the agent-service contract upgrade. Subsequent upgrade and chain evidence are in personal-agent.release.validation.json; this browser journey was not independently decoded."
   ],
   "screenshots": [
     ".dev/closure-browser/active-desktop.png",
