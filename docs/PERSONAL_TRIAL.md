@@ -31,15 +31,15 @@ This checks the installed CLI and login without a model call. If it fails, keep 
 2. Rider: review the named request and processing notice, check the permission box, and select **Allow this agent**. Leave automated assistance enabled for this test.
 3. Rider: send a fictional concern, for example: “Trial only: the driver took an unfamiliar detour and has not explained it. I feel uneasy and would like help clarifying the route.”
 4. Guardian: open **Connect my agent** and select **Download connection file**. Keep this file private.
-5. Run the command below in the same PowerShell window. If the browser added `(1)` to the filename, use the actual downloaded filename.
+5. Run the command below in the same PowerShell window as one complete command. Use the file's actual saved location and filename; Downloads is only the example location. If the browser added `(1)` to the filename, include that suffix. If you saved it in the project folder instead, replace the connection path with `".\stillhere-agent-connection.json"`.
 
 ```powershell
-npm run agent -- watch --connection "$env:USERPROFILE\Downloads\stillhere-agent-connection.json" --allow-processing --max-minutes 20 --max-turns 12
+npm run agent -- watch --connection "$env:USERPROFILE\Downloads\stillhere-agent-connection.json" --allow-processing
 ```
 
 Expect **Waiting for the first response**, followed by **Personal agent is here** only after the server accepts an assessment. Look for the named agent's question in the conversation and the action record under **Agent service**. Exact wording and interpretation may vary. Agent activity should not increase the human check-in count.
 
-Keep the computer awake, online, and the terminal running. The watcher stops at 20 minutes, 12 model turns, permission expiry, or a failure—whichever happens first. It uses your own Codex allowance. A 45-second connectivity limit and a maximum 90-second pending-response deadline make interrupted coverage visible; a heartbeat alone does not prove that the model is responding.
+Keep the computer awake, online, and the terminal running. The watcher defaults to 20 minutes and 12 model turns; it stops at either limit, permission expiry, or a failure—whichever happens first. Optional `--max-minutes` and `--max-turns` arguments belong on the same command, not on a separate PowerShell prompt. It uses your own Codex allowance. A 45-second connectivity limit and a maximum 90-second pending-response deadline make interrupted coverage visible; a heartbeat alone does not prove that the model is responding.
 
 ## 3. Return, arrive, and say thank you
 

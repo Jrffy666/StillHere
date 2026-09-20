@@ -2,7 +2,8 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { PassThrough } from 'node:stream';
 import { createServer } from 'node:http';
-import { mkdtemp, readdir, rm, writeFile } from 'node:fs/promises';
+import fsPromises, { mkdtemp, readdir, rm, writeFile } from 'node:fs/promises';
+import { syncBuiltinESMExports } from 'node:module';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { EventEmitter } from 'node:events';
@@ -10,7 +11,7 @@ import { spawn as nodeSpawn } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import {
   PersonalAgentClient, PersonalAgentError, PRODUCTION_ORIGIN, parseConnection, readBoundedJson,
-  MAX_RESPONSE_BYTES, type PersonalAgentTransport,
+  MAX_RESPONSE_BYTES, safeError, type PersonalAgentTransport,
 } from './personal-agent-client';
 import { parsePersonalAgentArguments } from './personal-agent';
 import { PersonalAgentMcp, serveMcp, MCP_TOOLS, MCP_MAX_LINE_BYTES, MCP_MAX_METADATA_BYTES } from './personal-agent-mcp';
@@ -71,6 +72,71 @@ test('connection files use a bounded regular-file reader', async () => {
     await assert.rejects(readBoundedJson(file, 4096), /INVALID_JSON/);
   } finally { await rm(directory, { recursive: true, force: true }); }
 });
+test('missing connection files return a specific safe error without a path or token', async () => {
+  const directory = await mkdtemp(path.join(tmpdir(), 'stillhere-missing-file-test-'));
+  const file = path.join(directory, `${TOKEN}.json`);
+  try {
+    await assert.rejects(readBoundedJson(file, 4096), (error: unknown) => {
+      assert.ok(error instanceof PersonalAgentError);
+      assert.equal(error.code, 'STILLHERE_INPUT_FILE_NOT_FOUND');
+      assert.equal(error.message, 'STILLHERE_INPUT_FILE_NOT_FOUND');
+      assert.equal(safeError(error), 'STILLHERE_INPUT_FILE_NOT_FOUND');
+      const diagnostic = `${String(error)} ${JSON.stringify(error)}`;
+      assert.ok(!diagnostic.includes(directory)); assert.ok(!diagnostic.includes(TOKEN));
+      return true;
+    });
+    assert.equal(safeError(new Error(`unknown failure at ${file}`)), 'STILLHERE_LOCAL_FAILURE');
+  } finally { await rm(directory, { recursive: true, force: true }); }
+});
+
+test('a non-directory connection path and ENOTDIR both become the safe not-found error', async context => {
+  const directory = await mkdtemp(path.join(tmpdir(), 'stillhere-not-directory-test-'));
+  const parent = path.join(directory, 'regular-file');
+  const file = path.join(parent, `${TOKEN}.json`);
+  try {
+    await writeFile(parent, 'not a directory');
+    // Windows can report ENOENT for a regular-file ancestor; exercise the real path first.
+    await assert.rejects(readBoundedJson(file, 4096), { code: 'STILLHERE_INPUT_FILE_NOT_FOUND' });
+    const mocked = context.mock.method(fsPromises, 'lstat', async () => {
+      throw Object.assign(new Error(`ENOTDIR: cannot read ${file}`), { code: 'ENOTDIR', path: file });
+    });
+    syncBuiltinESMExports();
+    try {
+      await assert.rejects(readBoundedJson(file, 4096), (error: unknown) => {
+        assert.ok(error instanceof PersonalAgentError);
+        assert.equal(error.code, 'STILLHERE_INPUT_FILE_NOT_FOUND');
+        assert.equal(error.message, 'STILLHERE_INPUT_FILE_NOT_FOUND');
+        assert.equal(safeError(error), 'STILLHERE_INPUT_FILE_NOT_FOUND');
+        const diagnostic = `${String(error)} ${JSON.stringify(error)}`;
+        assert.ok(!diagnostic.includes(directory)); assert.ok(!diagnostic.includes(TOKEN));
+        return true;
+      });
+      assert.equal(mocked.mock.callCount(), 1);
+    } finally { mocked.mock.restore(); syncBuiltinESMExports(); }
+  } finally { await rm(directory, { recursive: true, force: true }); }
+});
+
+test('actual watch CLI rejects a missing connection with only the safe file error', async () => {
+  const directory = await mkdtemp(path.join(tmpdir(), 'stillhere-missing-cli-test-'));
+  const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+  const file = path.join(directory, `${TOKEN}.json`);
+  try {
+    const child = nodeSpawn(process.execPath, [path.join(root, 'chain/node_modules/tsx/dist/cli.mjs'),
+      path.join(root, 'scripts/personal-agent.ts'), 'watch', '--connection', file, '--allow-processing'],
+    { cwd: directory, shell: false, windowsHide: true, env: scrubEnvironment(process.env), stdio: ['ignore', 'pipe', 'pipe'] });
+    let stdout = ''; let stderr = '';
+    child.stdout.on('data', chunk => { stdout += chunk.toString(); });
+    child.stderr.on('data', chunk => { stderr += chunk.toString(); });
+    const timeout = setTimeout(() => child.kill('SIGKILL'), 5000);
+    try {
+      const code = await new Promise<number | null>((resolve, reject) => { child.once('close', resolve); child.once('error', reject); });
+      assert.equal(code, 1); assert.equal(stdout, '');
+      assert.equal(stderr, 'STILLHERE_INPUT_FILE_NOT_FOUND\nThe --connection or --input file was not found. Check its saved location and filename.\n');
+      assert.ok(!stderr.includes(directory)); assert.ok(!stderr.includes(TOKEN));
+    } finally { clearTimeout(timeout); child.kill(); }
+  } finally { await rm(directory, { recursive: true, force: true }); }
+});
+
 test('CLI requires processing consent and rejects duplicate flags, arbitrary tools and unsafe limits', () => {
   const base = ['watch', '--connection', 'local.json', '--allow-processing'];
   assert.equal(parsePersonalAgentArguments(base).maxTurns, 12);

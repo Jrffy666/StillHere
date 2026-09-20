@@ -28,3 +28,5 @@ test-ledger/
 *.db-shm
 coverage/
 .cache/
+# Downloaded journey capabilities are private, including browser-numbered copies.
+stillhere-agent-connection*.json

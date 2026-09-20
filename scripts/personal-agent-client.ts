@@ -30,22 +30,30 @@ export function parseConnection(raw: unknown, options: { allowLoopback?: boolean
   return value;
 }
 export async function readBoundedJson(file: string, maxBytes: number): Promise<unknown> {
-  const stat = await lstat(file);
-  if (!stat.isFile() || stat.isSymbolicLink() || stat.size > maxBytes) failure('STILLHERE_INVALID_INPUT_FILE');
-  const handle = await open(file, constants.O_RDONLY | (constants.O_NOFOLLOW ?? 0));
   try {
-    if (!(await handle.stat()).isFile()) failure('STILLHERE_INVALID_INPUT_FILE');
-    const bytes = Buffer.alloc(maxBytes + 1);
-    let length = 0;
-    while (length < bytes.length) {
-      const read = await handle.read(bytes, length, bytes.length - length, null);
-      if (!read.bytesRead) break;
-      length += read.bytesRead;
-    }
-    if (length > maxBytes) failure('STILLHERE_INPUT_TOO_LARGE');
-    try { return JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes.subarray(0, length))); }
-    catch { return failure('STILLHERE_INVALID_JSON'); }
-  } finally { await handle.close(); }
+    const stat = await lstat(file);
+    if (!stat.isFile() || stat.isSymbolicLink() || stat.size > maxBytes) failure('STILLHERE_INVALID_INPUT_FILE');
+    const handle = await open(file, constants.O_RDONLY | (constants.O_NOFOLLOW ?? 0));
+    try {
+      if (!(await handle.stat()).isFile()) failure('STILLHERE_INVALID_INPUT_FILE');
+      const bytes = Buffer.alloc(maxBytes + 1);
+      let length = 0;
+      while (length < bytes.length) {
+        const read = await handle.read(bytes, length, bytes.length - length, null);
+        if (!read.bytesRead) break;
+        length += read.bytesRead;
+      }
+      if (length > maxBytes) failure('STILLHERE_INPUT_TOO_LARGE');
+      try { return JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes.subarray(0, length))); }
+      catch { return failure('STILLHERE_INVALID_JSON'); }
+    } finally { await handle.close(); }
+  } catch (error) {
+    if (error instanceof PersonalAgentError) throw error;
+    const code = error && typeof error === 'object' && 'code' in error ? error.code : undefined;
+    if (code === 'ENOENT' || code === 'ENOTDIR') failure('STILLHERE_INPUT_FILE_NOT_FOUND');
+    if (code === 'EACCES' || code === 'EPERM') failure('STILLHERE_INPUT_FILE_UNREADABLE');
+    throw error;
+  }
 }
 export function parseOperationInput(operation: PersonalAgentOperation, body: unknown): unknown {
   const schema = operation === 'assess' ? personalAgentAssessmentInputSchema

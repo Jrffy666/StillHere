@@ -58,7 +58,10 @@ export async function main(args: string[]) {
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   try { await main(process.argv.slice(2)); }
   catch (error) {
-    process.stderr.write(`${error instanceof CodexDemoError ? error.code : safeError(error)}\n`);
+    const code = error instanceof CodexDemoError ? error.code : safeError(error);
+    process.stderr.write(`${code}\n`);
+    if (code === 'STILLHERE_INPUT_FILE_NOT_FOUND') process.stderr.write('The --connection or --input file was not found. Check its saved location and filename.\n');
+    if (code === 'STILLHERE_INPUT_FILE_UNREADABLE') process.stderr.write('The --connection or --input file could not be read. Check its file permissions.\n');
     if (error instanceof CodexDemoError && error.cleanupFailed) process.stderr.write('STILLHERE_TEMP_CLEANUP_PENDING\n');
     if (error instanceof CodexDemoError && error.terminationPending) process.stderr.write('STILLHERE_MODEL_PROCESS_TERMINATION_PENDING\n');
     process.exitCode = 1;
